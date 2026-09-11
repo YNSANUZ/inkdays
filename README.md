@@ -40,3 +40,8 @@ Projeto isolado em `apps/inkdays`; não altera nenhum portal existente. Para rev
 ## Celular horizontal
 Controles automáticos em aparelhos touch: analógico esquerdo para mover; arrastar à direita para mirar; segurar ATIRAR dispara e permite arrastar a mira. Botões de recarga, pulo, corrida e agachamento; pausa no canto superior direito. Girar para vertical pausa a partida. Interface validada em viewport mobile; desempenho e multitoque em aparelho físico ainda precisam de teste. PWA e multiplayer continuam fora deste slice.
 
+
+## Jogar online
+GitHub Pages: https://ynsanuz.github.io/inkdays/
+Cada envio para main executa lint, testes e build antes de atualizar o jogo automaticamente.
+
