@@ -1,0 +1,3 @@
+export interface Settings {volume:number;sensitivity:number;quality:'low'|'high'}
+export function loadSettings():Settings {try {const s=JSON.parse(localStorage.getItem('inkdays.settings')??'{}');return {volume:typeof s.volume==='number'&&Number.isFinite(s.volume)?Math.max(0,Math.min(1,s.volume)):.35,sensitivity:typeof s.sensitivity==='number'&&Number.isFinite(s.sensitivity)?Math.max(.2,Math.min(2,s.sensitivity)):1,quality:s.quality==='low'?'low':'high'};}catch{return {volume:.35,sensitivity:1,quality:'high'};}}
+export function saveSettings(s:Settings) {try{localStorage.setItem('inkdays.settings',JSON.stringify(s));}catch{/* Settings still work for this session when storage is unavailable. */}}
