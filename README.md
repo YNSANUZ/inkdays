@@ -76,6 +76,8 @@ Antes de entrar no controle, cada participante pode informar um nick curto. O se
 
 O cliente conserva a alteração solicitada e a reenvia em intervalos limitados até que o próprio snapshot confirme o valor autoritativo. Uma perda isolada no transporte não deixa o participante silenciosamente com o nome genérico.
 
+Quando a vida autoritativa do jogador diminui, a bancada apresenta uma vinheta vermelha curta nas bordas. O primeiro snapshot, cura, reinício e reconexão apenas redefinem a referência e não fabricam um impacto visual.
+
 Se o alvo desconecta, morre ou deixa de estar elegível, a autoridade seleciona outro jogador vivo. Uma retomada dentro da tolerância preserva a identidade e permite que a IA volte a escolhê-lo pela distância; a troca é transmitida igualmente aos dois clientes.
 
 A morte individual também possui verificação dedicada: no passo seguinte, o participante caído deixa a seleção da IA, o inimigo restante recebe o ID do sobrevivente como alvo e `gameOver` continua falso.

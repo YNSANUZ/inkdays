@@ -322,3 +322,9 @@ Validação automatizada: 95 testes passaram. O caso novo confirma presença at�
 O modo touch horizontal ganhou um botão CHAT discreto ao lado interno do analógico. Ele abre o mesmo campo confiável com `enterkeyhint=send`, limpa qualquer intenção mantida e oculta temporariamente os controles de movimento, mira e disparo para evitar ações involuntárias enquanto o teclado do sistema está aberto. Enviar ou usar o botão de fechar devolve os controles no quadro seguinte. O desktop conserva Enter e Escape.
 
 Validação: os 95 testes, lint, TypeScript e build PWA continuam aprovados. Em viewport 844×390, o botão apareceu em modo touch com 55 px de largura, começando em x=145; o analógico ativo ocupa até aproximadamente x=137, deixando separação entre os alvos. O foco e o teclado virtual reais, redimensionamento causado pelo teclado e envio em Android/iOS ainda dependem de aparelho físico. O multiplayer permanece EM ANDAMENTO.
+
+## Fase 2 — percepção de dano autoritativo
+
+A bancada agora compara a vida local somente entre snapshots aceitos e apresenta uma vinheta vermelha curta quando há redução. O efeito não antecipa o servidor nem usa colisão local: ele nasce depois que o dano autoritativo chega. O primeiro estado após conexão ou retomada estabelece uma referência silenciosa, e aumento de vida, amanhecer ou reinício não são interpretados como impacto.
+
+Validação automatizada: 98 testes passaram. Os casos novos cobrem primeiro snapshot com vida já reduzida, dano de 14 pontos, estado repetido, cura, reset de reconexão e valores inválidos. Lint, TypeScript e build PWA passaram. Intensidade, duração e leitura do efeito em telas físicas ainda precisam de avaliação humana. O multiplayer permanece EM ANDAMENTO.
