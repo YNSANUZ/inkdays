@@ -50,6 +50,8 @@ Cada envio para main executa lint, testes e build antes de atualizar o jogo auto
 ## Bancada cooperativa local (Fase 2)
 Execute npm run coop:server e npm run dev -- --port 5180. Abra http://127.0.0.1:5180/?coop=1 em duas abas e clique CONTINUAR em cada uma. O servidor em 127.0.0.1:8787 aceita dois jogadores; uma terceira conexao recebe Sala cheia. WASD move, mouse mira, espaco pula. Esc libera o mouse. A bancada sincroniza movimento, combate, inimigos, vida, municao, recompensas e ciclo de hordas, com nomes sem fundo sobre os participantes.
 
+Para um playtest local com transporte degradado, use npm run coop:server:badnet. Esse perfil aplica deterministicamente cerca de 120 ms de RTT base, jitter, perda, duplicacao e reordenacao ao trafego WebSocket de entrada e saida. Ele serve para diagnostico e nao representa toda a variedade da internet real.
+
 O jogador local usa predicao e reconciliacao com replay das entradas ainda nao confirmadas. Jogadores remotos e inimigos usam um buffer de interpolacao de 100 ms, que ordena snapshots atrasados e nao extrapola alem do ultimo estado conhecido. Uma queda breve tenta reconectar automaticamente por cinco segundos e preserva identidade e estado no mesmo processo do servidor. A bancada mede ping e jitter separadamente. O servidor conserva 500 ms de historico dos inimigos e valida o tiro contra o tick apresentado ao atirador, mantendo dano, morte e recompensa autoritativos.
 
 Ainda sem salas publicas, revive ou progressao. Esc libera o mouse, mas nao pausa o servidor. Para reiniciar, feche as duas abas e abra novamente. Usa o mesmo mapa para colisoes. O servidor escuta somente loopback e nao e hospedado pelo GitHub Pages. A bancada e excluida do build de producao.

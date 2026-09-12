@@ -9,7 +9,8 @@
     "preview": "vite preview --host 127.0.0.1",
     "lint": "eslint src tests",
     "test": "vitest run",
-    "coop:server": "tsx scripts/coop-server.ts"
+    "coop:server": "tsx scripts/coop-server.ts",
+    "coop:server:badnet": "tsx scripts/coop-server.ts --bad-net"
   },
   "dependencies": {
     "three": "^0.180.0",

@@ -55,3 +55,13 @@ it('mede ida e volta sem alterar a simulação',async()=>{
   try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');socket=new WebSocket(`ws://127.0.0.1:${address.port}`);const pong=await new Promise<{type:string;nonce:number;serverTick:number}>((resolve,reject)=>{socket!.once('error',reject);socket!.on('message',raw=>{const p=JSON.parse(raw.toString());if(p.type==='welcome')socket!.send(JSON.stringify({type:'ping',nonce:123.5}));if(p.type==='pong')resolve(p);});});expect(pong).toMatchObject({type:'pong',nonce:123.5});expect(instance.authority.snapshot().players[0].acknowledged).toBe(-1);}
   finally{socket?.terminate();await instance.close();}
 },10000);
+it('mantém snapshots autoritativos iguais no WebSocket com rede degradada',async()=>{
+  const instance=createMovementServer({move(p,x,z){p.x+=x;p.z+=z;}},0,undefined,5000,{latencyMs:25,jitterMs:15,dropEvery:9,duplicateEvery:5,reorderEvery:4});const sockets:WebSocket[]=[];
+  try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');
+    const connect=()=>{const socket=new WebSocket(`ws://127.0.0.1:${address.port}`);sockets.push(socket);const state={id:'',frames:new Map<number,Snapshot>()};socket.on('message',raw=>{const p=JSON.parse(raw.toString());if(p.type==='welcome')state.id=p.id;if(p.type==='snapshot')state.frames.set(p.tick,p);});return {socket,state};};const a=connect(),b=connect();
+    const until=async(predicate:()=>boolean)=>{const end=Date.now()+5000;while(!predicate()){if(Date.now()>end)throw Error('Tempo esgotado na rede degradada');await new Promise(r=>setTimeout(r,10));}};await until(()=>!!a.state.id&&!!b.state.id);
+    for(let sequence=0;sequence<24;sequence++)a.socket.send(JSON.stringify({version:1,sequence,yaw:0,command:{x:0,z:1,run:false,crouch:false,jump:false,fire:false,reload:false}}));
+    let common:Snapshot|undefined;await until(()=>{for(const [tick,frame] of a.state.frames){const other=b.state.frames.get(tick);if(other&&frame.players.length===2&&frame.players.some(p=>p.id===a.state.id&&p.position.z<9.9)){expect(frame).toEqual(other);common=frame;return true;}}return false;});
+    expect(common!.players.map(p=>p.id).sort()).toEqual([a.state.id,b.state.id].sort());
+  }finally{for(const socket of sockets)socket.terminate();await instance.close();}
+},10000);

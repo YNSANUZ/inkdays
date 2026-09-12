@@ -35,6 +35,22 @@ Fazer uma sessão curta de playtest do slice, registrar sensação de câmera/ti
 - Mapas adicionais, variação ambiental e objetivos de preparação.
 - Arte autoral refinada, animação de recarga, áudio e mixagem definitivos.
 
+## Sistema de áudio e imersão
+O playtest humano registrou que o áudio será parte central da identidade do INKDAYS. Preservar uma arquitetura leve e modular para permitir esta evolução sem interromper agora a robustez do multiplayer.
+
+- **Música dinâmica:** preparação/exploração calma, agradável e atmosférica; transição gradual para música rápida e intensa durante a horda; retorno gradual ao período tranquilo. Chefões dos dias 10, 20, 30 etc. devem combinar apresentação, nome, barra de vida, efeito de entrada e música especial, com possibilidade de temas próprios.
+- **Passos por superfície:** identificar grama, terra, concreto/pedra, madeira e materiais futuros. Diferenciar caminhada e corrida, sincronizar o ritmo ao movimento e reduzir repetição com variações adequadas de sample, pitch e volume.
+- **Armas:** cada categoria terá identidade sonora própria. Pistola curta e seca; SMG rápida; rifle forte; escopeta pesada; sniper potente e distante; faca com lâmina e impacto; granada com preparação, lançamento e explosão; lança-chamas contínuo. Não reutilizar um único efeito apenas mudando o volume.
+- **Problema atual de polimento:** o som placeholder da pistola foi percebido no playtest humano como estranho e pouco convincente. Melhorá-lo em uma oportunidade de polimento do core que não atrapalhe a validação de rede.
+- **Áudio espacial:** posicionar fogo, máquinas, água, explosões, chefões, inimigos e tiros de outros jogadores; direção, distância e atenuação devem corresponder ao mundo.
+- **Fogo:** casas, objetos, barris, fogueiras, inimigos incendiados e lança-chamas poderão emitir áudio espacial com distância, prioridade e limite de fontes.
+- **Inimigos:** movimentação, aproximação, grunhido, ataque, dano e morte reconhecíveis. Tipos especiais poderão ser identificados apenas pelo som.
+- **Chefões:** entrada, passos, ataques, gritos, habilidades, dano, morte e música devem transmitir identidade e peso.
+- **Ambiente:** vento, folhas, pássaros, insetos, madeira e paisagem distante, de modo sutil durante a exploração para aumentar o contraste da horda.
+- **Prioridade e distância:** limitar fontes simultâneas e priorizar tiro próximo, dano recebido, chefão e ataque inimigo sobre sons ambientes e repetitivos.
+- **Performance:** manter abordagem web-first compatível com navegador mobile, PWA e futuro APK; carregar e administrar assets de forma eficiente.
+- **Copyright:** usar durante o desenvolvimento apenas placeholders próprios, gerados ou licenciados; na versão pública, distribuir somente áudio permitido e registrar origem/licença quando necessário.
+
 ## Plataformas
 - PWA com cache e atualização versionada.
 - APK Android após perfis de memória, GPU, suspensão/retomada e navegação.
