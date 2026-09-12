@@ -175,6 +175,13 @@ it('compensa o alvo visto no transporte sem deixá-lo no passado',async()=>{
     let common:ReturnType<CombatAuthority['snapshot']>|undefined;while(Date.now()<end&&!common){for(const [tick,left] of a.state.frames){const right=b.state.frames.get(tick),shot=left.shots.at(-1);if(right&&shot?.player===a.state.id&&shot.hit){expect(left).toEqual(right);common=left;break;}}if(!common)await new Promise(r=>setTimeout(r,10));}const shot=common!.shots.at(-1)!;expect(shot.rewindTicks).toBeGreaterThan(0);expect(common!.enemies[0].health).toBe(22);expect(common!.enemies[0].position.x).toBe(10);
   }finally{for(const socket of sockets)socket.terminate();await instance.close();}
 },15000);
+it('rejeita tick de visão futuro pelo transporte sem consumir munição',async()=>{
+  const authority=new CombatAuthority(),instance=createMovementServer(authority.world,0,authority);let socket:WebSocket|undefined;
+  try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');socket=new WebSocket(`ws://127.0.0.1:${address.port}`);let id='';socket.on('message',raw=>{const packet=JSON.parse(raw.toString());if(packet.type==='welcome')id=packet.id;});const end=Date.now()+3000;while(Date.now()<end&&!id)await new Promise(r=>setTimeout(r,10));
+    const command={x:0,z:0,run:false,crouch:false,jump:false,fire:true,reload:false};socket.send(JSON.stringify({version:1,sequence:0,yaw:0,pitch:0,viewTick:authority.tick+1000,command}));await new Promise(r=>setTimeout(r,80));expect(authority.snapshot().players.find(player=>player.id===id)?.ammo).toBe(8);expect(authority.snapshot().shots).toHaveLength(0);
+    socket.send(JSON.stringify({version:1,sequence:1,yaw:0,pitch:0,viewTick:authority.tick,command}));while(Date.now()<end&&authority.snapshot().shots.length===0)await new Promise(r=>setTimeout(r,10));expect(authority.snapshot().players.find(player=>player.id===id)?.ammo).toBe(7);
+  }finally{socket?.terminate();await instance.close();}
+},10000);
 it('recupera clique de tiro perdido sem duplicar munição',async()=>{
   const authority=new CombatAuthority(),instance=createMovementServer(authority.world,0,authority,5000,{latencyMs:6,jitterMs:2,dropEvery:3},'127.0.0.1',7000,{pulseMs:3,stepsPerPulse:1});const sockets:WebSocket[]=[];
   try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');const end=Date.now()+10000;

@@ -84,6 +84,8 @@ Inimigos aplicam separação local tanto na perseguição quanto enquanto atacam
 
 A compensação histórica também é exercitada através do WebSocket condicionado: o servidor consulta a posição que o alvo ocupava no tick apresentado ao atirador, aplica o resultado no estado atual e restaura imediatamente a posição presente antes de publicar o snapshot comum.
 
+O tick de visão é limitado pela linha temporal do servidor e avança monotonicamente por jogador. Pedidos futuros são rejeitados antes do disparo, e um cliente não pode voltar para um quadro antigo mais favorável depois de declarar que já apresentava um estado novo.
+
 Cliques rápidos de tiro carregam um `shotId` repetido até o acknowledgement do servidor. O servidor aceita cada identificador uma única vez, recuperando o clique se o primeiro comando for descartado sem transformar confirmações atrasadas em tiros ou consumo de munição adicionais. Fogo mantido continua seguindo a cadência normal da arma.
 
 Para testar em dois aparelhos da mesma rede Wi-Fi, execute npm run coop:server:lan e npm run dev:lan. O terminal mostra o endereço http://IP-LOCAL:5180/?coop=1 que deve ser aberto em cada aparelho. O cliente escolhe automaticamente o WebSocket do mesmo computador. Esse modo de desenvolvimento deve ser usado apenas em uma rede local confiável e não publica a sala na internet.
