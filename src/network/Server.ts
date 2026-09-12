@@ -15,10 +15,9 @@ export function createMovementServer(world:CollisionWorld,port=8787,authority:Pi
     if(session){if(session.timer)clearTimeout(session.timer);session.connected=true;authority.resume(session.id);}
     else{const id=randomUUID();if(!authority.join(id)){socket.close(1008,'Sala cheia');return;}session={id,connected:true};sessions.set(token,session);}
     const id=session.id;socket.send(JSON.stringify({type:'welcome',id,token,version:1,resumed:!!resume&&token===resume}));
-    let count=0,lastHeard=Date.now();const reset=setInterval(()=>{count=0;},1000),watchdog=setInterval(()=>{if(Date.now()-lastHeard>inactivityMs){socket.close(4000,'Conexão sem resposta');return;}socket.ping();},Math.min(2000,Math.max(20,inactivityMs/2)));
-    socket.on('pong',()=>{lastHeard=Date.now();});
+    let count=0,lastPong=Date.now();const reset=setInterval(()=>{count=0;},1000),watchdog=setInterval(()=>{if(Date.now()-lastPong>inactivityMs){socket.terminate();return;}socket.ping();},Math.min(2000,Math.max(20,inactivityMs/2)));
+    socket.on('pong',()=>{lastPong=Date.now();});
     socket.on('message',data=>{
-      lastHeard=Date.now();
       if(++count>120){socket.close(1008,'Limite de comandos');return;}
       link.schedule('inbound',()=>{if(!session!.connected||socket.readyState!==WebSocket.OPEN)return;try{const packet=JSON.parse(data.toString());if(packet?.type==='ping'&&typeof packet.nonce==='number'&&Number.isFinite(packet.nonce)){send(socket,JSON.stringify({type:'pong',nonce:packet.nonce,serverTick:authority.tick}));return;}if(!authority.receive(id,packet))send(socket,JSON.stringify({type:'rejected'}));}
       catch{socket.close(1008,'Comando inválido');}});

@@ -70,6 +70,8 @@ Durante a janela de reconexao, o personagem fica marcado discretamente como reco
 
 O servidor usa heartbeat nativo do WebSocket para detectar conexões interrompidas mesmo quando o sistema não entrega imediatamente o evento de fechamento. Esse heartbeat não depende dos timers do jogo na aba e evita tratar uma aba minimizada como desconectada. Se a reserva já tiver expirado, o cliente recebe uma nova identidade e reinicia a predição e suas métricas locais.
 
+Somente a resposta `pong` confirma a saúde do enlace. Continuar recebendo comandos não mascara uma falha no sentido servidor → jogador. Quando o prazo expira, o socket é terminado imediatamente para iniciar suspensão e reconexão sem aguardar o fechamento normal de uma rede que já não responde.
+
 Comandos pontuais de pulo e recarga são repetidos por uma janela limitada até o snapshot confirmar sua sequência, reduzindo perdas durante instabilidade. O servidor limpa o estado de disparo após cada tick: segurar continua enviando intenção de tiro, enquanto um clique isolado não permanece ativo se os pacotes seguintes atrasarem.
 
 Ainda sem salas publicas, revive ou progressao. Esc libera o mouse, mas nao pausa o servidor. Para reiniciar, feche as duas abas e abra novamente. Usa o mesmo mapa para colisoes. O servidor escuta somente loopback e nao e hospedado pelo GitHub Pages. A bancada e excluida do build de producao.

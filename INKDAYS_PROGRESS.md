@@ -172,3 +172,9 @@ Validacao automatizada: 58 testes passaram. Os novos casos confirmam que a telem
 Corrigido acúmulo de tempo enquanto o cliente estava desconectado ou aguardava seu primeiro snapshot. Esse tempo podia gerar centenas de comandos no mesmo quadro ao retomar, atingir o limite do servidor e causar nova desconexão. O relógio de entradas agora descarta tempo offline e limita a recuperação a seis passos por quadro. Toda conexão recomeça a predição a partir do primeiro estado recebido e limpa os buffers visuais antigos, preservando a sequência quando a identidade é retomada.
 
 Validação automatizada: 60 testes passaram; os novos casos simulam 60 segundos offline, travamento de dez segundos e cadência a 30, 60 e 144 FPS. Lint e build passaram. Esta entrega não foi validada visualmente em navegador nem em aparelho físico. Multiplayer permanece em desenvolvimento; a contagem de testes não substitui a partida humana prolongada.
+
+
+## Fase 2 — detecção de falha em uma direção
+O heartbeat do servidor agora considera somente `pong` nativo como prova de conexão saudável. Comandos recebidos não renovam esse prazo, pois uma rede pode continuar entregando jogador → servidor enquanto perdeu o caminho servidor → jogador. Ao expirar, o servidor termina o socket imediatamente; isso dispara suspensão, proteção do personagem e tentativa de reconexão sem depender da confirmação de um fechamento normal.
+
+Validação automatizada: 60 testes passaram. O teste de heartbeat mantém o cliente enviando comandos válidos a cada 20 ms, desativa deliberadamente suas respostas `pong`, confirma encerramento anormal pelo servidor e remoção da vaga depois da tolerância. Lint, TypeScript e build PWA passaram. Troca de Wi-Fi e perda unilateral em aparelho real ainda precisam de validação física. O multiplayer permanece EM ANDAMENTO.
