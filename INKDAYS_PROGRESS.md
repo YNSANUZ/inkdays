@@ -346,3 +346,9 @@ Validação automatizada: 101 testes passaram. Os casos novos confirmam associa�
 Um evento autoritativo marcado como acerto e pertencente ao jogador local agora pulsa a mira em vermelho; tiros de outros participantes continuam produzindo traçante e impacto sem transformar a mira do observador em confirmação própria. O dinheiro local também possui uma referência separada: somente aumento entre snapshots aceitos mostra `+$valor` abaixo da mira. Primeiro snapshot, cura de estado, reinício, redução e reconexão não fabricam recompensa.
 
 Validação automatizada: 103 testes passaram. Os casos novos cobrem referência inicial, aumento, repetição, redução, nova recompensa, valor inválido e reset de reconexão. Os cenários de transporte já exigem impacto, eliminação e $20 apenas para o autor em snapshots iguais. Lint, TypeScript e build PWA passaram. Contraste, duração e legibilidade durante uma horda cheia ainda dependem de avaliação humana em computador e celular. O multiplayer permanece EM ANDAMENTO.
+
+## Fase 2 — anúncios autoritativos de horda e amanhecer
+
+A apresentação agora observa o dia, a fase e a geração `round` recebidos no snapshot autoritativo. A passagem para a horda mostra `HORDA — DIA N`; o avanço ao período de preparação mostra `DIA N — AMANHECEU`. Cada mudança produz um único anúncio curto e um sinal sonoro de interface. Primeiro snapshot, reconexão, snapshot repetido e nova geração da partida somente redefinem a referência, evitando avisos antigos ou duplicados.
+
+Validação automatizada: 105 testes passaram em 21 arquivos. Os casos novos cobrem transição para horda, amanhecer, repetição do mesmo estado, conexão inicial, reset de reconexão e reinício da partida. Lint, TypeScript, build e geração da PWA passaram. Sincronia percebida, duração, contraste e áudio durante uma partida real ainda precisam de avaliação humana simultânea em computador e celular. O multiplayer permanece EM ANDAMENTO.

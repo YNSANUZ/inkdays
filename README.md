@@ -88,6 +88,8 @@ Um clique local produz imediatamente apenas o som curto do gatilho para reduzir 
 
 Quando esse evento confirma um acerto do jogador local, a mira pulsa brevemente em vermelho. Um aumento posterior no dinheiro autoritativo mostra o valor recebido abaixo da mira. Eventos remotos não ativam o marcador local, e valores já existentes ao conectar ou retomar não geram recompensa falsa.
 
+As mudanças autoritativas de preparação para horda e de horda para um novo dia geram um anúncio central curto nas duas telas. O primeiro snapshot, a reconexão, snapshots repetidos e o reinício da partida apenas estabelecem a referência atual, sem repetir anúncios antigos.
+
 Corrida e salto também atravessam o transporte como estado autoritativo. Posição, velocidade horizontal e velocidade vertical são comparadas no mesmo tick recebido pelos dois clientes; a apresentação remota usa esses valores no buffer de interpolação e na animação.
 
 Cada partida reiniciada possui uma geração `round` crescente, independente do tick contínuo do servidor. Ao detectar a nova geração, o cliente descarta predição e buffers antigos antes de posicionar os avatares no ponto inicial, impedindo uma interpolação longa desde o local da morte.
