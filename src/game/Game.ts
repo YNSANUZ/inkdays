@@ -24,7 +24,8 @@ export class Game {
     this.scene.add(new T.HemisphereLight(0xffffff,0xb4b7af,2.1));this.light=new T.DirectionalLight(0xffffff,2.3);this.light.position.set(-20,35,10);this.scene.add(this.light);
     this.world=new World(this.scene);this.scene.add(this.player.avatar.root);this.enemies=new Enemies(this.scene,this.world);this.effects=new Effects(this.scene);this.ui=new UI(app);
     this.input=new Input(this.renderer.domElement,()=>this.pause(),()=>{this.debug=!this.debug;this.ui.el('#debug').classList.toggle('hidden',!this.debug);});
-    this.touch=new TouchControls(this.input,()=>this.pause());
+    this.touch=new TouchControls(this.input,()=>this.pause(),()=>{if(this.mode==='playing')this.lock();});
+    this.renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&this.mode==='playing'&&!document.pointerLockElement)this.lock();});
     window.addEventListener('resize',()=>{this.resize();if(this.touch.enabled&&innerHeight>innerWidth)this.pause();});this.applySettings();
     this.renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();this.contextLost=true;this.pause();this.ui.toast('Renderização interrompida. Aguarde a recuperação da placa gráfica.');});
     this.renderer.domElement.addEventListener('webglcontextrestored',()=>{this.contextLost=false;this.ui.toast('Renderização recuperada. Continue pelo menu.');});

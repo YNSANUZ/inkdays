@@ -1,13 +1,20 @@
 import type { Input } from './Input';
 import { joystick } from './TouchState';
-export const touchDevice=()=>matchMedia('(pointer: coarse)').matches||navigator.maxTouchPoints>0||new URLSearchParams(location.search).get('touch')==='1';
+export const touchDevice=()=>matchMedia('(pointer: coarse)').matches||new URLSearchParams(location.search).get('touch')==='1';
 export class TouchControls {
-  readonly enabled=touchDevice();readonly root=document.createElement('section');
+  enabled=touchDevice();readonly root=document.createElement('section');
   private active=false;private stickId:number|null=null;private lookId:number|null=null;private fireId:number|null=null;
   private origin={x:0,y:0};private last=new Map<number,{x:number;y:number}>();
-  constructor(private input:Input,onPause:()=>void) {
-    if(!this.enabled)return;
-    document.body.classList.add('touch-mode');this.root.className='touch-controls hidden';this.root.setAttribute('aria-label','Controles touch');
+  constructor(private input:Input,onPause:()=>void,onMouse:()=>void=()=>{}) {
+    document.body.classList.toggle('touch-mode',this.enabled);this.root.className='touch-controls hidden';this.root.setAttribute('aria-label','Controles touch');
+    window.addEventListener('pointerdown',e=>{
+      const enabled=e.pointerType==='touch'?true:e.pointerType==='mouse'?false:this.enabled;
+      if(enabled===this.enabled)return;
+      this.reset();this.active=false;this.enabled=enabled;
+      document.body.classList.toggle('touch-mode',enabled);
+      this.root.classList.add('hidden');
+      if(!enabled)onMouse();
+    },true);
     this.root.innerHTML=`<div class="touch-look" aria-label="Arraste para mirar"><span>ARRASTE PARA MIRAR</span></div>
       <div class="touch-stick" role="group" aria-label="Analógico de movimento"><div class="stick-ring"></div><div class="stick-knob"></div><small>MOVER</small></div>
       <button class="touch-button touch-run" aria-label="Alternar corrida" aria-pressed="false">⇈<small>CORRER</small></button>
