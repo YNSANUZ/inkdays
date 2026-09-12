@@ -143,3 +143,9 @@ A medição simples de intervalo foi substituída por telemetria baseada nos tic
 
 Validacao automatizada: 53 testes passaram. Os novos casos cobrem duplicatas, reordenação recuperada dentro da tolerância, perda realmente finalizada e variação de chegada sem perda. Lint, TypeScript e build PWA passaram. A precisão matemática da métrica está validada; limites aceitáveis para uma experiência boa ainda dependem do playtest prolongado em rede real e aparelhos físicos. O multiplayer permanece EM ANDAMENTO.
 
+
+## Fase 2 — relatório de playtest por aparelho
+A bancada cooperativa agora permite baixar um relatório JSON ao final da sessão. Cada aparelho agrega duração, amostras, último dia/tick, média e máximo de ping, jitter e perda, maior correção, ajustes bruscos, desconexões, retomadas e novas identidades. O relatório guarda somente números técnicos: não inclui nick, ID do jogador, comandos, mensagens ou conteúdo pessoal. Comparar os dois arquivos permitirá identificar problemas assimétricos durante uma partida prolongada sem depender apenas da memória dos participantes.
+
+Validacao automatizada: 54 testes passaram. O novo teste confirma cálculos de média/máximo, duração, progressão de dia, correções e eventos de conexão, além da ausência de identidade no JSON. Lint, TypeScript e build PWA passaram. O botão existe apenas na bancada cooperativa de desenvolvimento, que continua excluída do pacote público. A coleta em dois aparelhos físicos ainda não foi realizada; portanto nenhuma conclusão de rede real foi inferida. O multiplayer permanece EM ANDAMENTO.
+
