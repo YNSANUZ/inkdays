@@ -149,3 +149,9 @@ A bancada cooperativa agora permite baixar um relatório JSON ao final da sessã
 
 Validacao automatizada: 54 testes passaram. O novo teste confirma cálculos de média/máximo, duração, progressão de dia, correções e eventos de conexão, além da ausência de identidade no JSON. Lint, TypeScript e build PWA passaram. O botão existe apenas na bancada cooperativa de desenvolvimento, que continua excluída do pacote público. A coleta em dois aparelhos físicos ainda não foi realizada; portanto nenhuma conclusão de rede real foi inferida. O multiplayer permanece EM ANDAMENTO.
 
+
+## Fase 2 — entrega confiável de ações pontuais
+Pulo e recarga agora permanecem marcados nos comandos seguintes por uma janela máxima de 30 ticks, até que um snapshot autoritativo confirme a sequência em que a ação começou. Assim, perder o pacote original não elimina a ação, e o limite impede repetição indefinida quando a conexão desaparece. No servidor, a intenção de disparo é consumida e limpa a cada tick. Um jogador segurando o botão continua enviando `fire`, mas um clique isolado não deixa o gatilho preso durante uma lacuna de pacotes, evitando tiros, munição ou dano adicionais.
+
+Validacao automatizada: 56 testes passaram. Os casos novos confirmam repetição de pulo/recarga até o acknowledgement, remoção após confirmação, expiração da redundância e apenas uma bala consumida quando um único comando de tiro é seguido por 120 ticks sem novas entradas. Lint, TypeScript e build PWA passaram. WebSocket já fornece entrega ordenada no transporte real; essa redundância protege também a camada de comandos durante reconexão e condicionamento artificial. Sensação de pulo e recarga sob rede física ainda depende do playtest em dois aparelhos. O multiplayer permanece EM ANDAMENTO.
+

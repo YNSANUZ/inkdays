@@ -30,4 +30,5 @@ describe('predição e reconciliação',()=>{
     expect(client.renderPosition.z).toBeCloseTo(before);for(let i=0;i<60;i++)client.updateRender(1/60);expect(client.renderPosition.z).toBeCloseTo(before-.5,3);
     client.reconcile({acknowledged:0,position:{x:10,y:0,z:0},velocity:{x:0,y:0,z:0},vertical:0});expect(client.renderPosition.x).toBe(10);
   });
+  it('repete pulo e recarga até confirmação sem mantê-los indefinidamente',()=>{const client=new ClientPrediction(world,{acknowledged:-1,position:{x:0,y:0,z:0},velocity:{x:0,y:0,z:0},vertical:0});const base=command(false),first=client.prepare(5,{...base,jump:true,reload:true});expect(first).toMatchObject({jump:true,reload:true});expect(client.prepare(6,base)).toMatchObject({jump:true,reload:true});client.reconcile({acknowledged:5,position:{x:0,y:0,z:0},velocity:{x:0,y:0,z:0},vertical:0});expect(client.prepare(7,base)).toMatchObject({jump:false,reload:false});const late=client.prepare(8,{...base,jump:true});expect(late.jump).toBe(true);expect(client.prepare(39,base).jump).toBe(false);});
 });

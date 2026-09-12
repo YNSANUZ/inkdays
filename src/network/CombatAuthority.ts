@@ -56,7 +56,7 @@ export class CombatAuthority {
       p.player.update(C.fixedStep,p.input.command,p.input.yaw,this.world);p.weapon.update(C.fixedStep);
       p.camera.yaw=p.input.yaw;p.camera.pitch=p.input.pitch??.19;p.camera.update(C.fixedStep,p.player.position,this.world,true);
       if(p.input.command.reload)p.weapon.reload();if(p.input.command.fire)this.fire(id,p);
-      p.applied=p.received;p.input.command.jump=p.input.command.reload=false;
+      p.applied=p.received;p.input.command.jump=p.input.command.reload=p.input.command.fire=false;
     }
     const event=this.cycle.update(C.fixedStep);
     if(event==='horde')this.horde.begin(this.cycle.day);

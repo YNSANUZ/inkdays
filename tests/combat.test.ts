@@ -12,6 +12,7 @@ describe('combate controlado pelo servidor',()=>{
     a.receive('a',packet(10,false,true));for(let n=0;n<80;n++)a.step();
     expect(a.snapshot().players[0]).toMatchObject({ammo:8,reserve:47});
   });
+  it('não mantém o gatilho preso quando novos comandos deixam de chegar',()=>{const a=new CombatAuthority();a.join('a');a.receive('a',packet(0,true));for(let n=0;n<120;n++)a.step();expect(a.snapshot().players[0].ammo).toBe(7);});
   it('dois tiros matam um alvo e concedem a recompensa uma única vez',()=>{
     const a=new CombatAuthority();a.join('a');a.enemies.spawn(1,new Vector3(0,0,10));
     const enemy=a.enemies.active[0];enemy.avatar.root.position.set(.85,0,0);enemy.speed=0;
