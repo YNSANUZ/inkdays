@@ -104,6 +104,8 @@ Somente a resposta `pong` confirma a saúde do enlace. Continuar recebendo coman
 
 Comandos pontuais de pulo e recarga são repetidos por uma janela limitada até o snapshot confirmar sua sequência, reduzindo perdas durante instabilidade. O servidor limpa o estado de disparo após cada tick: segurar continua enviando intenção de tiro, enquanto um clique isolado não permanece ativo se os pacotes seguintes atrasarem.
 
+Ao conectar ou retomar uma sessão, o primeiro snapshot estabelece a referência dos eventos de disparo. Tiros ainda retidos no histórico autoritativo não são reproduzidos como uma rajada atrasada; somente eventos posteriores geram novos traçantes e sons no cliente.
+
 Ainda sem salas publicas, revive ou progressao. Esc libera o mouse, mas nao pausa o servidor. Para reiniciar, feche as duas abas e abra novamente. Usa o mesmo mapa para colisoes. O servidor escuta somente loopback e nao e hospedado pelo GitHub Pages. A bancada e excluida do build de producao.
 
 

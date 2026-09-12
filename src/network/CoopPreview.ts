@@ -12,13 +12,14 @@ import { AngleInterpolationBuffer, InterpolationBuffer, interpolationTick } from
 import { SnapshotTelemetry } from './SnapshotTelemetry';
 import { SessionReport } from './SessionReport';
 import { InputClock } from './InputClock';
+import { ShotEventCursor } from './ShotEventCursor';
 type Snapshot=ReturnType<CombatAuthority['snapshot']>;
 export function mountCoopPreview(app:HTMLElement){
   const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));app.append(renderer.domElement);
   const scene=new T.Scene();scene.background=new T.Color(0xf3f1e9);scene.fog=new T.Fog(0xf3f1e9,43,130);scene.add(new T.HemisphereLight(0xffffff,0xb4b7af,2.1));
   const light=new T.DirectionalLight(0xffffff,2.3);light.position.set(-20,35,10);scene.add(light);
   const world=new World(scene),camera=new ThirdPerson(),effects=new Effects(scene),audio=new GameAudio();
-  const enemies=new Map<number,Avatar>(),labels=new Map<string,HTMLElement>(),playerBuffers=new Map<string,InterpolationBuffer>(),enemyBuffers=new Map<number,InterpolationBuffer>(),playerAngles=new Map<string,AngleInterpolationBuffer>(),enemyAngles=new Map<number,AngleInterpolationBuffer>();let lastShot=0;
+  const enemies=new Map<number,Avatar>(),labels=new Map<string,HTMLElement>(),playerBuffers=new Map<string,InterpolationBuffer>(),enemyBuffers=new Map<number,InterpolationBuffer>(),playerAngles=new Map<string,AngleInterpolationBuffer>(),enemyAngles=new Map<number,AngleInterpolationBuffer>(),shotEvents=new ShotEventCursor();
   const crosshair=document.createElement('div');crosshair.textContent='+';Object.assign(crosshair.style,{position:'fixed',left:'50%',top:'50%',transform:'translate(-50%,-50%)',pointerEvents:'none',fontSize:'22px'});app.append(crosshair);
   const panel=document.createElement('div');Object.assign(panel.style,{position:'fixed',top:'12px',left:'12px',zIndex:'20',background:'#f3f1e9',padding:'12px',maxWidth:'360px'});
   panel.innerHTML='<strong>COOP · TESTE DE COMBATE</strong><p role="status">Conectando…</p><button>CONTINUAR</button> <button class="report">BAIXAR RELATÓRIO</button><p class="help">WASD · mouse · R recarrega<br>Esc libera o mouse; a partida continua.<br>Após a derrota, qualquer jogador pode reiniciar a sala.</p>';app.append(panel);
@@ -27,7 +28,7 @@ export function mountCoopPreview(app:HTMLElement){
   const avatars=new Map<string,Avatar>(),inputClock=new InputClock();
   const pause=()=>{input.active=false;input.clear();touch.setActive(false);button.hidden=false;if(document.pointerLockElement)document.exitPointerLock();};
   const input=new Input(renderer.domElement,pause,()=>{}),touch=new TouchControls(input,pause,()=>{if(input.active)void renderer.domElement.requestPointerLock()?.catch(()=>{});});
-  let socket:WebSocket,reconnectTimer=0,restartTimer=0,pageLeaving=false,firstSnapshot=true;
+  let socket:WebSocket,reconnectTimer=0,restartTimer=0,pageLeaving=false;
   const requestRestart=()=>{if(socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'restart'}));};
   button.onclick=()=>{if(!connected)return;if(snapshot?.gameOver){requestRestart();clearInterval(restartTimer);restartTimer=window.setInterval(requestRestart,250);button.disabled=true;button.textContent='REINICIANDO…';return;}input.active=true;audio.start();button.hidden=true;help.hidden=true;if(!touch.enabled)void renderer.domElement.requestPointerLock()?.catch(()=>{status.textContent='Segure o botão direito para mirar.';});};
   reportButton.onclick=()=>{const blob=new Blob([JSON.stringify(report.summary(),null,2)],{type:'application/json'}),link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`inkdays-rede-${new Date().toISOString().replaceAll(':','-')}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);};
@@ -36,7 +37,7 @@ export function mountCoopPreview(app:HTMLElement){
     socket.onmessage=e=>{
     const packet=JSON.parse(e.data);
     if(packet.type==='pong'){const sample=performance.now()-packet.nonce;rtt=rtt?rtt*.8+sample*.2:sample;return;}
-    if(packet.type==='welcome'){prediction=null;inputClock.advance(0,false);playerBuffers.clear();playerAngles.clear();enemyBuffers.clear();enemyAngles.clear();telemetry=new SnapshotTelemetry();rtt=0;if(packet.resumed)report.resumed();if(id&&id!==packet.id){report.newIdentity();prediction=null;sequence=0;maxCorrection=snaps=0;firstSnapshot=true;}id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada.':'Conectado. Abra outra aba em /?coop=1.';}
+    if(packet.type==='welcome'){prediction=null;inputClock.advance(0,false);playerBuffers.clear();playerAngles.clear();enemyBuffers.clear();enemyAngles.clear();shotEvents.reset();telemetry=new SnapshotTelemetry();rtt=0;if(packet.resumed)report.resumed();if(id&&id!==packet.id){report.newIdentity();prediction=null;sequence=0;maxCorrection=snaps=0;}id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada.':'Conectado. Abra outra aba em /?coop=1.';}
     if(packet.type==='snapshot'){
       const state=packet as Snapshot,receivedAt=performance.now(),unique=telemetry.observe(state.tick,receivedAt);if(!unique||state.tick<telemetry.latestTick)return;if(round&&state.round!==round){prediction=null;playerBuffers.clear();playerAngles.clear();enemyBuffers.clear();enemyAngles.clear();maxCorrection=snaps=0;}round=state.round;snapshot=state;snapshotReceivedAt=receivedAt;const me=state.players.find(p=>p.id===id);
       if(me){const authoritative={acknowledged:me.acknowledged,position:me.position,velocity:me.velocity,vertical:me.vertical};if(!prediction)prediction=new ClientPrediction(world,authoritative);else{const error=prediction.reconcile(authoritative);maxCorrection=Math.max(maxCorrection,error);if(error>3)snaps++;}}
@@ -52,8 +53,7 @@ export function mountCoopPreview(app:HTMLElement){
       const enemyIds=new Set(state.enemies.map(e=>e.id));for(const [key,avatar] of enemies)if(!enemyIds.has(key)){scene.remove(avatar.root);enemies.delete(key);enemyBuffers.delete(key);enemyAngles.delete(key);}
       for(const enemy of state.enemies)if(!enemies.has(enemy.id)){const avatar=new Avatar(true);avatar.root.position.copy(enemy.position);enemies.set(enemy.id,avatar);scene.add(avatar.root);}
       for(const enemy of state.enemies){let buffer=enemyBuffers.get(enemy.id),angle=enemyAngles.get(enemy.id);if(!buffer){buffer=new InterpolationBuffer();enemyBuffers.set(enemy.id,buffer);}if(!angle){angle=new AngleInterpolationBuffer();enemyAngles.set(enemy.id,angle);}buffer.push(state.tick,enemy.position,receivedAt);angle.push(state.tick,enemy.yaw,receivedAt);}
-      if(firstSnapshot){lastShot=state.shots.at(-1)?.serial??0;firstSnapshot=false;}
-      for(const shot of state.shots)if(shot.serial>lastShot){effects.shot(new T.Vector3().copy(shot.from),new T.Vector3().copy(shot.to));if(shot.hit)effects.impact(new T.Vector3().copy(shot.to));audio.cue('shot');lastShot=shot.serial;}
+      for(const shot of shotEvents.consume(state.shots)){effects.shot(new T.Vector3().copy(shot.from),new T.Vector3().copy(shot.to));if(shot.hit)effects.impact(new T.Vector3().copy(shot.to));audio.cue('shot');}
       if(me?.health===0&&input.active)pause();
     }
     };
