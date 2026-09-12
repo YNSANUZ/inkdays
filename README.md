@@ -56,6 +56,8 @@ Os testes automatizados incluem também um soak acelerado de 10.800 passos: dois
 
 Um segundo soak mantém hordas reais durante 7.200 passos e exige que os dois clientes observem os inimigos e cheguem ao Dia 3 com o mesmo snapshot e limpeza correta no amanhecer. Apenas o dano dos jogadores é neutralizado dentro desse teste para preservar a duração da sessão.
 
+O transporte degradado também possui um cenário de eliminação controlada: duplicação e reordenação não podem repetir dano, morte, munição ou recompensa, e ambos os clientes precisam receber exatamente o mesmo resultado autoritativo.
+
 Para testar em dois aparelhos da mesma rede Wi-Fi, execute npm run coop:server:lan e npm run dev:lan. O terminal mostra o endereço http://IP-LOCAL:5180/?coop=1 que deve ser aberto em cada aparelho. O cliente escolhe automaticamente o WebSocket do mesmo computador. Esse modo de desenvolvimento deve ser usado apenas em uma rede local confiável e não publica a sala na internet.
 
 Ao final do playtest, use BAIXAR RELATÓRIO em cada aparelho. O JSON contém duração, último dia/tick, médias e máximos de ping, jitter e perda, maior correção, ajustes bruscos, desconexões, retomadas e trocas de identidade. Ele não contém nick, identificador de jogador, comandos ou conteúdo pessoal.

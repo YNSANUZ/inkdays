@@ -1,5 +1,6 @@
 import {it,expect} from 'vitest';
 import {WebSocket} from 'ws';
+import {Vector3} from 'three';
 import {createMovementServer} from '../src/network/Server';
 import type {MovementAuthority} from '../src/network/MovementAuthority';
 import {CombatAuthority} from '../src/network/CombatAuthority';
@@ -95,3 +96,13 @@ it('mantém hordas reais sincronizadas até o terceiro dia sob transporte degrad
     expect(a.maxEnemies).toBeGreaterThanOrEqual(5);expect(b.maxEnemies).toBeGreaterThanOrEqual(5);expect(common).toMatchObject({day:3,phase:'day',enemies:[]});expect(common!.players.every(player=>player.health===100)).toBe(true);
   }finally{for(const socket of sockets)socket.terminate();await instance.close();}
 },30000);
+it('não duplica dano ou recompensa de eliminação no transporte degradado',async()=>{
+  const authority=new CombatAuthority(),instance=createMovementServer(authority.world,0,authority,5000,{latencyMs:15,jitterMs:8,duplicateEvery:2,reorderEvery:3});const sockets:WebSocket[]=[];
+  try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');
+    const connect=()=>{const socket=new WebSocket(`ws://127.0.0.1:${address.port}`);sockets.push(socket);const state={id:'',frames:new Map<number,ReturnType<CombatAuthority['snapshot']>>()};socket.on('message',raw=>{const packet=JSON.parse(raw.toString());if(packet.type==='welcome')state.id=packet.id;if(packet.type==='snapshot'){state.frames.set(packet.tick,packet);if(state.frames.size>100)state.frames.delete(state.frames.keys().next().value!);}});return {socket,state};},a=connect(),b=connect(),until=async(predicate:()=>boolean)=>{const end=Date.now()+5000;while(!predicate()){if(Date.now()>end)throw Error('Tempo esgotado no combate degradado');await new Promise(r=>setTimeout(r,10));}};
+    await until(()=>!!a.state.id&&!!b.state.id&&authority.snapshot().players.length===2);authority.enemies.spawn(1,new Vector3(0,0,10));const enemy=authority.enemies.active[0];enemy.avatar.root.position.set(.85,0,0);enemy.speed=0;
+    const fire=(sequence:number)=>a.socket.send(JSON.stringify({version:1,sequence,yaw:0,pitch:0,command:{x:0,z:0,run:false,crouch:false,jump:false,fire:true,reload:false}}));fire(0);await until(()=>authority.snapshot().players.find(player=>player.id===a.state.id)?.ammo===7);expect(enemy.health).toBe(22);const firstShotTick=authority.tick;await until(()=>authority.tick>=firstShotTick+16);fire(1);await until(()=>authority.snapshot().players.find(player=>player.id===a.state.id)?.ammo===6);expect(authority.snapshot().players.find(player=>player.id===a.state.id)?.money).toBe(20);
+    let common:ReturnType<CombatAuthority['snapshot']>|undefined;await until(()=>{for(const [tick,left] of a.state.frames){const right=b.state.frames.get(tick);if(right&&left.players.some(player=>player.id===a.state.id&&player.money===20)){expect(left).toEqual(right);common=left;return true;}}return false;});
+    expect(common!.enemies).toHaveLength(0);expect(common!.players.find(player=>player.id===a.state.id)).toMatchObject({ammo:6,kills:1,money:20});expect(common!.players.find(player=>player.id===b.state.id)).toMatchObject({ammo:8,kills:0,money:0});expect(common!.shots.filter(shot=>shot.hit)).toHaveLength(2);
+  }finally{for(const socket of sockets)socket.terminate();await instance.close();}
+},10000);
