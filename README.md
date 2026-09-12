@@ -76,6 +76,8 @@ Corrida e salto também atravessam o transporte como estado autoritativo. Posiç
 
 Cada partida reiniciada possui uma geração `round` crescente, independente do tick contínuo do servidor. Ao detectar a nova geração, o cliente descarta predição e buffers antigos antes de posicionar os avatares no ponto inicial, impedindo uma interpolação longa desde o local da morte.
 
+Inimigos aplicam separação local tanto na perseguição quanto enquanto atacam. A pressão lateral suave reduz sobreposição ao redor do jogador sem retirar do servidor a escolha de alvo, movimento, alcance ou aplicação de dano.
+
 Para testar em dois aparelhos da mesma rede Wi-Fi, execute npm run coop:server:lan e npm run dev:lan. O terminal mostra o endereço http://IP-LOCAL:5180/?coop=1 que deve ser aberto em cada aparelho. O cliente escolhe automaticamente o WebSocket do mesmo computador. Esse modo de desenvolvimento deve ser usado apenas em uma rede local confiável e não publica a sala na internet.
 
 Ao final do playtest, use BAIXAR RELATÓRIO em cada aparelho. O JSON contém duração, último dia/tick, médias e máximos de ping, jitter e perda, maior correção, ajustes bruscos, desconexões, retomadas e trocas de identidade. Ele não contém nick, identificador de jogador, comandos ou conteúdo pessoal.

@@ -26,6 +26,7 @@ export class Enemies {
       if(!player){e.state='IDLE';continue;}
       e.age+=dt;e.cooldown=Math.max(0,e.cooldown-dt);
       const p=e.avatar.root.position, direction=player.position.clone().sub(p);direction.y=0;const distance=direction.length();
+      const separation=new T.Vector3();for(const other of this.active){if(other===e)continue;const d=p.clone().sub(other.avatar.root.position);d.y=0;const len=d.length();if(len<1e-4)d.set(e.id<other.id?-1:1,0,0);else d.multiplyScalar(1/len);if(len<1.05)separation.addScaledVector(d,1.05-len);}
       e.state=distance>C.enemy.detection?'IDLE':distance<C.enemy.attackRange?'ATTACK':'CHASE';
       if(e.state==='CHASE') {
         direction.normalize();
@@ -37,7 +38,6 @@ export class Enemies {
           const score=candidate.dot(direction);if(score>bestScore){best=candidate;bestScore=score;}
         }
         if(best) {
-          const separation=new T.Vector3();for(const other of this.active) {if(other===e)continue;const d=p.clone().sub(other.avatar.root.position);d.y=0;const len=d.length();if(len>0&&len<1)separation.addScaledVector(d,(1-len)/len);}
           best.addScaledVector(separation,.8).normalize();this.world.move(p,best.x*e.speed*dt,best.z*e.speed*dt,C.enemy.radius);
         }
       } else if(e.state==='ATTACK'&&e.cooldown===0) {
@@ -47,6 +47,7 @@ export class Enemies {
         const attackRay=new T.Raycaster(origin,target.clone().sub(origin).normalize(),0,origin.distanceTo(target));
         if(player.position.y<1&&!attackRay.intersectObjects(this.world.solids,false).length&&player.health.damage(C.enemy.damage))onAttack();
       }
+      if(e.state==='ATTACK'&&separation.lengthSq()>.0001){separation.normalize();this.world.move(p,separation.x*e.speed*.35*dt,separation.z*e.speed*.35*dt,C.enemy.radius);}
       e.avatar.root.rotation.y=Math.atan2(direction.x,direction.z);
       e.avatar.animate(e.age,e.state==='CHASE'?e.speed:0);
       e.avatar.arm.rotation.x=e.state==='ATTACK'?-Math.sin(e.cooldown/C.enemy.attackCooldown*Math.PI)*1.3:0;
