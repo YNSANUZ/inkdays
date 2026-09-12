@@ -115,3 +115,12 @@ it('sincroniza dano e morte de um jogador sem encerrar a partida do sobrevivente
     expect(common?.gameOver).toBe(false);expect(common!.players.find(player=>player.id===a.id)?.health).toBe(0);expect(common!.players.find(player=>player.id===b.id)!.health).toBeGreaterThan(0);expect(common!.enemies).toHaveLength(1);
   }finally{for(const socket of sockets)socket.terminate();await instance.close();}
 },15000);
+it('sincroniza derrota coletiva e congela o estado da partida',async()=>{
+  const authority=new CombatAuthority(),instance=createMovementServer(authority.world,0,authority,5000,{latencyMs:8,jitterMs:5,dropEvery:13,duplicateEvery:7,reorderEvery:5},'127.0.0.1',7000,{pulseMs:3,stepsPerPulse:5});const sockets:WebSocket[]=[];
+  try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');
+    const connect=()=>{const socket=new WebSocket(`ws://127.0.0.1:${address.port}`);sockets.push(socket);const frames=new Map<number,ReturnType<CombatAuthority['snapshot']>>();socket.on('message',raw=>{const packet=JSON.parse(raw.toString());if(packet.type==='snapshot'){frames.set(packet.tick,packet);if(frames.size>300)frames.delete(frames.keys().next().value!);}});return frames;},a=connect(),b=connect(),end=Date.now()+15000;
+    while(Date.now()<end&&authority.snapshot().players.length<2)await new Promise(r=>setTimeout(r,10));expect(authority.snapshot().players).toHaveLength(2);authority.enemies.spawn(1,new Vector3(1,0,10));const enemy=authority.enemies.active[0];enemy.avatar.root.position.set(1,0,10);enemy.speed=0;enemy.cooldown=0;
+    let ended:ReturnType<CombatAuthority['snapshot']>|undefined;while(Date.now()<end&&!ended){for(const [tick,left] of a){const right=b.get(tick);if(right&&left.gameOver){expect(left).toEqual(right);ended=left;break;}}if(!ended)await new Promise(r=>setTimeout(r,10));}expect(ended!.players.every(player=>player.health===0)).toBe(true);const frozenRemaining=ended!.remaining,frozenEnemies=ended!.enemies,afterTick=ended!.tick+60;
+    let later:ReturnType<CombatAuthority['snapshot']>|undefined;while(Date.now()<end&&!later){for(const [tick,left] of a){const right=b.get(tick);if(right&&tick>=afterTick){expect(left).toEqual(right);later=left;break;}}if(!later)await new Promise(r=>setTimeout(r,10));}expect(later).toMatchObject({gameOver:true,remaining:frozenRemaining,enemies:frozenEnemies});
+  }finally{for(const socket of sockets)socket.terminate();await instance.close();}
+},20000);

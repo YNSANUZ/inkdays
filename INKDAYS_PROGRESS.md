@@ -202,3 +202,9 @@ Validação automatizada: 63 testes passaram. O cenário confirmou inimigo remov
 Um inimigo controlado agora ataca um dos dois participantes através da simulação normal enquanto os snapshots atravessam atraso, jitter, perda, duplicação e reordenação. O teste procura o primeiro tick de morte recebido em comum e compara o estado completo dos dois clientes. A autoridade precisa manter o outro participante vivo e a partida ativa.
 
 Validação automatizada: 64 testes passaram. O cenário de morte individual passou quatro execuções isoladas e a suíte completa: ambos os clientes receberam o mesmo snapshot, o alvo chegou a zero de vida, o companheiro permaneceu com vida, o inimigo continuou único e `gameOver` permaneceu falso. Lint, TypeScript e build PWA passaram. A animação de morte, percepção do dano e continuidade jogável pelo sobrevivente ainda precisam de avaliação humana em dois aparelhos. O multiplayer permanece EM ANDAMENTO.
+
+## Fase 2 — derrota coletiva e congelamento da partida
+
+O complemento do fluxo de morte deixa um inimigo controlado derrubar os dois participantes pela simulação normal enquanto os snapshots atravessam atraso, jitter, perda, duplicação e reordenação. Os clientes precisam convergir no mesmo tick de derrota, com ambos em zero de vida e `gameOver` verdadeiro. Depois disso, o teste avança a autoridade por pelo menos mais 60 ticks e exige que o tempo restante e os inimigos permaneçam inalterados.
+
+Validação automatizada: 65 testes passaram. O cenário de derrota coletiva passou quatro execuções isoladas e a suíte completa: os dois clientes receberam snapshots integralmente iguais na derrota e depois dela, e o calendário e a IA ficaram congelados enquanto o tick técnico continuou avançando. Lint, TypeScript e build PWA passaram. Tela de derrota, sensação da transição e recuperação ou reinício após uma partida real ainda dependem de avaliação humana em dois aparelhos. O multiplayer permanece EM ANDAMENTO.
