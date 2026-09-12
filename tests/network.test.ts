@@ -5,6 +5,10 @@ import type {Point} from '../src/simulation/Movement';
 const input=(sequence:number)=>({version:1,sequence,yaw:0,command:{x:0,z:1,run:false,crouch:false,jump:false,fire:false,reload:false}});
 const world={move(p:Point,dx:number,dz:number){p.x+=dx;p.z+=dz;}};
 describe('base autoritativa de movimentação',()=>{
+  it('reutiliza a vaga livre sem sobrepor o outro jogador após reconexão',()=>{
+    const a=new MovementAuthority(world);a.join('a');a.join('b');a.leave('a');a.join('c');
+    const s=a.snapshot();expect(s.players[0].position.x).not.toBe(s.players[1].position.x);
+  });
   it('rejeita posições forjadas, eixos inválidos, NaN e versões incompatíveis',()=>{
     expect(parseInput({...input(0),position:{x:999}})).toBeNull();
     expect(parseInput({...input(0),yaw:NaN})).toBeNull();

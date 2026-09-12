@@ -5,12 +5,13 @@ import type { InputPacket } from './Protocol';
 const neutral=()=>({x:0,z:0,run:false,crouch:false,jump:false,fire:false,reload:false});
 /** Movement-only authority prototype. Connections must supply their own server-assigned ID. */
 export class MovementAuthority {
-  private players=new Map<string,{motion:Motion;input:InputPacket;age:number;received:number;applied:number}>();
+  private players=new Map<string,{slot:number;motion:Motion;input:InputPacket;age:number;received:number;applied:number}>();
   tick=0;
   constructor(private world:CollisionWorld){}
   join(id:string){
     if(this.players.has(id)||this.players.size>=2)return false;
-    this.players.set(id,{motion:{position:{x:this.players.size*2,y:0,z:10},velocity:{x:0,y:0,z:0},vertical:0},input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1});return true;
+    const slot=Array.from(this.players.values()).some(p=>p.slot===0)?1:0;
+    this.players.set(id,{slot,motion:{position:{x:slot*2,y:0,z:10},velocity:{x:0,y:0,z:0},vertical:0},input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1});return true;
   }
   leave(id:string){this.players.delete(id);}
   receive(id:string,value:unknown){

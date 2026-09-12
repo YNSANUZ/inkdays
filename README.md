@@ -46,3 +46,7 @@ GitHub Pages: https://ynsanuz.github.io/inkdays/
 Cada envio para main executa lint, testes e build antes de atualizar o jogo automaticamente.
 
 
+
+## Bancada cooperativa local (Fase 2)
+Execute npm run coop:server e npm run dev -- --port 5180. Abra http://127.0.0.1:5180/?coop=1 em duas abas e clique CONTINUAR em cada uma. O servidor em 127.0.0.1:8787 aceita dois jogadores; uma terceira conexao recebe Sala cheia. WASD move, mouse mira, espaco pula. Esc libera o mouse. A bancada sincroniza somente movimento, sem combate, nomes, salas publicas ou progressao. Usa o mesmo mapa para colisoes. O servidor escuta somente loopback e nao e hospedado pelo GitHub Pages. A bancada e excluida do build de producao.
+
