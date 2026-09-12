@@ -17,6 +17,7 @@ import { ReliablePlayerName } from './ReliablePlayerName';
 import { resumeInputSequence } from './InputSequence';
 import { ChatOutbox } from './Chat';
 import { HealthEvents } from './HealthEvents';
+import { controlsReady } from './ControlGate';
 type Snapshot=ReturnType<CombatAuthority['snapshot']>;
 export function mountCoopPreview(app:HTMLElement){
   const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));app.append(renderer.domElement);
@@ -47,7 +48,7 @@ export function mountCoopPreview(app:HTMLElement){
     socket.onmessage=e=>{
     const packet=JSON.parse(e.data);
     if(packet.type==='pong'){const sample=performance.now()-packet.nonce;rtt=rtt?rtt*.8+sample*.2:sample;return;}
-    if(packet.type==='welcome'){prediction=null;inputClock.advance(0,false);playerBuffers.clear();playerAngles.clear();enemyBuffers.clear();enemyAngles.clear();shotEvents.reset();healthEvents.reset();telemetry=new SnapshotTelemetry();rtt=0;if(packet.resumed)report.resumed();if(id&&id!==packet.id){report.newIdentity();prediction=null;sequence=0;maxCorrection=snaps=0;}id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada.':'Conectado. Abra outra aba em /?coop=1.';}
+    if(packet.type==='welcome'){prediction=null;input.clear();inputClock.advance(0,false);playerBuffers.clear();playerAngles.clear();enemyBuffers.clear();enemyAngles.clear();shotEvents.reset();healthEvents.reset();telemetry=new SnapshotTelemetry();rtt=0;if(packet.resumed)report.resumed();if(id&&id!==packet.id){report.newIdentity();prediction=null;sequence=0;maxCorrection=snaps=0;}id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada. Aguardando estado…':'Conectado. Aguardando estado…';}
     if(packet.type==='snapshot'){
       const state=packet as Snapshot,receivedAt=performance.now(),unique=telemetry.observe(state.tick,receivedAt);if(!unique||state.tick<telemetry.latestTick)return;if(round&&state.round!==round){prediction=null;playerBuffers.clear();playerAngles.clear();enemyBuffers.clear();enemyAngles.clear();maxCorrection=snaps=0;}round=state.round;snapshot=state;snapshotReceivedAt=receivedAt;const me=state.players.find(p=>p.id===id);
       if(me){sequence=resumeInputSequence(sequence,me.acknowledged);reliableName.observe(me.name);chatOutbox.observe(me.chatAcknowledged);if(healthEvents.observe(me.health)>0){damageFlash.classList.remove('visible');void damageFlash.offsetWidth;damageFlash.classList.add('visible');}const authoritative={acknowledged:me.acknowledged,position:me.position,velocity:me.velocity,vertical:me.vertical};if(!prediction)prediction=new ClientPrediction(world,authoritative);else{const error=prediction.reconcile(authoritative);maxCorrection=Math.max(maxCorrection,error);if(error>3)snaps++;}}
@@ -79,8 +80,8 @@ export function mountCoopPreview(app:HTMLElement){
   function frame(now:number){
     requestAnimationFrame(frame);const dt=Math.min(.1,(now-(last||now))/1000);last=now;
     const namePacket=connected&&socket.readyState===WebSocket.OPEN?reliableName.packet(now):null;if(namePacket)socket.send(JSON.stringify(namePacket));const chatPacket=connected&&socket.readyState===WebSocket.OPEN?chatOutbox.packet(now):null;if(chatPacket)socket.send(JSON.stringify(chatPacket));
-    camera.look(input.lookX,input.lookY,1);input.lookX=input.lookY=0;touch.setActive(input.active&&!chatOpen&&innerWidth>innerHeight);
-    const steps=inputClock.advance(dt,connected&&socket.readyState===WebSocket.OPEN&&prediction!==null);
+    const ready=controlsReady(connected&&socket.readyState===WebSocket.OPEN,prediction!==null,chatOpen);if(ready)camera.look(input.lookX,input.lookY,1);input.lookX=input.lookY=0;touch.setActive(input.active&&ready&&innerWidth>innerHeight);
+    const steps=inputClock.advance(dt,ready);
     for(let step=0;step<steps&&prediction;step++){
       const sent=sequence++,command=prediction.prepare(sent,input.consume()),yaw=Math.atan2(Math.sin(camera.yaw),Math.cos(camera.yaw)),viewTick=Math.max(0,Math.floor(interpolationTick(snapshot?.tick??6,snapshotReceivedAt||now,now)));prediction.submit({sequence:sent,yaw,command});socket.send(JSON.stringify({version:1,sequence:sent,yaw,pitch:camera.pitch,viewTick,shotId:prediction.shotId,command}));
     }

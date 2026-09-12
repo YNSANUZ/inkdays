@@ -114,6 +114,8 @@ Durante a janela de reconexao, o personagem fica marcado discretamente como reco
 
 Se a própria página for recarregada dentro dessa janela, o primeiro snapshot informa a última sequência aceita. O cliente novo continua imediatamente no número seguinte, sem precisar repetir centenas de comandos antigos antes de voltar a andar ou atirar.
 
+Controles online só ficam ativos quando o WebSocket está aberto e o primeiro snapshot autoritativo já criou a referência local. Durante uma queda, o relógio de entrada para, o touch desaparece e movimentos acumulados de câmera são descartados; a retomada limpa teclas e gestos antigos antes de liberar novamente.
+
 O servidor usa heartbeat nativo do WebSocket para detectar conexões interrompidas mesmo quando o sistema não entrega imediatamente o evento de fechamento. Esse heartbeat não depende dos timers do jogo na aba e evita tratar uma aba minimizada como desconectada. Se a reserva já tiver expirado, o cliente recebe uma nova identidade e reinicia a predição e suas métricas locais.
 
 Somente a resposta `pong` confirma a saúde do enlace. Continuar recebendo comandos não mascara uma falha no sentido servidor → jogador. Quando o prazo expira, o socket é terminado imediatamente para iniciar suspensão e reconexão sem aguardar o fechamento normal de uma rede que já não responde.

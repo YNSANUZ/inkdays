@@ -328,3 +328,9 @@ Validação: os 95 testes, lint, TypeScript e build PWA continuam aprovados. Em 
 A bancada agora compara a vida local somente entre snapshots aceitos e apresenta uma vinheta vermelha curta quando há redução. O efeito não antecipa o servidor nem usa colisão local: ele nasce depois que o dano autoritativo chega. O primeiro estado após conexão ou retomada estabelece uma referência silenciosa, e aumento de vida, amanhecer ou reinício não são interpretados como impacto.
 
 Validação automatizada: 98 testes passaram. Os casos novos cobrem primeiro snapshot com vida já reduzida, dano de 14 pontos, estado repetido, cura, reset de reconexão e valores inválidos. Lint, TypeScript e build PWA passaram. Intensidade, duração e leitura do efeito em telas físicas ainda precisam de avaliação humana. O multiplayer permanece EM ANDAMENTO.
+
+## Fase 2 — bloqueio de entrada durante reconexão
+
+A entrada jogável agora depende simultaneamente de WebSocket aberto, primeira referência autoritativa recebida e chat fechado. Quando o transporte cai ou ainda aguarda snapshot, o relógio de comandos não avança, movimentos de câmera são descartados e os controles touch ficam ocultos. Ao receber `welcome`, o cliente limpa teclas, disparo e gestos antigos antes de aguardar o snapshot que restabelece a predição. Isso evita caminhar, mirar ou atirar imediatamente por uma intenção acumulada durante o período offline.
+
+Validação automatizada: 99 testes passaram. O caso novo cobre todas as combinações relevantes da trava de controle; os cenários existentes continuam cobrindo queda, retomada de identidade, sequência após recarga e ausência de rajada de comandos. Lint, TypeScript e build PWA passaram. A sensação da interrupção e retomada durante troca real de Wi-Fi ainda depende de dois aparelhos físicos. O multiplayer permanece EM ANDAMENTO.
