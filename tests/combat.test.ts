@@ -33,6 +33,7 @@ describe('combate controlado pelo servidor',()=>{
     a.step();const viewedTick=a.tick;enemy.avatar.root.position.set(10,0,0);a.receive('a',{...packet(0,true),viewTick:viewedTick});a.step();
     expect(enemy.health).toBe(22);expect(enemy.avatar.root.position.x).toBe(10);
   });
+  it('não permite acertar inimigo que ainda não existia no tick visto',()=>{const a=new CombatAuthority();a.join('a');a.step();const viewedTick=a.tick;a.enemies.spawn(1,new Vector3(0,0,10));const enemy=a.enemies.active[0];enemy.avatar.root.position.set(.85,0,0);enemy.speed=0;a.receive('a',{...packet(0,true),viewTick:viewedTick});a.step();expect(enemy.health).toBe(48);expect(a.snapshot().shots.at(-1)).toMatchObject({hit:false,rewindTicks:1});});
   it('pacotes duplicados não duplicam dano nem recompensa',()=>{
     const a=new CombatAuthority();a.join('a');a.enemies.spawn(1,new Vector3(0,0,10));const enemy=a.enemies.active[0];enemy.avatar.root.position.set(.85,0,0);enemy.speed=0;
     expect(a.receive('a',packet(0,true))).toBe(true);expect(a.receive('a',packet(0,true))).toBe(false);a.step();expect(enemy.health).toBe(22);

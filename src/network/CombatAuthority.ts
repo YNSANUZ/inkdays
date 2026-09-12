@@ -14,7 +14,7 @@ interface Participant {slot:number;connected:boolean;player:Player;weapon:Pistol
 export class CombatAuthority {
   readonly scene=new T.Scene();readonly world=new World(this.scene);readonly enemies=new Enemies(this.scene,this.world);
   cycle=new DayCycle();private horde=new Horde();private players=new Map<string,Participant>();tick=0;
-  private shots:{serial:number;player:string;from:T.Vector3;to:T.Vector3;hit:boolean}[]=[];private serial=0;
+  private shots:{serial:number;player:string;from:T.Vector3;to:T.Vector3;hit:boolean;rewindTicks:number}[]=[];private serial=0;
   private enemyHistory=new Map<number,Map<number,T.Vector3>>();private readonly historyTicks=30;
   join(id:string){
     if(this.players.has(id)||this.players.size>=2)return false;
@@ -31,20 +31,21 @@ export class CombatAuthority {
   }
   private fire(id:string,p:Participant){
     if(!p.weapon.fire())return;
-    const requested=p.input.viewTick,history=requested===undefined?undefined:this.enemyHistory.get(Math.max(this.tick-this.historyTicks,Math.min(this.tick-1,requested)));
+    const requested=p.input.viewTick,rewindTick=requested===undefined?this.tick:Math.max(this.tick-this.historyTicks,Math.min(this.tick-1,requested)),history=requested===undefined?undefined:this.enemyHistory.get(rewindTick);
     const restored=new Map<number,T.Vector3>();if(history)for(const enemy of this.enemies.active){const old=enemy.avatar.root.position.clone(),past=history.get(enemy.id);if(past){restored.set(enemy.id,old);enemy.avatar.root.position.copy(past);}}
     this.scene.updateMatrixWorld(true);
     const ray=new T.Raycaster();ray.setFromCamera(new T.Vector2(),p.camera.camera);ray.far=C.weapon.range;
     let distance:number=C.weapon.range,to=ray.ray.at(distance,new T.Vector3());
     const wall=ray.intersectObjects(this.world.solids,false)[0];if(wall){distance=wall.distance;to=wall.point;}
     let victim:typeof this.enemies.active[number]|undefined;
-    for(const enemy of this.enemies.active){const hit=ray.intersectObject(enemy.avatar.body,true).find(h=>h.object instanceof T.Mesh&&(h.object.material as T.Material).side!==T.BackSide);if(hit&&hit.distance<distance){distance=hit.distance;to=hit.point;victim=enemy;}}
+    const candidates=history?this.enemies.active.filter(enemy=>history.has(enemy.id)):requested===undefined?this.enemies.active:[];
+    for(const enemy of candidates){const hit=ray.intersectObject(enemy.avatar.body,true).find(h=>h.object instanceof T.Mesh&&(h.object.material as T.Material).side!==T.BackSide);if(hit&&hit.distance<distance){distance=hit.distance;to=hit.point;victim=enemy;}}
     const from=p.player.avatar.muzzle.getWorldPosition(new T.Vector3());
     const cover=new T.Raycaster(from,to.clone().sub(from).normalize(),0,from.distanceTo(to)).intersectObjects(this.world.solids,false)[0];
     if(cover){to=cover.point;victim=undefined;}
     for(const enemy of this.enemies.active){const current=restored.get(enemy.id);if(current)enemy.avatar.root.position.copy(current);}this.scene.updateMatrixWorld(true);
     if(victim&&this.enemies.damage(victim,C.weapon.damage)){p.kills++;p.money+=C.enemy.reward;}
-    this.shots.push({serial:++this.serial,player:id,from,to,hit:!!victim});this.shots=this.shots.slice(-16);
+    this.shots.push({serial:++this.serial,player:id,from,to,hit:!!victim,rewindTicks:this.tick-rewindTick});this.shots=this.shots.slice(-16);
   }
   step(){
     this.tick++;if(!this.players.size)return;

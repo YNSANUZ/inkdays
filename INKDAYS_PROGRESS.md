@@ -155,3 +155,9 @@ Pulo e recarga agora permanecem marcados nos comandos seguintes por uma janela m
 
 Validacao automatizada: 56 testes passaram. Os casos novos confirmam repetição de pulo/recarga até o acknowledgement, remoção após confirmação, expiração da redundância e apenas uma bala consumida quando um único comando de tiro é seguido por 120 ticks sem novas entradas. Lint, TypeScript e build PWA passaram. WebSocket já fornece entrega ordenada no transporte real; essa redundância protege também a camada de comandos durante reconexão e condicionamento artificial. Sensação de pulo e recarga sob rede física ainda depende do playtest em dois aparelhos. O multiplayer permanece EM ANDAMENTO.
 
+
+## Fase 2 — existência histórica dos alvos
+A compensação de tiro agora filtra os candidatos pelo conjunto de inimigos que realmente existia no tick visto. Um inimigo surgido depois daquele instante permanece no mundo atual, mas não participa do raycast rebobinado. Cada evento de tiro registra também a profundidade do rewind em ticks; o relatório de sessão apresenta o maior valor convertido em milissegundos para comparação com ping, jitter e sensação humana do disparo.
+
+Validacao automatizada: 57 testes passaram. O caso novo cria o histórico sem inimigo, faz o alvo surgir depois, dispara solicitando o tick anterior e confirma vida intacta, `hit: false` e rewind de um tick. Os testes anteriores continuam verificando acerto em alvo que existia e se moveu, restauração imediata da posição atual, dano e recompensa únicos. Lint, TypeScript e build PWA passaram. A coerência perceptiva com alvos em movimento sob internet real continua pendente de playtest físico. O multiplayer permanece EM ANDAMENTO.
+
