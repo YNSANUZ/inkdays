@@ -27,7 +27,7 @@ export function mountCoopPreview(app:HTMLElement){
   button.onclick=()=>{if(!connected)return;input.active=true;audio.start();button.hidden=true;help.hidden=true;if(!touch.enabled)void renderer.domElement.requestPointerLock()?.catch(()=>{status.textContent='Segure o botão direito para mirar.';});};
   let socket:WebSocket,reconnectTimer=0,pageLeaving=false,firstSnapshot=true;
   const connect=()=>{
-    const token=sessionStorage.getItem('inkdays-coop-token'),url=new URL('ws://127.0.0.1:8787');if(token)url.searchParams.set('resume',token);socket=new WebSocket(url);
+    const token=sessionStorage.getItem('inkdays-coop-token'),override=new URLSearchParams(location.search).get('server'),url=new URL(override??`${location.protocol==='https:'?'wss':'ws'}://${location.hostname}:8787`);if(token)url.searchParams.set('resume',token);socket=new WebSocket(url);
     socket.onmessage=e=>{
     const packet=JSON.parse(e.data);
     if(packet.type==='pong'){const sample=performance.now()-packet.nonce;rtt=rtt?rtt*.8+sample*.2:sample;return;}

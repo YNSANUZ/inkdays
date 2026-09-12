@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
+    "dev:lan": "vite --host 0.0.0.0 --port 5180",
     "build": "tsc --noEmit && vite build && node scripts/pwa.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "lint": "eslint src tests",
     "test": "vitest run",
     "coop:server": "tsx scripts/coop-server.ts",
-    "coop:server:badnet": "tsx scripts/coop-server.ts --bad-net"
+    "coop:server:badnet": "tsx scripts/coop-server.ts --bad-net",
+    "coop:server:lan": "tsx scripts/coop-server.ts --lan"
   },
   "dependencies": {
     "three": "^0.180.0",

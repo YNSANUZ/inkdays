@@ -52,6 +52,8 @@ Execute npm run coop:server e npm run dev -- --port 5180. Abra http://127.0.0.1:
 
 Para um playtest local com transporte degradado, use npm run coop:server:badnet. Esse perfil aplica deterministicamente cerca de 120 ms de RTT base, jitter, perda, duplicacao e reordenacao ao trafego WebSocket de entrada e saida. Ele serve para diagnostico e nao representa toda a variedade da internet real.
 
+Para testar em dois aparelhos da mesma rede Wi-Fi, execute npm run coop:server:lan e npm run dev:lan. O terminal mostra o endereço http://IP-LOCAL:5180/?coop=1 que deve ser aberto em cada aparelho. O cliente escolhe automaticamente o WebSocket do mesmo computador. Esse modo de desenvolvimento deve ser usado apenas em uma rede local confiável e não publica a sala na internet.
+
 O jogador local usa predicao e reconciliacao com replay das entradas ainda nao confirmadas. Jogadores remotos e inimigos usam um buffer de interpolacao de 100 ms, que ordena snapshots atrasados e nao extrapola alem do ultimo estado conhecido. Uma queda breve tenta reconectar automaticamente por cinco segundos e preserva identidade e estado no mesmo processo do servidor. A bancada mede ping e jitter separadamente. O servidor conserva 500 ms de historico dos inimigos e valida o tiro contra o tick apresentado ao atirador, mantendo dano, morte e recompensa autoritativos.
 
 Ainda sem salas publicas, revive ou progressao. Esc libera o mouse, mas nao pausa o servidor. Para reiniciar, feche as duas abas e abra novamente. Usa o mesmo mapa para colisoes. O servidor escuta somente loopback e nao e hospedado pelo GitHub Pages. A bancada e excluida do build de producao.

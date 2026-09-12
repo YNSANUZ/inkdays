@@ -4,8 +4,8 @@ import { MovementAuthority } from './MovementAuthority';
 import type { CollisionWorld } from '../simulation/Movement';
 import { NetworkConditioner } from './NetworkConditioner';
 import type { NetworkConditions } from './NetworkConditioner';
-export function createMovementServer(world:CollisionWorld,port=8787,authority:Pick<MovementAuthority,'join'|'suspend'|'leave'|'receive'|'step'|'snapshot'|'tick'>=new MovementAuthority(world),reconnectGraceMs=5000,conditions?:NetworkConditions){
-  const server=new WebSocketServer({host:'127.0.0.1',port,maxPayload:2048});
+export function createMovementServer(world:CollisionWorld,port=8787,authority:Pick<MovementAuthority,'join'|'suspend'|'leave'|'receive'|'step'|'snapshot'|'tick'>=new MovementAuthority(world),reconnectGraceMs=5000,conditions?:NetworkConditions,host='127.0.0.1'){
+  const server=new WebSocketServer({host,port,maxPayload:2048});
   const link=new NetworkConditioner(conditions),send=(socket:WebSocket,packet:string)=>link.schedule('outbound',()=>{if(socket.readyState===WebSocket.OPEN)socket.send(packet);});
   const sessions=new Map<string,{id:string;connected:boolean;timer?:ReturnType<typeof setTimeout>}>();
   server.on('connection',(socket,request)=>{
@@ -18,7 +18,7 @@ export function createMovementServer(world:CollisionWorld,port=8787,authority:Pi
     let count=0;const reset=setInterval(()=>{count=0;},1000);
     socket.on('message',data=>{
       if(++count>120){socket.close(1008,'Limite de comandos');return;}
-      link.schedule('inbound',()=>{if(!session!.connected)return;try{const packet=JSON.parse(data.toString());if(packet?.type==='ping'&&typeof packet.nonce==='number'&&Number.isFinite(packet.nonce)){send(socket,JSON.stringify({type:'pong',nonce:packet.nonce,serverTick:authority.tick}));return;}if(!authority.receive(id,packet))send(socket,JSON.stringify({type:'rejected'}));}
+      link.schedule('inbound',()=>{if(!session!.connected||socket.readyState!==WebSocket.OPEN)return;try{const packet=JSON.parse(data.toString());if(packet?.type==='ping'&&typeof packet.nonce==='number'&&Number.isFinite(packet.nonce)){send(socket,JSON.stringify({type:'pong',nonce:packet.nonce,serverTick:authority.tick}));return;}if(!authority.receive(id,packet))send(socket,JSON.stringify({type:'rejected'}));}
       catch{socket.close(1008,'Comando inválido');}});
     });
     socket.on('error',()=>{});
