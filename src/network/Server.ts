@@ -2,8 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { randomUUID } from 'node:crypto';
 import { MovementAuthority } from './MovementAuthority';
 import type { CollisionWorld } from '../simulation/Movement';
-export function createMovementServer(world:CollisionWorld,port=8787){
-  const authority=new MovementAuthority(world);
+export function createMovementServer(world:CollisionWorld,port=8787,authority:Pick<MovementAuthority,'join'|'leave'|'receive'|'step'|'snapshot'|'tick'>=new MovementAuthority(world)){
   const server=new WebSocketServer({host:'127.0.0.1',port,maxPayload:2048});
   server.on('connection',socket=>{
     const id=randomUUID();

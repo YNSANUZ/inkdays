@@ -18,9 +18,12 @@ export class Enemies {
       this.active.push({id:++this.serial,avatar,health:stats.health,speed:stats.speed,cooldown:C.enemy.attackCooldown,state:'IDLE',age:0});return true;
     } return false;
   }
-  update(dt:number,player:Player,onAttack:()=>void) {
+  update(dt:number,players:Player|Player[],onAttack:()=>void) {
+    const targets=(Array.isArray(players)?players:[players]).filter(p=>!p.health.dead);
     for(const e of this.active) {
       if(e.state==='DEAD')continue;
+      const player=targets.reduce<Player|null>((best,p)=>!best||p.position.distanceToSquared(e.avatar.root.position)<best.position.distanceToSquared(e.avatar.root.position)?p:best,null);
+      if(!player){e.state='IDLE';continue;}
       e.age+=dt;e.cooldown=Math.max(0,e.cooldown-dt);
       const p=e.avatar.root.position, direction=player.position.clone().sub(p);direction.y=0;const distance=direction.length();
       e.state=distance>C.enemy.detection?'IDLE':distance<C.enemy.attackRange?'ATTACK':'CHASE';
