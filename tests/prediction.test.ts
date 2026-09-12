@@ -5,7 +5,7 @@ import type {Point} from '../src/simulation/Movement';
 const world={move(p:Point,x:number,z:number){p.x+=x;p.z+=z;}};
 const command=(moving=true)=>({x:0,z:moving?1:0,run:false,crouch:false,jump:false,fire:false,reload:false});
 describe('predição e reconciliação',()=>{
-  it('mantém resposta local e converge com atraso, perda e reordenação',()=>{
+  it.each([{ping:50,delay:2,loss:17},{ping:120,delay:4,loss:11},{ping:250,delay:8,loss:7}])('mantém resposta e converge com ping de $ping ms, perda, duplicação e reordenação',({delay,loss})=>{
     const server=new MovementAuthority(world);server.join('a');
     const initial=server.snapshot().players[0];const client=new ClientPrediction(world,initial);
     const network:{deliver:number;packet:ReturnType<typeof packet>}[]=[];
@@ -13,8 +13,8 @@ describe('predição e reconciliação',()=>{
     let lastSnapshot=server.snapshot();
     for(let tick=0;tick<180;tick++){
       const p=packet(tick,tick<120);client.submit({sequence:p.sequence,yaw:p.yaw,command:p.command});
-      // Deterministic 100–200 ms delay, 1/11 loss, and occasional reordering.
-      if(tick%11!==5)network.push({deliver:tick+6+(tick%7===0?6:0),packet:p});
+      // Deterministic delay, jitter, loss, duplication and occasional reordering.
+      if(tick%loss!==5%loss){const deliver=tick+delay+(tick%7===0?delay:0);network.push({deliver,packet:p});if(tick%19===0)network.push({deliver:deliver+1,packet:p});}
       for(const item of network.filter(item=>item.deliver===tick).reverse())server.receive('a',item.packet);
       server.step();if(tick%3===0){lastSnapshot=server.snapshot();client.reconcile(lastSnapshot.players[0]);}
       client.updateRender(1/60);

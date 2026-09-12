@@ -13,6 +13,8 @@ describe('base autoritativa de movimentação',()=>{
     expect(parseInput({...input(0),position:{x:999}})).toBeNull();
     expect(parseInput({...input(0),yaw:NaN})).toBeNull();
     expect(parseInput({...input(0),version:2})).toBeNull();
+    expect(parseInput({...input(0),viewTick:-1})).toBeNull();
+    expect(parseInput({...input(0),viewTick:1.5})).toBeNull();
     expect(parseInput({...input(0),command:{...input(0).command,x:2}})).toBeNull();
   });
   it('limita a dois jogadores e rejeita comandos de conexão desconhecida ou repetidos',()=>{

@@ -27,6 +27,21 @@ describe('combate controlado pelo servidor',()=>{
     a.world.solids[0].position.set(.85,1,5);a.world.solids[0].updateMatrixWorld(true);
     a.receive('a',packet(0,true));a.step();expect(enemy.health).toBe(48);expect(a.snapshot().players[0].money).toBe(0);
   });
+  it('compensa a posição histórica vista sem deixar o inimigo no passado',()=>{
+    const a=new CombatAuthority();a.join('a');a.enemies.spawn(1,new Vector3(0,0,10));const enemy=a.enemies.active[0];enemy.avatar.root.position.set(.85,0,0);enemy.speed=0;
+    a.step();const viewedTick=a.tick;enemy.avatar.root.position.set(10,0,0);a.receive('a',{...packet(0,true),viewTick:viewedTick});a.step();
+    expect(enemy.health).toBe(22);expect(enemy.avatar.root.position.x).toBe(10);
+  });
+  it('pacotes duplicados não duplicam dano nem recompensa',()=>{
+    const a=new CombatAuthority();a.join('a');a.enemies.spawn(1,new Vector3(0,0,10));const enemy=a.enemies.active[0];enemy.avatar.root.position.set(.85,0,0);enemy.speed=0;
+    expect(a.receive('a',packet(0,true))).toBe(true);expect(a.receive('a',packet(0,true))).toBe(false);a.step();expect(enemy.health).toBe(22);
+    for(let n=1;n<16;n++){a.receive('a',packet(n));a.step();}expect(a.receive('a',packet(16,true))).toBe(true);expect(a.receive('a',packet(16,true))).toBe(false);a.step();
+    expect(a.snapshot().players[0]).toMatchObject({kills:1,money:20});expect(a.enemies.active).toHaveLength(0);
+  });
+  it('mantém dois jogadores e o ciclo único durante vários dias simulados',()=>{
+    const a=new CombatAuthority();a.join('a');a.join('b');for(let n=0;n<10800;n++){a.enemies.clear();a.step();}
+    const state=a.snapshot();expect(state).toMatchObject({day:4,phase:'day'});expect(new Set(state.players.map(p=>p.id)).size).toBe(2);expect(new Set(state.enemies.map(e=>e.id)).size).toBe(state.enemies.length);
+  });
   it('avança preparação e horda; sala vazia reinicia e morte encerra a partida',()=>{
     const a=new CombatAuthority();a.join('a');a.join('b');
     for(let n=0;n<2400;n++)a.step();expect(a.snapshot().phase).toBe('horde');expect(a.snapshot().enemies.length).toBeGreaterThan(0);

@@ -15,7 +15,7 @@ export function createMovementServer(world:CollisionWorld,port=8787,authority:Pi
     let count=0;const reset=setInterval(()=>{count=0;},1000);
     socket.on('message',data=>{
       if(++count>120){socket.close(1008,'Limite de comandos');return;}
-      try{if(!authority.receive(id,JSON.parse(data.toString())))socket.send(JSON.stringify({type:'rejected'}));}
+      try{const packet=JSON.parse(data.toString());if(packet?.type==='ping'&&typeof packet.nonce==='number'&&Number.isFinite(packet.nonce)){socket.send(JSON.stringify({type:'pong',nonce:packet.nonce,serverTick:authority.tick}));return;}if(!authority.receive(id,packet))socket.send(JSON.stringify({type:'rejected'}));}
       catch{socket.close(1008,'Comando inválido');}
     });
     socket.on('error',()=>{});

@@ -50,3 +50,8 @@ it('transmite a mesma munição e fase autoritativas para dois clientes',async()
     expect(first.players.map(p=>p.ammo)).toEqual(second.players.map(p=>p.ammo));expect(first.day).toBe(second.day);expect(first.phase).toBe('day');
   }finally{for(const socket of sockets)socket.terminate();await instance.close();}
 },10000);
+it('mede ida e volta sem alterar a simulação',async()=>{
+  const instance=createMovementServer({move(p,x,z){p.x+=x;p.z+=z;}},0);let socket:WebSocket|undefined;
+  try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');socket=new WebSocket(`ws://127.0.0.1:${address.port}`);const pong=await new Promise<{type:string;nonce:number;serverTick:number}>((resolve,reject)=>{socket!.once('error',reject);socket!.on('message',raw=>{const p=JSON.parse(raw.toString());if(p.type==='welcome')socket!.send(JSON.stringify({type:'ping',nonce:123.5}));if(p.type==='pong')resolve(p);});});expect(pong).toMatchObject({type:'pong',nonce:123.5});expect(instance.authority.snapshot().players[0].acknowledged).toBe(-1);}
+  finally{socket?.terminate();await instance.close();}
+},10000);

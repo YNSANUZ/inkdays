@@ -20,7 +20,7 @@ export function mountCoopPreview(app:HTMLElement){
   const panel=document.createElement('div');Object.assign(panel.style,{position:'fixed',top:'12px',left:'12px',zIndex:'20',background:'#f3f1e9',padding:'12px',maxWidth:'360px'});
   panel.innerHTML='<strong>COOP · TESTE DE COMBATE</strong><p role="status">Conectando…</p><button>CONTINUAR</button><p class="help">WASD · mouse · R recarrega<br>Esc libera o mouse; a partida continua.<br>Para reiniciar, feche as duas abas e abra novamente.</p>';app.append(panel);
   const status=panel.querySelector('p')!,button=panel.querySelector('button')!,help=panel.querySelector<HTMLElement>('.help')!;
-  let id='',snapshot:Snapshot|null=null,sequence=0,last=0,elapsed=0,connected=false,prediction:ClientPrediction|null=null,lastSnapshotAt=0,jitter=0;
+  let id='',snapshot:Snapshot|null=null,sequence=0,last=0,elapsed=0,connected=false,prediction:ClientPrediction|null=null,lastSnapshotAt=0,jitter=0,rtt=0;
   const avatars=new Map<string,Avatar>();
   const pause=()=>{input.active=false;input.clear();touch.setActive(false);button.hidden=false;if(document.pointerLockElement)document.exitPointerLock();};
   const input=new Input(renderer.domElement,pause,()=>{}),touch=new TouchControls(input,pause,()=>{if(input.active)void renderer.domElement.requestPointerLock()?.catch(()=>{});});
@@ -30,12 +30,13 @@ export function mountCoopPreview(app:HTMLElement){
     const token=sessionStorage.getItem('inkdays-coop-token'),url=new URL('ws://127.0.0.1:8787');if(token)url.searchParams.set('resume',token);socket=new WebSocket(url);
     socket.onmessage=e=>{
     const packet=JSON.parse(e.data);
+    if(packet.type==='pong'){const sample=performance.now()-packet.nonce;rtt=rtt?rtt*.8+sample*.2:sample;return;}
     if(packet.type==='welcome'){id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada.':'Conectado. Abra outra aba em /?coop=1.';}
     if(packet.type==='snapshot'){
       snapshot=packet;const state=packet as Snapshot,me=state.players.find(p=>p.id===id),receivedAt=performance.now();
       if(lastSnapshotAt){const interval=receivedAt-lastSnapshotAt;jitter=jitter*.9+Math.abs(interval-50)*.1;}lastSnapshotAt=receivedAt;
       if(me){const authoritative={acknowledged:me.acknowledged,position:me.position,velocity:me.velocity,vertical:me.vertical};if(!prediction)prediction=new ClientPrediction(world,authoritative);else prediction.reconcile(authoritative);}
-      status.textContent=`DIA ${state.day} · ${state.phase==='horde'?'HORDA':'PREPARAÇÃO'} ${Math.ceil(state.remaining)}s · ${state.players.length}/2 | Vida ${me?.health??0} · ${me?.ammo??0}/${me?.reserve??0} ${me?.reloading?'RECARREGANDO':''} · $${me?.money??0} · jitter ${jitter.toFixed(0)}ms${state.gameOver?' · FIM DE PARTIDA':me?.health===0?' · VOCÊ MORREU':''}`;
+      status.textContent=`DIA ${state.day} · ${state.phase==='horde'?'HORDA':'PREPARAÇÃO'} ${Math.ceil(state.remaining)}s · ${state.players.length}/2 | Vida ${me?.health??0} · ${me?.ammo??0}/${me?.reserve??0} ${me?.reloading?'RECARREGANDO':''} · $${me?.money??0} · ping ${rtt.toFixed(0)}ms · jitter ${jitter.toFixed(0)}ms${state.gameOver?' · FIM DE PARTIDA':me?.health===0?' · VOCÊ MORREU':''}`;
       const ids=new Set((packet as Snapshot).players.map(p=>p.id));
       for(const [key,avatar] of avatars)if(!ids.has(key)){scene.remove(avatar.root);avatars.delete(key);playerBuffers.delete(key);labels.get(key)?.remove();labels.delete(key);}
       for(const player of (packet as Snapshot).players)if(!avatars.has(player.id)){const avatar=new Avatar();avatar.root.position.copy(player.position);avatars.set(player.id,avatar);scene.add(avatar.root);}
@@ -53,14 +54,15 @@ export function mountCoopPreview(app:HTMLElement){
     socket.onerror=()=>{status.textContent='Conexão interrompida. Tentando recuperar…';};
   };
   connect();
-  window.addEventListener('pagehide',()=>{pageLeaving=true;clearTimeout(reconnectTimer);socket.close();});
+  const pingTimer=window.setInterval(()=>{if(socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'ping',nonce:performance.now()}));},2000);
+  window.addEventListener('pagehide',()=>{pageLeaving=true;clearTimeout(reconnectTimer);clearInterval(pingTimer);socket.close();});
   window.addEventListener('pageshow',e=>{if(e.persisted)location.reload();});
   const resize=()=>{renderer.setSize(innerWidth,innerHeight);camera.camera.aspect=innerWidth/innerHeight;camera.camera.updateProjectionMatrix();};window.addEventListener('resize',resize);resize();
   function frame(now:number){
     requestAnimationFrame(frame);const dt=Math.min(.1,(now-(last||now))/1000);last=now;elapsed+=dt;
     camera.look(input.lookX,input.lookY,1);input.lookX=input.lookY=0;touch.setActive(input.active&&innerWidth>innerHeight);
     while(connected&&socket.readyState===WebSocket.OPEN&&prediction&&elapsed>=ClientPrediction.fixedStep){
-      elapsed-=ClientPrediction.fixedStep;const command=input.consume(),sent=sequence++,yaw=Math.atan2(Math.sin(camera.yaw),Math.cos(camera.yaw));prediction.submit({sequence:sent,yaw,command});socket.send(JSON.stringify({version:1,sequence:sent,yaw,pitch:camera.pitch,command}));
+      elapsed-=ClientPrediction.fixedStep;const command=input.consume(),sent=sequence++,yaw=Math.atan2(Math.sin(camera.yaw),Math.cos(camera.yaw));prediction.submit({sequence:sent,yaw,command});socket.send(JSON.stringify({version:1,sequence:sent,yaw,pitch:camera.pitch,viewTick:Math.max(0,(snapshot?.tick??6)-6),command}));
     }
     if(snapshot)for(const player of snapshot.players){
       const avatar=avatars.get(player.id)!;if(player.id===id&&prediction){prediction.updateRender(dt);avatar.root.position.copy(prediction.renderPosition);}else{const sampled=playerBuffers.get(player.id)?.sample(now);if(sampled)avatar.root.position.copy(sampled);}avatar.root.rotation.y=player.yaw+Math.PI;avatar.animate(now/1000,Math.hypot(player.velocity.x,player.velocity.z),player.crouch);avatar.body.rotation.z=player.health===0?1.5:0;

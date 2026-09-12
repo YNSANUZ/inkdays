@@ -17,6 +17,17 @@ Fazer uma sessão curta de playtest do slice, registrar sensação de câmera/ti
 - Ranking, XP e progressão permanente.
 - Avaliar Firebase para identidade e metadados; não assumir que substitui servidor de simulação.
 
+### Voice Chat Multiplayer — futuro, não iniciado
+- Comunicação por voz restrita aos jogadores da mesma sala, com **VOZ DA SALA** como primeira implementação.
+- Microfone aberto após permissão: o jogador continua andando, correndo, mirando, atirando, usando itens e ajudando amigos enquanto conversa; não exige manter tecla ou botão pressionado.
+- Controle discreto para alternar entre microfone ligado e mutado. Push-to-talk poderá existir como opção adicional nas configurações.
+- Indicação discreta junto ao nome, sem caixa ou balão, enquanto a pessoa estiver falando.
+- Controles futuros: mutar/desmutar individualmente, volume geral, volume individual quando apropriado e desligar completamente o voice chat.
+- Permissões claras e compatibilidade planejada com desktop, navegador mobile, PWA, futuro APK e cross-play.
+- Salas privadas poderão favorecer voz aberta simples. Partidas públicas exigirão decisão própria sobre segurança, privacidade e moderação antes da implementação.
+- Avaliar WebRTC ou a tecnologia mais apropriada quando esta etapa começar.
+- Evolução posterior: **VOICE CHAT POR PROXIMIDADE**, com volume reduzido pela distância e escolha do criador entre VOZ DA SALA e VOZ POR PROXIMIDADE.
+
 ## Conteúdo e gameplay
 - Loja, economia e compras entre hordas.
 - Armas adicionais e inventário.
