@@ -6,6 +6,7 @@ export class Input {
   constructor(canvas: HTMLCanvasElement, onPause: () => void, onDebug: () => void) {
     window.addEventListener('keydown', e => {
       if (e.code === 'F3') { e.preventDefault(); if (!e.repeat) onDebug(); return; }
+      if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||(e.target as HTMLElement)?.isContentEditable)return;
       if (!this.active) return;
       if (['Space','Tab','KeyW','KeyA','KeyS','KeyD'].includes(e.code)) e.preventDefault();
       if (e.code === 'Escape') { onPause(); return; }

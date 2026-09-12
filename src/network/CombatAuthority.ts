@@ -10,20 +10,23 @@ import { ThirdPerson } from '../camera/ThirdPerson';
 import { parseInput } from './Protocol';
 import type { InputPacket } from './Protocol';
 import { normalizePlayerName } from './PlayerName';
+import { normalizeChatText } from './Chat';
 const neutral=()=>({x:0,z:0,run:false,crouch:false,jump:false,fire:false,reload:false});
-interface Participant {slot:number;name:string;connected:boolean;player:Player;weapon:Pistol;camera:ThirdPerson;input:InputPacket;age:number;received:number;applied:number;viewed:number;kills:number;money:number;lastShot:number;shotPending:boolean}
+interface Participant {slot:number;name:string;connected:boolean;player:Player;weapon:Pistol;camera:ThirdPerson;input:InputPacket;age:number;received:number;applied:number;viewed:number;kills:number;money:number;lastShot:number;shotPending:boolean;lastChat:number;lastChatTick:number}
 export class CombatAuthority {
   readonly scene=new T.Scene();readonly world=new World(this.scene);readonly enemies=new Enemies(this.scene,this.world);
   cycle=new DayCycle();private horde=new Horde();private players=new Map<string,Participant>();tick=0;private round=1;
   private shots:{serial:number;player:string;from:T.Vector3;to:T.Vector3;hit:boolean;rewindTicks:number}[]=[];private serial=0;
+  private messages:{serial:number;messageId:number;player:string;name:string;text:string}[]=[];private chatSerial=0;
   private enemyHistory=new Map<number,Map<number,T.Vector3>>();private readonly historyTicks=30;
   join(id:string){
     if(this.players.has(id)||this.players.size>=2)return false;
-    if(!this.players.size){this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.enemyHistory.clear();}
+    if(!this.players.size){this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.messages=[];this.enemyHistory.clear();}
     const slot=[...this.players.values()].some(p=>p.slot===0)?1:0,player=new Player();player.position.x=slot*2;this.scene.add(player.avatar.root);
-    this.players.set(id,{slot,name:`Errante ${slot+1}`,connected:true,player,weapon:new Pistol(),camera:new ThirdPerson(),input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1,viewed:-1,kills:0,money:0,lastShot:-1,shotPending:false});return true;
+    this.players.set(id,{slot,name:`Errante ${slot+1}`,connected:true,player,weapon:new Pistol(),camera:new ThirdPerson(),input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1,viewed:-1,kills:0,money:0,lastShot:-1,shotPending:false,lastChat:-1,lastChatTick:-Infinity});return true;
   }
   rename(id:string,value:unknown){const p=this.players.get(id),name=normalizePlayerName(value);if(!p?.connected||!name)return false;p.name=name;return true;}
+  chat(id:string,messageId:unknown,value:unknown){const p=this.players.get(id),text=normalizeChatText(value);if(!p?.connected||!Number.isSafeInteger(messageId)||(messageId as number)<0||!text)return false;if((messageId as number)<=p.lastChat)return true;if(this.tick-p.lastChatTick<30)return false;p.lastChat=messageId as number;p.lastChatTick=this.tick;this.messages.push({serial:++this.chatSerial,messageId:p.lastChat,player:id,name:p.name,text});this.messages=this.messages.slice(-8);return true;}
   suspend(id:string){const p=this.players.get(id);if(p){p.connected=false;p.input.command=neutral();p.player.velocity.x=p.player.velocity.z=0;}}
   resume(id:string){const p=this.players.get(id);if(p)p.connected=true;}
   leave(id:string){const p=this.players.get(id);if(p)this.scene.remove(p.player.avatar.root);this.players.delete(id);if(!this.players.size)this.enemies.clear();}
@@ -80,7 +83,7 @@ export class CombatAuthority {
   }
   private get gameOver(){return this.players.size>0&&[...this.players.values()].every(p=>p.player.health.dead);}
   snapshot(){const ids=new Map([...this.players].map(([id,p])=>[p.player,id]));return {version:1,tick:this.tick,round:this.round,day:this.cycle.day,phase:this.cycle.phase,remaining:this.cycle.remaining,gameOver:this.gameOver,
-    players:[...this.players].map(([id,p])=>({id,name:p.name,connected:p.connected,acknowledged:p.applied,yaw:p.input.yaw,position:{...p.player.position},velocity:{...p.player.velocity},vertical:p.player.vertical,health:p.player.health.value,ammo:p.weapon.ammo,reserve:p.weapon.reserve,reloading:p.weapon.reloadTime>0,crouch:p.input.command.crouch,kills:p.kills,money:p.money})),
+    players:[...this.players].map(([id,p])=>({id,name:p.name,connected:p.connected,acknowledged:p.applied,chatAcknowledged:p.lastChat,yaw:p.input.yaw,position:{...p.player.position},velocity:{...p.player.velocity},vertical:p.player.vertical,health:p.player.health.value,ammo:p.weapon.ammo,reserve:p.weapon.reserve,reloading:p.weapon.reloadTime>0,crouch:p.input.command.crouch,kills:p.kills,money:p.money})),
     enemies:this.enemies.active.map(e=>({id:e.id,targetId:e.target?ids.get(e.target)??null:null,position:{...e.avatar.root.position},yaw:e.avatar.root.rotation.y,health:e.health,state:e.state,speed:e.speed})),
-    shots:this.shots.map(s=>({...s,from:{...s.from},to:{...s.to}}))};}
+    shots:this.shots.map(s=>({...s,from:{...s.from},to:{...s.to}})),messages:this.messages.map(message=>({...message}))};}
 }

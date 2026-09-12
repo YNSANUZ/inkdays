@@ -50,6 +50,14 @@ it('retoma comandos imediatamente após recarregar a página',async()=>{
     const resumed=await open(first.welcome.token);let sent=false;resumed.socket.on('message',raw=>{const packet=JSON.parse(raw.toString());if(packet.type==='snapshot'&&!sent){sent=true;const sequence=resumeInputSequence(0,packet.players[0].acknowledged);resumed.socket.send(JSON.stringify({version:1,sequence,yaw:0,command}));}});while(Date.now()<end&&instance.authority.snapshot().players[0]?.acknowledged!==41)await new Promise(r=>setTimeout(r,10));expect(instance.authority.snapshot().players[0]?.acknowledged).toBe(41);expect(instance.authority.snapshot().players[0]?.connected).toBe(true);
   }finally{for(const socket of sockets)socket.terminate();await instance.close();}
 },10000);
+it('recupera e compartilha uma mensagem de chat descartada',async()=>{
+  const authority=new CombatAuthority(),instance=createMovementServer(authority.world,0,authority,5000,{latencyMs:4,jitterMs:2,dropEvery:3});const sockets:WebSocket[]=[];
+  try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');const states=[new Map<number,ReturnType<CombatAuthority['snapshot']>>(),new Map<number,ReturnType<CombatAuthority['snapshot']>>()];
+    for(const frames of states){const socket=new WebSocket(`ws://127.0.0.1:${address.port}`);sockets.push(socket);socket.on('message',raw=>{const packet=JSON.parse(raw.toString());if(packet.type==='snapshot')frames.set(packet.tick,packet);});}const end=Date.now()+5000;while(Date.now()<end&&authority.snapshot().players.length<2)await new Promise(r=>setTimeout(r,10));
+    sockets[0].send(JSON.stringify({type:'ping',nonce:1}));sockets[0].send(JSON.stringify({type:'ping',nonce:2}));sockets[0].send(JSON.stringify({type:'chat',messageId:0,text:'vem pro moinho'}));await new Promise(r=>setTimeout(r,30));expect(authority.snapshot().messages).toHaveLength(0);sockets[0].send(JSON.stringify({type:'chat',messageId:0,text:'vem pro moinho'}));
+    let common:ReturnType<CombatAuthority['snapshot']>|undefined;while(Date.now()<end&&!common){for(const [tick,left] of states[0]){const right=states[1].get(tick);if(right&&left.messages.length===1){expect(left).toEqual(right);common=left;break;}}if(!common)await new Promise(r=>setTimeout(r,10));}expect(common!.messages[0]).toMatchObject({messageId:0,text:'vem pro moinho'});expect(common!.players.find(player=>player.id===common!.messages[0].player)?.chatAcknowledged).toBe(0);
+  }finally{for(const socket of sockets)socket.terminate();await instance.close();}
+},10000);
 it('transmite a mesma munição e fase autoritativas para dois clientes',async()=>{
   const authority=new CombatAuthority(),instance=createMovementServer(authority.world,0,authority);
   const sockets:WebSocket[]=[];
