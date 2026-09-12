@@ -13,7 +13,7 @@ const neutral=()=>({x:0,z:0,run:false,crouch:false,jump:false,fire:false,reload:
 interface Participant {slot:number;connected:boolean;player:Player;weapon:Pistol;camera:ThirdPerson;input:InputPacket;age:number;received:number;applied:number;kills:number;money:number}
 export class CombatAuthority {
   readonly scene=new T.Scene();readonly world=new World(this.scene);readonly enemies=new Enemies(this.scene,this.world);
-  cycle=new DayCycle();private horde=new Horde();private players=new Map<string,Participant>();tick=0;
+  cycle=new DayCycle();private horde=new Horde();private players=new Map<string,Participant>();tick=0;private round=1;
   private shots:{serial:number;player:string;from:T.Vector3;to:T.Vector3;hit:boolean;rewindTicks:number}[]=[];private serial=0;
   private enemyHistory=new Map<number,Map<number,T.Vector3>>();private readonly historyTicks=30;
   join(id:string){
@@ -27,7 +27,7 @@ export class CombatAuthority {
   leave(id:string){const p=this.players.get(id);if(p)this.scene.remove(p.player.avatar.root);this.players.delete(id);if(!this.players.size)this.enemies.clear();}
   restart(id:string){
     const requester=this.players.get(id);if(!requester?.connected||!this.gameOver)return false;
-    this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.enemyHistory.clear();
+    this.round++;this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.enemyHistory.clear();
     for(const p of this.players.values()){
       this.scene.remove(p.player.avatar.root);p.player=new Player();p.player.position.x=p.slot*2;this.scene.add(p.player.avatar.root);
       p.weapon=new Pistol();p.input.command=neutral();p.age=Infinity;p.kills=0;p.money=0;
@@ -76,7 +76,7 @@ export class CombatAuthority {
     this.enemyHistory.set(this.tick,new Map(this.enemies.active.map(e=>[e.id,e.avatar.root.position.clone()])));while(this.enemyHistory.size>this.historyTicks)this.enemyHistory.delete(this.enemyHistory.keys().next().value!);
   }
   private get gameOver(){return this.players.size>0&&[...this.players.values()].every(p=>p.player.health.dead);}
-  snapshot(){const ids=new Map([...this.players].map(([id,p])=>[p.player,id]));return {version:1,tick:this.tick,day:this.cycle.day,phase:this.cycle.phase,remaining:this.cycle.remaining,gameOver:this.gameOver,
+  snapshot(){const ids=new Map([...this.players].map(([id,p])=>[p.player,id]));return {version:1,tick:this.tick,round:this.round,day:this.cycle.day,phase:this.cycle.phase,remaining:this.cycle.remaining,gameOver:this.gameOver,
     players:[...this.players].map(([id,p])=>({id,name:`Errante ${p.slot+1}`,connected:p.connected,acknowledged:p.applied,yaw:p.input.yaw,position:{...p.player.position},velocity:{...p.player.velocity},vertical:p.player.vertical,health:p.player.health.value,ammo:p.weapon.ammo,reserve:p.weapon.reserve,reloading:p.weapon.reloadTime>0,crouch:p.input.command.crouch,kills:p.kills,money:p.money})),
     enemies:this.enemies.active.map(e=>({id:e.id,targetId:e.target?ids.get(e.target)??null:null,position:{...e.avatar.root.position},yaw:e.avatar.root.rotation.y,health:e.health,state:e.state,speed:e.speed})),
     shots:this.shots.map(s=>({...s,from:{...s.from},to:{...s.to}}))};}

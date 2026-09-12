@@ -63,8 +63,8 @@ describe('combate controlado pelo servidor',()=>{
     a.receive('a',packet(0,true));a.step();for(let n=1;n<16;n++){a.receive('a',packet(n));a.step();}a.receive('a',packet(16,true));a.step();
     a.enemies.spawn(1,new Vector3(1,0,10));a.enemies.active[0].avatar.root.position.set(1,0,10);a.enemies.active[0].speed=0;a.enemies.active[0].cooldown=0;
     for(let n=0;n<1500&&!a.snapshot().gameOver;n++)a.step();expect(a.snapshot().gameOver).toBe(true);
-    const tick=a.tick;expect(a.restart('a')).toBe(true);expect(a.restart('b')).toBe(false);expect(a.tick).toBe(tick);
-    expect(a.snapshot()).toMatchObject({day:1,phase:'day',gameOver:false,enemies:[],shots:[],players:[{id:'a',health:100,ammo:8,reserve:48,kills:0,money:0},{id:'b',health:100,ammo:8,reserve:48,kills:0,money:0}]});
+    const tick=a.tick,round=a.snapshot().round;expect(a.restart('a')).toBe(true);expect(a.restart('b')).toBe(false);expect(a.tick).toBe(tick);
+    expect(a.snapshot()).toMatchObject({round:round+1,day:1,phase:'day',gameOver:false,enemies:[],shots:[],players:[{id:'a',health:100,ammo:8,reserve:48,kills:0,money:0},{id:'b',health:100,ammo:8,reserve:48,kills:0,money:0}]});
   });
   it('atribui inimigos diferentes aos dois jogadores vivos mais próximos',()=>{
     const a=new CombatAuthority();a.join('a');a.join('b');a.enemies.spawn(1,new Vector3(0,0,10));a.enemies.spawn(1,new Vector3(2,0,10));

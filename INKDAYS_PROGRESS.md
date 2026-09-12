@@ -244,3 +244,9 @@ Validação automatizada: 72 testes passaram. O novo cenário WebSocket dispara 
 Foi adicionado um cenário dedicado às ações locomotoras visíveis pelo companheiro. Um cliente envia corrida e salto enquanto o outro permanece neutro. O resultado só é aceito quando os dois clientes recebem o mesmo tick com o corredor acima do chão, velocidade vertical positiva e velocidade horizontal superior à caminhada, mantendo o observador exatamente no ponto inicial.
 
 Validação automatizada: 73 testes passaram. O cenário WebSocket passou quatro vezes isoladamente e depois na suíte completa sob atraso, jitter, perda, duplicação e reordenação. Ele confirma estado autoritativo compartilhado e isolamento entre participantes; a suavidade percebida da animação remota, o arco completo do salto e a resposta dos controles touch continuam dependendo de playtest humano em dois aparelhos. Lint, TypeScript e build PWA passaram. O multiplayer permanece EM ANDAMENTO.
+
+## Fase 2 — geração de partida e limpeza visual no reinício
+
+O snapshot agora inclui `round`, uma geração autoritativa que aumenta em cada reinício sem interromper a monotonicidade do tick do servidor. Quando o cliente observa uma geração diferente, ele descarta a predição local e os buffers de posição e rotação de jogadores e inimigos antes de processar o novo estado. Isso evita interpolar entre a posição da derrota e o ponto inicial como se fosse movimento normal.
+
+Validação automatizada: os 73 testes continuam aprovados. O teste direto passou a exigir incremento unitário da geração e tick preservado; o cenário WebSocket de derrota e reinício passou quatro vezes isoladamente e depois na suíte completa, exigindo o mesmo `round` novo nos dois clientes sob atraso, jitter, perda, duplicação e reordenação. Lint, TypeScript e build PWA passaram. A ausência perceptiva do arrasto entre posições ainda precisa ser confirmada visualmente em duas telas reais. O multiplayer permanece EM ANDAMENTO.

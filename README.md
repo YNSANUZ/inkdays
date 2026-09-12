@@ -74,6 +74,8 @@ Os disparos são eventos autoritativos numerados. Ambos os clientes recebem o me
 
 Corrida e salto também atravessam o transporte como estado autoritativo. Posição, velocidade horizontal e velocidade vertical são comparadas no mesmo tick recebido pelos dois clientes; a apresentação remota usa esses valores no buffer de interpolação e na animação.
 
+Cada partida reiniciada possui uma geração `round` crescente, independente do tick contínuo do servidor. Ao detectar a nova geração, o cliente descarta predição e buffers antigos antes de posicionar os avatares no ponto inicial, impedindo uma interpolação longa desde o local da morte.
+
 Para testar em dois aparelhos da mesma rede Wi-Fi, execute npm run coop:server:lan e npm run dev:lan. O terminal mostra o endereço http://IP-LOCAL:5180/?coop=1 que deve ser aberto em cada aparelho. O cliente escolhe automaticamente o WebSocket do mesmo computador. Esse modo de desenvolvimento deve ser usado apenas em uma rede local confiável e não publica a sala na internet.
 
 Ao final do playtest, use BAIXAR RELATÓRIO em cada aparelho. O JSON contém duração, último dia/tick, médias e máximos de ping, jitter e perda, maior correção, ajustes bruscos, desconexões, retomadas e trocas de identidade. Ele não contém nick, identificador de jogador, comandos ou conteúdo pessoal.
