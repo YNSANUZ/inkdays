@@ -4,6 +4,7 @@ import {Vector3} from 'three';
 import {createMovementServer} from '../src/network/Server';
 import type {MovementAuthority} from '../src/network/MovementAuthority';
 import {CombatAuthority} from '../src/network/CombatAuthority';
+import {resumeInputSequence} from '../src/network/InputSequence';
 type Snapshot=ReturnType<MovementAuthority['snapshot']>;
 it('sincroniza dois clientes reais, limita a sala e remove quem desconecta',async()=>{
   const instance=createMovementServer({move(p,x,z){p.x+=x;p.z+=z;}},0,undefined,50);
@@ -39,6 +40,14 @@ it('preserva identidade e estado durante reconexão breve',async()=>{
     const first=await open();first.socket.send(JSON.stringify({version:1,sequence:1,yaw:0,command:{x:0,z:1,run:false,crouch:false,jump:false,fire:false,reload:false}}));await new Promise(r=>setTimeout(r,50));
     await new Promise<void>(resolve=>{first.socket.once('close',()=>resolve());first.socket.close();});await new Promise(r=>setTimeout(r,20));const before=instance.authority.snapshot().players[0].position.z;expect(before).toBeLessThan(10);
     const resumed=await open(first.welcome.token);expect(resumed.welcome).toMatchObject({id:first.welcome.id,resumed:true});const players=instance.authority.snapshot().players;expect(players).toHaveLength(1);expect(players[0].position.z).toBeCloseTo(before);
+  }finally{for(const socket of sockets)socket.terminate();await instance.close();}
+},10000);
+it('retoma comandos imediatamente após recarregar a página',async()=>{
+  const instance=createMovementServer({move(p,x,z){p.x+=x;p.z+=z;}},0,undefined,500);const sockets:WebSocket[]=[];
+  try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');const url=`ws://127.0.0.1:${address.port}`;
+    const open=(resume='')=>new Promise<{socket:WebSocket;welcome:{id:string;token:string}}>((resolve,reject)=>{const socket=new WebSocket(`${url}${resume?`?resume=${resume}`:''}`);sockets.push(socket);socket.once('error',reject);socket.on('message',raw=>{const packet=JSON.parse(raw.toString());if(packet.type==='welcome')resolve({socket,welcome:packet});});});
+    const first=await open(),command={x:0,z:1,run:false,crouch:false,jump:false,fire:false,reload:false};first.socket.send(JSON.stringify({version:1,sequence:40,yaw:0,command}));const end=Date.now()+3000;while(Date.now()<end&&instance.authority.snapshot().players[0]?.acknowledged!==40)await new Promise(r=>setTimeout(r,10));expect(instance.authority.snapshot().players[0]?.acknowledged).toBe(40);await new Promise<void>(resolve=>{first.socket.once('close',()=>resolve());first.socket.close();});
+    const resumed=await open(first.welcome.token);let sent=false;resumed.socket.on('message',raw=>{const packet=JSON.parse(raw.toString());if(packet.type==='snapshot'&&!sent){sent=true;const sequence=resumeInputSequence(0,packet.players[0].acknowledged);resumed.socket.send(JSON.stringify({version:1,sequence,yaw:0,command}));}});while(Date.now()<end&&instance.authority.snapshot().players[0]?.acknowledged!==41)await new Promise(r=>setTimeout(r,10));expect(instance.authority.snapshot().players[0]?.acknowledged).toBe(41);expect(instance.authority.snapshot().players[0]?.connected).toBe(true);
   }finally{for(const socket of sockets)socket.terminate();await instance.close();}
 },10000);
 it('transmite a mesma munição e fase autoritativas para dois clientes',async()=>{

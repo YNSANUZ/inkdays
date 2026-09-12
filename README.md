@@ -104,6 +104,8 @@ A telemetria usa os ticks dos snapshots para mostrar jitter e perda estimada em 
 
 Durante a janela de reconexao, o personagem fica marcado discretamente como reconectando, para de agir e deixa de ser alvo. Se os dois jogadores estiverem temporariamente desconectados, o ciclo e os inimigos ficam congelados. A retomada reativa o mesmo participante; depois de cinco segundos sem retorno, ele e removido da sala.
 
+Se a própria página for recarregada dentro dessa janela, o primeiro snapshot informa a última sequência aceita. O cliente novo continua imediatamente no número seguinte, sem precisar repetir centenas de comandos antigos antes de voltar a andar ou atirar.
+
 O servidor usa heartbeat nativo do WebSocket para detectar conexões interrompidas mesmo quando o sistema não entrega imediatamente o evento de fechamento. Esse heartbeat não depende dos timers do jogo na aba e evita tratar uma aba minimizada como desconectada. Se a reserva já tiver expirado, o cliente recebe uma nova identidade e reinicia a predição e suas métricas locais.
 
 Somente a resposta `pong` confirma a saúde do enlace. Continuar recebendo comandos não mascara uma falha no sentido servidor → jogador. Quando o prazo expira, o socket é terminado imediatamente para iniciar suspensão e reconexão sem aguardar o fechamento normal de uma rede que já não responde.

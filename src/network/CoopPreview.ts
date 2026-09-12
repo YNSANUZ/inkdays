@@ -14,6 +14,7 @@ import { SessionReport } from './SessionReport';
 import { InputClock } from './InputClock';
 import { ShotEventCursor } from './ShotEventCursor';
 import { ReliablePlayerName } from './ReliablePlayerName';
+import { resumeInputSequence } from './InputSequence';
 type Snapshot=ReturnType<CombatAuthority['snapshot']>;
 export function mountCoopPreview(app:HTMLElement){
   const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));app.append(renderer.domElement);
@@ -41,7 +42,7 @@ export function mountCoopPreview(app:HTMLElement){
     if(packet.type==='welcome'){prediction=null;inputClock.advance(0,false);playerBuffers.clear();playerAngles.clear();enemyBuffers.clear();enemyAngles.clear();shotEvents.reset();telemetry=new SnapshotTelemetry();rtt=0;if(packet.resumed)report.resumed();if(id&&id!==packet.id){report.newIdentity();prediction=null;sequence=0;maxCorrection=snaps=0;}id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada.':'Conectado. Abra outra aba em /?coop=1.';}
     if(packet.type==='snapshot'){
       const state=packet as Snapshot,receivedAt=performance.now(),unique=telemetry.observe(state.tick,receivedAt);if(!unique||state.tick<telemetry.latestTick)return;if(round&&state.round!==round){prediction=null;playerBuffers.clear();playerAngles.clear();enemyBuffers.clear();enemyAngles.clear();maxCorrection=snaps=0;}round=state.round;snapshot=state;snapshotReceivedAt=receivedAt;const me=state.players.find(p=>p.id===id);
-      if(me){reliableName.observe(me.name);const authoritative={acknowledged:me.acknowledged,position:me.position,velocity:me.velocity,vertical:me.vertical};if(!prediction)prediction=new ClientPrediction(world,authoritative);else{const error=prediction.reconcile(authoritative);maxCorrection=Math.max(maxCorrection,error);if(error>3)snaps++;}}
+      if(me){sequence=resumeInputSequence(sequence,me.acknowledged);reliableName.observe(me.name);const authoritative={acknowledged:me.acknowledged,position:me.position,velocity:me.velocity,vertical:me.vertical};if(!prediction)prediction=new ClientPrediction(world,authoritative);else{const error=prediction.reconcile(authoritative);maxCorrection=Math.max(maxCorrection,error);if(error>3)snaps++;}}
       status.textContent=`DIA ${state.day} · ${state.phase==='horde'?'HORDA':'PREPARAÇÃO'} ${Math.ceil(state.remaining)}s · ${state.players.filter(p=>p.connected).length}/2 | Vida ${me?.health??0} · ${me?.ammo??0}/${me?.reserve??0} ${me?.reloading?'RECARREGANDO':''} · $${me?.money??0} · ping ${rtt.toFixed(0)}ms · jitter ${telemetry.jitter.toFixed(0)}ms · perda ${telemetry.lossPercent.toFixed(0)}% · correção máx. ${(maxCorrection*100).toFixed(0)}cm · saltos ${snaps}${state.gameOver?' · FIM DE PARTIDA':me?.health===0?' · VOCÊ MORREU':''}`;
       if(!state.gameOver&&restartTimer){clearInterval(restartTimer);restartTimer=0;}button.disabled=state.gameOver&&!!restartTimer;button.textContent=restartTimer?'REINICIANDO…':state.gameOver?'JOGAR NOVAMENTE':'CONTINUAR';
       report.sample({day:state.day,tick:state.tick,rtt,jitter:telemetry.jitter,loss:telemetry.lossPercent,correction:maxCorrection,snaps,rewindTicks:Math.max(0,...state.shots.map(shot=>shot.rewindTicks))});
