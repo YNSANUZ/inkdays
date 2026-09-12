@@ -70,7 +70,7 @@ export function mountCoopPreview(app:HTMLElement){
     camera.look(input.lookX,input.lookY,1);input.lookX=input.lookY=0;touch.setActive(input.active&&innerWidth>innerHeight);
     const steps=inputClock.advance(dt,connected&&socket.readyState===WebSocket.OPEN&&prediction!==null);
     for(let step=0;step<steps&&prediction;step++){
-      const sent=sequence++,command=prediction.prepare(sent,input.consume()),yaw=Math.atan2(Math.sin(camera.yaw),Math.cos(camera.yaw)),viewTick=Math.max(0,Math.floor(interpolationTick(snapshot?.tick??6,snapshotReceivedAt||now,now)));prediction.submit({sequence:sent,yaw,command});socket.send(JSON.stringify({version:1,sequence:sent,yaw,pitch:camera.pitch,viewTick,command}));
+      const sent=sequence++,command=prediction.prepare(sent,input.consume()),yaw=Math.atan2(Math.sin(camera.yaw),Math.cos(camera.yaw)),viewTick=Math.max(0,Math.floor(interpolationTick(snapshot?.tick??6,snapshotReceivedAt||now,now)));prediction.submit({sequence:sent,yaw,command});socket.send(JSON.stringify({version:1,sequence:sent,yaw,pitch:camera.pitch,viewTick,shotId:prediction.shotId,command}));
     }
     if(snapshot)for(const player of snapshot.players){
       const avatar=avatars.get(player.id)!;if(player.id===id&&prediction){prediction.updateRender(dt);avatar.root.position.copy(prediction.renderPosition);avatar.root.rotation.y=player.yaw+Math.PI;}else{const sampled=playerBuffers.get(player.id)?.sample(now),angle=playerAngles.get(player.id)?.sample(now);if(sampled)avatar.root.position.copy(sampled);if(angle!==null&&angle!==undefined)avatar.root.rotation.y=angle;}avatar.animate(now/1000,Math.hypot(player.velocity.x,player.velocity.z),player.crouch);avatar.body.rotation.z=player.health===0?1.5:0;

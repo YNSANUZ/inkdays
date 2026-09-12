@@ -1,5 +1,5 @@
 import { TouchState } from './TouchState';
-export interface Command { x: number; z: number; run: boolean; crouch: boolean; jump: boolean; fire: boolean; reload: boolean }
+export interface Command { x: number; z: number; run: boolean; crouch: boolean; jump: boolean; fire: boolean; reload: boolean; shot?:boolean }
 export class Input {
   touch=new TouchState();onClear:()=>void=()=>{};
   keys = new Set<string>(); pressed = new Set<string>(); firing = false; firePending = false; lookX = 0; lookY = 0; active = false; dragging = false;
@@ -23,8 +23,8 @@ export class Input {
   }
   clear() { this.keys.clear(); this.pressed.clear(); this.firing = false;this.firePending=false; this.dragging = false; this.lookX = this.lookY = 0;this.touch.clear();this.onClear(); }
   consume(): Command {
-    const c = { x: Number(this.keys.has('KeyD')) - Number(this.keys.has('KeyA')), z: Number(this.keys.has('KeyW')) - Number(this.keys.has('KeyS')), run: this.keys.has('ShiftLeft') || this.keys.has('ShiftRight'), crouch: this.keys.has('KeyC'), jump: this.pressed.has('Space'), fire: this.firing||this.firePending, reload: this.pressed.has('KeyR') };
-    const touch=this.touch.consume();c.x=Math.max(-1,Math.min(1,c.x+touch.x));c.z=Math.max(-1,Math.min(1,c.z+touch.z));c.run||=touch.run;c.crouch||=touch.crouch;c.jump||=touch.jump;c.fire||=touch.fire;c.reload||=touch.reload;
+    const c = { x: Number(this.keys.has('KeyD')) - Number(this.keys.has('KeyA')), z: Number(this.keys.has('KeyW')) - Number(this.keys.has('KeyS')), run: this.keys.has('ShiftLeft') || this.keys.has('ShiftRight'), crouch: this.keys.has('KeyC'), jump: this.pressed.has('Space'), fire: this.firing, reload: this.pressed.has('KeyR'),shot:this.firePending };
+    const touch=this.touch.consume();c.x=Math.max(-1,Math.min(1,c.x+touch.x));c.z=Math.max(-1,Math.min(1,c.z+touch.z));c.run||=touch.run;c.crouch||=touch.crouch;c.jump||=touch.jump;c.fire||=touch.fire;c.reload||=touch.reload;c.shot||=Boolean(touch.shot);
     this.pressed.clear();this.firePending=false; return c;
   }
 }

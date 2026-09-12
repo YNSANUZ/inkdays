@@ -62,7 +62,7 @@ export class Game {
     const command=this.input.consume();this.lastCommand=command;
     this.player.update(dt,command,this.camera.yaw,this.world);this.pistol.update(dt);
     if(command.reload&&this.pistol.reload())this.audio.cue('reload');
-    if(command.fire)this.fire();
+    if(command.fire||command.shot)this.fire();
     this.player.avatar.arm.rotation.x=T.MathUtils.damp(this.player.avatar.arm.rotation.x,0,12,dt);
     const event=this.cycle.update(dt);
     if(event==='horde'){this.horde.begin(this.cycle.day);this.audio.cue('enemy');this.ui.toast('A HORDA CHEGOU · Aguente até o amanhecer.');}
