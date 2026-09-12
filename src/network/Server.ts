@@ -4,7 +4,8 @@ import { MovementAuthority } from './MovementAuthority';
 import type { CollisionWorld } from '../simulation/Movement';
 import { NetworkConditioner } from './NetworkConditioner';
 import type { NetworkConditions } from './NetworkConditioner';
-export function createMovementServer(world:CollisionWorld,port=8787,authority:Pick<MovementAuthority,'join'|'suspend'|'resume'|'leave'|'receive'|'step'|'snapshot'|'tick'>=new MovementAuthority(world),reconnectGraceMs=5000,conditions?:NetworkConditions,host='127.0.0.1',inactivityMs=7000){
+interface ServerRuntime {pulseMs?:number;stepsPerPulse?:number}
+export function createMovementServer(world:CollisionWorld,port=8787,authority:Pick<MovementAuthority,'join'|'suspend'|'resume'|'leave'|'receive'|'step'|'snapshot'|'tick'>=new MovementAuthority(world),reconnectGraceMs=5000,conditions?:NetworkConditions,host='127.0.0.1',inactivityMs=7000,runtime?:ServerRuntime){
   const server=new WebSocketServer({host,port,maxPayload:2048});
   const link=new NetworkConditioner(conditions),send=(socket:WebSocket,packet:string)=>link.schedule('outbound',()=>{if(socket.readyState===WebSocket.OPEN)socket.send(packet);});
   const sessions=new Map<string,{id:string;connected:boolean;timer?:ReturnType<typeof setTimeout>}>();
@@ -25,12 +26,12 @@ export function createMovementServer(world:CollisionWorld,port=8787,authority:Pi
     socket.on('error',()=>{});
     socket.on('close',()=>{clearInterval(reset);clearInterval(watchdog);authority.suspend(id);session!.connected=false;session!.timer=setTimeout(()=>{authority.leave(id);sessions.delete(token);},reconnectGraceMs);});
   });
-  const timer=setInterval(()=>{
-    authority.step();if(authority.tick%3)return;
+  const stepsPerPulse=Math.max(1,Math.floor(runtime?.stepsPerPulse??1)),pulseMs=Math.max(1,runtime?.pulseMs??1000/60),timer=setInterval(()=>{
+    for(let step=0;step<stepsPerPulse;step++)authority.step();if(authority.tick%3)return;
     const packet=JSON.stringify({type:'snapshot',...authority.snapshot()});
     for(const socket of server.clients)if(socket.readyState===WebSocket.OPEN){
       if(socket.bufferedAmount>65536){socket.close(1013,'Conexão lenta');continue;}send(socket,packet);
     }
-  },1000/60);
+  },pulseMs);
   return {server,authority,close:async()=>{clearInterval(timer);link.close();for(const session of sessions.values())if(session.timer)clearTimeout(session.timer);for(const socket of server.clients)socket.terminate();await new Promise<void>(resolve=>server.close(()=>resolve()));}};
 }
