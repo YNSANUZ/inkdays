@@ -4,7 +4,7 @@ import { Avatar } from '../player/Avatar';
 import type { Player } from '../player/Player';
 import type { World } from '../world/World';
 export type EnemyState='IDLE'|'CHASE'|'ATTACK'|'DEAD';
-export interface Enemy { id:number; avatar:Avatar; health:number; speed:number; cooldown:number; state:EnemyState; age:number }
+export interface Enemy { id:number; avatar:Avatar; health:number; speed:number; cooldown:number; state:EnemyState; age:number; target?:Player }
 export class Enemies {
   active:Enemy[]=[]; private serial=0;
   constructor(private scene:T.Scene, private world:World) {}
@@ -22,7 +22,7 @@ export class Enemies {
     const targets=(Array.isArray(players)?players:[players]).filter(p=>!p.health.dead);
     for(const e of this.active) {
       if(e.state==='DEAD')continue;
-      const player=targets.reduce<Player|null>((best,p)=>!best||p.position.distanceToSquared(e.avatar.root.position)<best.position.distanceToSquared(e.avatar.root.position)?p:best,null);
+      const player=targets.reduce<Player|null>((best,p)=>!best||p.position.distanceToSquared(e.avatar.root.position)<best.position.distanceToSquared(e.avatar.root.position)?p:best,null);e.target=player??undefined;
       if(!player){e.state='IDLE';continue;}
       e.age+=dt;e.cooldown=Math.max(0,e.cooldown-dt);
       const p=e.avatar.root.position, direction=player.position.clone().sub(p);direction.y=0;const distance=direction.length();

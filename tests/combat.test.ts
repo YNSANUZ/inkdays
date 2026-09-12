@@ -66,4 +66,9 @@ describe('combate controlado pelo servidor',()=>{
     const tick=a.tick;expect(a.restart('a')).toBe(true);expect(a.restart('b')).toBe(false);expect(a.tick).toBe(tick);
     expect(a.snapshot()).toMatchObject({day:1,phase:'day',gameOver:false,enemies:[],shots:[],players:[{id:'a',health:100,ammo:8,reserve:48,kills:0,money:0},{id:'b',health:100,ammo:8,reserve:48,kills:0,money:0}]});
   });
+  it('atribui inimigos diferentes aos dois jogadores vivos mais próximos',()=>{
+    const a=new CombatAuthority();a.join('a');a.join('b');a.enemies.spawn(1,new Vector3(0,0,10));a.enemies.spawn(1,new Vector3(2,0,10));
+    a.enemies.active[0].avatar.root.position.set(0,0,7);a.enemies.active[1].avatar.root.position.set(2,0,7);for(const enemy of a.enemies.active)enemy.speed=0;a.step();
+    expect(a.snapshot().enemies.map(enemy=>enemy.targetId)).toEqual(['a','b']);expect(a.snapshot().enemies.every(enemy=>enemy.state==='CHASE')).toBe(true);
+  });
 });
