@@ -4,7 +4,7 @@ import { MovementAuthority } from './MovementAuthority';
 import type { CollisionWorld } from '../simulation/Movement';
 import { NetworkConditioner } from './NetworkConditioner';
 import type { NetworkConditions } from './NetworkConditioner';
-export function createMovementServer(world:CollisionWorld,port=8787,authority:Pick<MovementAuthority,'join'|'suspend'|'leave'|'receive'|'step'|'snapshot'|'tick'>=new MovementAuthority(world),reconnectGraceMs=5000,conditions?:NetworkConditions,host='127.0.0.1'){
+export function createMovementServer(world:CollisionWorld,port=8787,authority:Pick<MovementAuthority,'join'|'suspend'|'resume'|'leave'|'receive'|'step'|'snapshot'|'tick'>=new MovementAuthority(world),reconnectGraceMs=5000,conditions?:NetworkConditions,host='127.0.0.1'){
   const server=new WebSocketServer({host,port,maxPayload:2048});
   const link=new NetworkConditioner(conditions),send=(socket:WebSocket,packet:string)=>link.schedule('outbound',()=>{if(socket.readyState===WebSocket.OPEN)socket.send(packet);});
   const sessions=new Map<string,{id:string;connected:boolean;timer?:ReturnType<typeof setTimeout>}>();
@@ -12,7 +12,7 @@ export function createMovementServer(world:CollisionWorld,port=8787,authority:Pi
     const resume=new URL(request.url??'/',`ws://${request.headers.host??'localhost'}`).searchParams.get('resume');
     const token=resume&&sessions.get(resume)&&!sessions.get(resume)!.connected?resume:randomUUID();
     let session=sessions.get(token);
-    if(session){if(session.timer)clearTimeout(session.timer);session.connected=true;}
+    if(session){if(session.timer)clearTimeout(session.timer);session.connected=true;authority.resume(session.id);}
     else{const id=randomUUID();if(!authority.join(id)){socket.close(1008,'Sala cheia');return;}session={id,connected:true};sessions.set(token,session);}
     const id=session.id;socket.send(JSON.stringify({type:'welcome',id,token,version:1,resumed:!!resume&&token===resume}));
     let count=0;const reset=setInterval(()=>{count=0;},1000);

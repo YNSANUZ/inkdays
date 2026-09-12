@@ -42,6 +42,11 @@ describe('combate controlado pelo servidor',()=>{
     const a=new CombatAuthority();a.join('a');a.join('b');for(let n=0;n<10800;n++){a.enemies.clear();a.step();}
     const state=a.snapshot();expect(state).toMatchObject({day:4,phase:'day'});expect(new Set(state.players.map(p=>p.id)).size).toBe(2);expect(new Set(state.enemies.map(e=>e.id)).size).toBe(state.enemies.length);
   });
+  it('protege jogador desconectado e congela o ciclo quando todos estão suspensos',()=>{
+    const a=new CombatAuthority();a.join('a');a.join('b');a.suspend('a');const disconnected=a.snapshot().players.find(p=>p.id==='a')!;expect(disconnected.connected).toBe(false);
+    a.enemies.spawn(1,new Vector3(0,0,10));a.enemies.active[0].avatar.root.position.copy(disconnected.position).add(new Vector3(0,0,-1));a.enemies.active[0].cooldown=0;for(let n=0;n<180;n++)a.step();expect(a.snapshot().players.find(p=>p.id==='a')!.health).toBe(100);
+    a.suspend('b');const remaining=a.cycle.remaining;for(let n=0;n<180;n++)a.step();expect(a.cycle.remaining).toBe(remaining);a.resume('a');a.step();expect(a.cycle.remaining).toBeLessThan(remaining);expect(a.snapshot().players.find(p=>p.id==='a')!.connected).toBe(true);
+  });
   it('avança preparação e horda; sala vazia reinicia e morte encerra a partida',()=>{
     const a=new CombatAuthority();a.join('a');a.join('b');
     for(let n=0;n<2400;n++)a.step();expect(a.snapshot().phase).toBe('horde');expect(a.snapshot().enemies.length).toBeGreaterThan(0);

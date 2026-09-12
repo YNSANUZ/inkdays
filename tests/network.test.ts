@@ -37,4 +37,8 @@ describe('base autoritativa de movimentação',()=>{
     for(let n=0;n<60;n++){a.receive('a',input(n));b.receive('a',input(n));a.step();b.step();}
     expect(a.snapshot()).toEqual(b.snapshot());for(let n=0;n<180;n++)a.step();expect(Math.abs(a.snapshot().players[0].velocity.z)).toBeLessThan(.0001);
   });
+  it('não simula jogador suspenso até a retomada',()=>{
+    const a=new MovementAuthority(world);a.join('a');a.receive('a',input(0));a.step();a.suspend('a');const stopped=a.snapshot().players[0].position.z;
+    expect(a.receive('a',input(1))).toBe(false);for(let n=0;n<30;n++)a.step();expect(a.snapshot().players[0]).toMatchObject({connected:false,position:{z:stopped}});a.resume('a');expect(a.receive('a',input(1))).toBe(true);a.step();expect(a.snapshot().players[0].position.z).toBeLessThan(stopped);
+  });
 });
