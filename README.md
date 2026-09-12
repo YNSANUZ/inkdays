@@ -60,6 +60,8 @@ A interpolacao remota inclui posição e rotação, escolhendo o menor arco ao a
 
 Durante a janela de reconexao, o personagem fica marcado discretamente como reconectando, para de agir e deixa de ser alvo. Se os dois jogadores estiverem temporariamente desconectados, o ciclo e os inimigos ficam congelados. A retomada reativa o mesmo participante; depois de cinco segundos sem retorno, ele e removido da sala.
 
+O servidor usa heartbeat nativo do WebSocket para detectar conexões interrompidas mesmo quando o sistema não entrega imediatamente o evento de fechamento. Esse heartbeat não depende dos timers do jogo na aba e evita tratar uma aba minimizada como desconectada. Se a reserva já tiver expirado, o cliente recebe uma nova identidade e reinicia a predição e suas métricas locais.
+
 Ainda sem salas publicas, revive ou progressao. Esc libera o mouse, mas nao pausa o servidor. Para reiniciar, feche as duas abas e abra novamente. Usa o mesmo mapa para colisoes. O servidor escuta somente loopback e nao e hospedado pelo GitHub Pages. A bancada e excluida do build de producao.
 
 

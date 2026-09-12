@@ -73,3 +73,8 @@ it('reconecta na rede degradada sem aplicar mensagens antigas nem duplicar jogad
     const stopped=instance.authority.snapshot().players[0].position.z,resumed=await open(first.welcome.token);expect(resumed.welcome).toMatchObject({id:first.welcome.id,resumed:true});await new Promise(r=>setTimeout(r,180));const players=instance.authority.snapshot().players;expect(players).toHaveLength(1);expect(players[0].id).toBe(first.welcome.id);expect(players[0].position.z).toBeCloseTo(stopped);
   }finally{for(const socket of sockets)socket.terminate();await instance.close();}
 },10000);
+it('encerra conexão silenciosa e libera a vaga após a tolerância',async()=>{
+  const instance=createMovementServer({move(p,x,z){p.x+=x;p.z+=z;}},0,undefined,50,undefined,'127.0.0.1',80);let socket:WebSocket|undefined;
+  try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');socket=new WebSocket(`ws://127.0.0.1:${address.port}`,{autoPong:false});const code=await new Promise<number>((resolve,reject)=>{socket!.once('error',reject);socket!.once('close',resolve);});expect(code).toBe(4000);await new Promise(r=>setTimeout(r,80));expect(instance.authority.snapshot().players).toHaveLength(0);}
+  finally{socket?.terminate();await instance.close();}
+},10000);

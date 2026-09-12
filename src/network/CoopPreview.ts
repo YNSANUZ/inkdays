@@ -31,7 +31,7 @@ export function mountCoopPreview(app:HTMLElement){
     socket.onmessage=e=>{
     const packet=JSON.parse(e.data);
     if(packet.type==='pong'){const sample=performance.now()-packet.nonce;rtt=rtt?rtt*.8+sample*.2:sample;return;}
-    if(packet.type==='welcome'){id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada.':'Conectado. Abra outra aba em /?coop=1.';}
+    if(packet.type==='welcome'){if(id&&id!==packet.id){prediction=null;sequence=0;maxCorrection=snaps=0;firstSnapshot=true;}id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada.':'Conectado. Abra outra aba em /?coop=1.';}
     if(packet.type==='snapshot'){
       snapshot=packet;const state=packet as Snapshot,me=state.players.find(p=>p.id===id),receivedAt=performance.now();
       if(lastSnapshotAt){const interval=receivedAt-lastSnapshotAt;jitter=jitter*.9+Math.abs(interval-50)*.1;}lastSnapshotAt=receivedAt;

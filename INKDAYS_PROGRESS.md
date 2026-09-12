@@ -131,3 +131,9 @@ A apresentação remota agora interpola também a rotação de jogadores e inimi
 
 Validacao automatizada: 49 testes passaram, incluindo a interpolação angular na descontinuidade de PI. Lint, TypeScript e build PWA passaram. A interpolação matemática está validada; a percepção visual, os valores de correção ao longo de vários dias e a frequência aceitável de ajustes bruscos ainda precisam ser avaliados em dois aparelhos e rede real. O multiplayer continua EM ANDAMENTO e o chat de texto permanece aguardando essa validação.
 
+
+## Fase 2 — heartbeat e retomada após expiração
+O servidor agora envia heartbeat nativo do WebSocket e encerra conexões que deixam de responder. Isso cobre quedas em que o navegador, roteador ou sistema operacional não produz um fechamento imediato. O mecanismo não depende do `setInterval` do cliente, que pode ser reduzido pelo navegador em uma aba minimizada. O fluxo normal de suspensão, proteção e reserva de cinco segundos é acionado pelo fechamento detectado. Se essa reserva já tiver expirado, uma conexão posterior recebe uma nova identidade e o cliente reinicia sua predição, sequência e métricas de correção, evitando carregar divergência da sessão anterior.
+
+Validacao automatizada: 50 testes passaram. O caso novo cria um cliente WebSocket que deliberadamente não responde ao heartbeat, confirma encerramento pelo código esperado e verifica que a vaga é removida após a tolerância. Clientes normais continuam respondendo ao heartbeat automaticamente nos demais testes de transporte. Lint, TypeScript e build PWA passaram. Detecção em suspensão real de celular e retomada após troca de Wi-Fi continuam pendentes de aparelho físico. O multiplayer permanece EM ANDAMENTO.
+
