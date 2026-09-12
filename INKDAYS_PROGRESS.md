@@ -352,3 +352,9 @@ Validação automatizada: 103 testes passaram. Os casos novos cobrem referência
 A apresentação agora observa o dia, a fase e a geração `round` recebidos no snapshot autoritativo. A passagem para a horda mostra `HORDA — DIA N`; o avanço ao período de preparação mostra `DIA N — AMANHECEU`. Cada mudança produz um único anúncio curto e um sinal sonoro de interface. Primeiro snapshot, reconexão, snapshot repetido e nova geração da partida somente redefinem a referência, evitando avisos antigos ou duplicados.
 
 Validação automatizada: 105 testes passaram em 21 arquivos. Os casos novos cobrem transição para horda, amanhecer, repetição do mesmo estado, conexão inicial, reset de reconexão e reinício da partida. Lint, TypeScript, build e geração da PWA passaram. Sincronia percebida, duração, contraste e áudio durante uma partida real ainda precisam de avaliação humana simultânea em computador e celular. O multiplayer permanece EM ANDAMENTO.
+
+## Fase 2 — detecção de fluxo autoritativo interrompido
+
+O cliente agora mede a idade do último snapshot novo aceito. Se o canal servidor → jogador ficar silencioso por mais de 2,5 segundos, a entrada e a predição são bloqueadas no mesmo quadro e o WebSocket é encerrado para iniciar a retomada. O prazo começa no `welcome`, portanto também cobre uma conexão aberta que nunca entrega seu primeiro estado. Snapshots duplicados ou regressivos não renovam o vigia e não conseguem manter uma sessão obsoleta aparentemente saudável.
+
+Validação automatizada: 107 testes passaram em 22 arquivos. Os casos novos verificam o limite temporal e a renovação por snapshot válido; as suítes existentes continuam cobrindo bloqueio de controles, retomada de identidade, sequência de comandos e heartbeat. Lint, TypeScript, build e geração da PWA passaram. O comportamento sob falha unilateral real, suspensão prolongada da aba e troca de Wi-Fi ainda precisa de teste em aparelhos físicos. O multiplayer permanece EM ANDAMENTO.

@@ -122,6 +122,8 @@ Se a própria página for recarregada dentro dessa janela, o primeiro snapshot i
 
 Controles online só ficam ativos quando o WebSocket está aberto e o primeiro snapshot autoritativo já criou a referência local. Durante uma queda, o relógio de entrada para, o touch desaparece e movimentos acumulados de câmera são descartados; a retomada limpa teclas e gestos antigos antes de liberar novamente.
 
+O cliente também vigia a chegada de estado novo. Se nenhum snapshot autoritativo aceito chegar por 2,5 segundos, ele bloqueia a entrada imediatamente e força uma reconexão, mesmo que o navegador ainda considere o WebSocket aberto. Isso limita a divergência quando somente o caminho servidor → jogador falha.
+
 O servidor usa heartbeat nativo do WebSocket para detectar conexões interrompidas mesmo quando o sistema não entrega imediatamente o evento de fechamento. Esse heartbeat não depende dos timers do jogo na aba e evita tratar uma aba minimizada como desconectada. Se a reserva já tiver expirado, o cliente recebe uma nova identidade e reinicia a predição e suas métricas locais.
 
 Somente a resposta `pong` confirma a saúde do enlace. Continuar recebendo comandos não mascara uma falha no sentido servidor → jogador. Quando o prazo expira, o socket é terminado imediatamente para iniciar suspensão e reconexão sem aguardar o fechamento normal de uma rede que já não responde.
