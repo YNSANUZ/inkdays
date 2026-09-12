@@ -125,3 +125,9 @@ Participantes agora possuem estado conectado explicito no servidor e nos snapsho
 
 Validacao automatizada: 48 testes passaram. Casos novos confirmam que movimento não avança durante suspensão, pacotes são rejeitados até a retomada, o jogador desconectado não recebe dano e o ciclo só volta a avançar depois de uma reconexão. Lint, TypeScript e build PWA passaram. Os servidores LAN foram reiniciados com esta versão em `192.168.1.15`, mas a interação entre dois aparelhos físicos e a avaliação humana dessa transição permanecem pendentes. O multiplayer continua EM ANDAMENTO.
 
+
+## Fase 2 — rotação interpolada e telemetria de reconciliação
+A apresentação remota agora interpola também a rotação de jogadores e inimigos usando o arco angular mais curto, inclusive na passagem entre -180° e 180°. Isso remove giros longos e mudanças secas causadas por snapshots fora de ordem. A bancada passou a mostrar a maior correção local acumulada, em centímetros, e contar ajustes acima do limite de três unidades. Esses números tornam divergências reais observáveis durante o playtest em vez de depender apenas da aparência suavizada.
+
+Validacao automatizada: 49 testes passaram, incluindo a interpolação angular na descontinuidade de PI. Lint, TypeScript e build PWA passaram. A interpolação matemática está validada; a percepção visual, os valores de correção ao longo de vários dias e a frequência aceitável de ajustes bruscos ainda precisam ser avaliados em dois aparelhos e rede real. O multiplayer continua EM ANDAMENTO e o chat de texto permanece aguardando essa validação.
+

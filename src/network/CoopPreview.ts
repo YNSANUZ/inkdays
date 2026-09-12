@@ -8,19 +8,19 @@ import type { CombatAuthority } from './CombatAuthority';
 import { Effects } from '../game/Effects';
 import { GameAudio } from '../audio/Audio';
 import { ClientPrediction } from './ClientPrediction';
-import { InterpolationBuffer } from './Interpolation';
+import { AngleInterpolationBuffer, InterpolationBuffer } from './Interpolation';
 type Snapshot=ReturnType<CombatAuthority['snapshot']>;
 export function mountCoopPreview(app:HTMLElement){
   const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));app.append(renderer.domElement);
   const scene=new T.Scene();scene.background=new T.Color(0xf3f1e9);scene.fog=new T.Fog(0xf3f1e9,43,130);scene.add(new T.HemisphereLight(0xffffff,0xb4b7af,2.1));
   const light=new T.DirectionalLight(0xffffff,2.3);light.position.set(-20,35,10);scene.add(light);
   const world=new World(scene),camera=new ThirdPerson(),effects=new Effects(scene),audio=new GameAudio();
-  const enemies=new Map<number,Avatar>(),labels=new Map<string,HTMLElement>(),playerBuffers=new Map<string,InterpolationBuffer>(),enemyBuffers=new Map<number,InterpolationBuffer>();let lastShot=0;
+  const enemies=new Map<number,Avatar>(),labels=new Map<string,HTMLElement>(),playerBuffers=new Map<string,InterpolationBuffer>(),enemyBuffers=new Map<number,InterpolationBuffer>(),playerAngles=new Map<string,AngleInterpolationBuffer>(),enemyAngles=new Map<number,AngleInterpolationBuffer>();let lastShot=0;
   const crosshair=document.createElement('div');crosshair.textContent='+';Object.assign(crosshair.style,{position:'fixed',left:'50%',top:'50%',transform:'translate(-50%,-50%)',pointerEvents:'none',fontSize:'22px'});app.append(crosshair);
   const panel=document.createElement('div');Object.assign(panel.style,{position:'fixed',top:'12px',left:'12px',zIndex:'20',background:'#f3f1e9',padding:'12px',maxWidth:'360px'});
   panel.innerHTML='<strong>COOP · TESTE DE COMBATE</strong><p role="status">Conectando…</p><button>CONTINUAR</button><p class="help">WASD · mouse · R recarrega<br>Esc libera o mouse; a partida continua.<br>Para reiniciar, feche as duas abas e abra novamente.</p>';app.append(panel);
   const status=panel.querySelector('p')!,button=panel.querySelector('button')!,help=panel.querySelector<HTMLElement>('.help')!;
-  let id='',snapshot:Snapshot|null=null,sequence=0,last=0,elapsed=0,connected=false,prediction:ClientPrediction|null=null,lastSnapshotAt=0,jitter=0,rtt=0;
+  let id='',snapshot:Snapshot|null=null,sequence=0,last=0,elapsed=0,connected=false,prediction:ClientPrediction|null=null,lastSnapshotAt=0,jitter=0,rtt=0,maxCorrection=0,snaps=0;
   const avatars=new Map<string,Avatar>();
   const pause=()=>{input.active=false;input.clear();touch.setActive(false);button.hidden=false;if(document.pointerLockElement)document.exitPointerLock();};
   const input=new Input(renderer.domElement,pause,()=>{}),touch=new TouchControls(input,pause,()=>{if(input.active)void renderer.domElement.requestPointerLock()?.catch(()=>{});});
@@ -35,17 +35,17 @@ export function mountCoopPreview(app:HTMLElement){
     if(packet.type==='snapshot'){
       snapshot=packet;const state=packet as Snapshot,me=state.players.find(p=>p.id===id),receivedAt=performance.now();
       if(lastSnapshotAt){const interval=receivedAt-lastSnapshotAt;jitter=jitter*.9+Math.abs(interval-50)*.1;}lastSnapshotAt=receivedAt;
-      if(me){const authoritative={acknowledged:me.acknowledged,position:me.position,velocity:me.velocity,vertical:me.vertical};if(!prediction)prediction=new ClientPrediction(world,authoritative);else prediction.reconcile(authoritative);}
-      status.textContent=`DIA ${state.day} · ${state.phase==='horde'?'HORDA':'PREPARAÇÃO'} ${Math.ceil(state.remaining)}s · ${state.players.filter(p=>p.connected).length}/2 | Vida ${me?.health??0} · ${me?.ammo??0}/${me?.reserve??0} ${me?.reloading?'RECARREGANDO':''} · $${me?.money??0} · ping ${rtt.toFixed(0)}ms · jitter ${jitter.toFixed(0)}ms${state.gameOver?' · FIM DE PARTIDA':me?.health===0?' · VOCÊ MORREU':''}`;
+      if(me){const authoritative={acknowledged:me.acknowledged,position:me.position,velocity:me.velocity,vertical:me.vertical};if(!prediction)prediction=new ClientPrediction(world,authoritative);else{const error=prediction.reconcile(authoritative);maxCorrection=Math.max(maxCorrection,error);if(error>3)snaps++;}}
+      status.textContent=`DIA ${state.day} · ${state.phase==='horde'?'HORDA':'PREPARAÇÃO'} ${Math.ceil(state.remaining)}s · ${state.players.filter(p=>p.connected).length}/2 | Vida ${me?.health??0} · ${me?.ammo??0}/${me?.reserve??0} ${me?.reloading?'RECARREGANDO':''} · $${me?.money??0} · ping ${rtt.toFixed(0)}ms · jitter ${jitter.toFixed(0)}ms · correção máx. ${(maxCorrection*100).toFixed(0)}cm · saltos ${snaps}${state.gameOver?' · FIM DE PARTIDA':me?.health===0?' · VOCÊ MORREU':''}`;
       const ids=new Set((packet as Snapshot).players.map(p=>p.id));
-      for(const [key,avatar] of avatars)if(!ids.has(key)){scene.remove(avatar.root);avatars.delete(key);playerBuffers.delete(key);labels.get(key)?.remove();labels.delete(key);}
+      for(const [key,avatar] of avatars)if(!ids.has(key)){scene.remove(avatar.root);avatars.delete(key);playerBuffers.delete(key);playerAngles.delete(key);labels.get(key)?.remove();labels.delete(key);}
       for(const player of (packet as Snapshot).players)if(!avatars.has(player.id)){const avatar=new Avatar();avatar.root.position.copy(player.position);avatars.set(player.id,avatar);scene.add(avatar.root);}
-      for(const player of state.players)if(player.id!==id){let buffer=playerBuffers.get(player.id);if(!buffer){buffer=new InterpolationBuffer();playerBuffers.set(player.id,buffer);}buffer.push(state.tick,player.position,receivedAt);}
+      for(const player of state.players)if(player.id!==id){let buffer=playerBuffers.get(player.id),angle=playerAngles.get(player.id);if(!buffer){buffer=new InterpolationBuffer();playerBuffers.set(player.id,buffer);}if(!angle){angle=new AngleInterpolationBuffer();playerAngles.set(player.id,angle);}buffer.push(state.tick,player.position,receivedAt);angle.push(state.tick,player.yaw+Math.PI,receivedAt);}
       for(const player of state.players)if(player.id!==id&&!labels.has(player.id)){const label=document.createElement('span');label.textContent=player.name;Object.assign(label.style,{position:'fixed',color:'#171918',fontWeight:'800',fontSize:'11px',textShadow:'0 1px #f3f1e9,1px 0 #f3f1e9,0 -1px #f3f1e9,-1px 0 #f3f1e9',pointerEvents:'none',transform:'translate(-50%,-100%)'});app.append(label);labels.set(player.id,label);}
       for(const player of state.players)if(player.id!==id){const label=labels.get(player.id);if(label){label.textContent=player.connected?player.name:`${player.name} · reconectando`;label.style.opacity=player.connected?'1':'.5';}}
-      const enemyIds=new Set(state.enemies.map(e=>e.id));for(const [key,avatar] of enemies)if(!enemyIds.has(key)){scene.remove(avatar.root);enemies.delete(key);enemyBuffers.delete(key);}
+      const enemyIds=new Set(state.enemies.map(e=>e.id));for(const [key,avatar] of enemies)if(!enemyIds.has(key)){scene.remove(avatar.root);enemies.delete(key);enemyBuffers.delete(key);enemyAngles.delete(key);}
       for(const enemy of state.enemies)if(!enemies.has(enemy.id)){const avatar=new Avatar(true);avatar.root.position.copy(enemy.position);enemies.set(enemy.id,avatar);scene.add(avatar.root);}
-      for(const enemy of state.enemies){let buffer=enemyBuffers.get(enemy.id);if(!buffer){buffer=new InterpolationBuffer();enemyBuffers.set(enemy.id,buffer);}buffer.push(state.tick,enemy.position,receivedAt);}
+      for(const enemy of state.enemies){let buffer=enemyBuffers.get(enemy.id),angle=enemyAngles.get(enemy.id);if(!buffer){buffer=new InterpolationBuffer();enemyBuffers.set(enemy.id,buffer);}if(!angle){angle=new AngleInterpolationBuffer();enemyAngles.set(enemy.id,angle);}buffer.push(state.tick,enemy.position,receivedAt);angle.push(state.tick,enemy.yaw,receivedAt);}
       if(firstSnapshot){lastShot=state.shots.at(-1)?.serial??0;firstSnapshot=false;}
       for(const shot of state.shots)if(shot.serial>lastShot){effects.shot(new T.Vector3().copy(shot.from),new T.Vector3().copy(shot.to));if(shot.hit)effects.impact(new T.Vector3().copy(shot.to));audio.cue('shot');lastShot=shot.serial;}
       if(me?.health===0&&input.active)pause();
@@ -66,9 +66,9 @@ export function mountCoopPreview(app:HTMLElement){
       elapsed-=ClientPrediction.fixedStep;const command=input.consume(),sent=sequence++,yaw=Math.atan2(Math.sin(camera.yaw),Math.cos(camera.yaw));prediction.submit({sequence:sent,yaw,command});socket.send(JSON.stringify({version:1,sequence:sent,yaw,pitch:camera.pitch,viewTick:Math.max(0,(snapshot?.tick??6)-6),command}));
     }
     if(snapshot)for(const player of snapshot.players){
-      const avatar=avatars.get(player.id)!;if(player.id===id&&prediction){prediction.updateRender(dt);avatar.root.position.copy(prediction.renderPosition);}else{const sampled=playerBuffers.get(player.id)?.sample(now);if(sampled)avatar.root.position.copy(sampled);}avatar.root.rotation.y=player.yaw+Math.PI;avatar.animate(now/1000,Math.hypot(player.velocity.x,player.velocity.z),player.crouch);avatar.body.rotation.z=player.health===0?1.5:0;
+      const avatar=avatars.get(player.id)!;if(player.id===id&&prediction){prediction.updateRender(dt);avatar.root.position.copy(prediction.renderPosition);avatar.root.rotation.y=player.yaw+Math.PI;}else{const sampled=playerBuffers.get(player.id)?.sample(now),angle=playerAngles.get(player.id)?.sample(now);if(sampled)avatar.root.position.copy(sampled);if(angle!==null&&angle!==undefined)avatar.root.rotation.y=angle;}avatar.animate(now/1000,Math.hypot(player.velocity.x,player.velocity.z),player.crouch);avatar.body.rotation.z=player.health===0?1.5:0;
     }
-    if(snapshot)for(const enemy of snapshot.enemies){const avatar=enemies.get(enemy.id)!,sampled=enemyBuffers.get(enemy.id)?.sample(now);if(sampled)avatar.root.position.copy(sampled);avatar.root.rotation.y=enemy.yaw;avatar.animate(now/1000,enemy.state==='CHASE'?enemy.speed:0);}
+    if(snapshot)for(const enemy of snapshot.enemies){const avatar=enemies.get(enemy.id)!,sampled=enemyBuffers.get(enemy.id)?.sample(now),angle=enemyAngles.get(enemy.id)?.sample(now);if(sampled)avatar.root.position.copy(sampled);if(angle!==null&&angle!==undefined)avatar.root.rotation.y=angle;avatar.animate(now/1000,enemy.state==='CHASE'?enemy.speed:0);}
     camera.update(dt,avatars.get(id)?.root.position??new T.Vector3(0,0,10),world,true);
     for(const [key,label] of labels){const point=avatars.get(key)!.root.position.clone().add(new T.Vector3(0,2.5,0)).project(camera.camera);label.hidden=point.z>1||point.z< -1;label.style.left=`${(point.x+1)*innerWidth/2}px`;label.style.top=`${(1-point.y)*innerHeight/2}px`;}
     effects.update(dt);if(connected&&snapshot){audio.update(dt,snapshot.phase==='horde');(scene.background as T.Color).lerp(new T.Color(snapshot.phase==='horde'?0xa9b1ad:0xf3f1e9),dt*1.8);(scene.fog as T.Fog).color.copy(scene.background as T.Color);}renderer.render(scene,camera.camera);
