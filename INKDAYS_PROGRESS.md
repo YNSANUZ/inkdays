@@ -316,3 +316,9 @@ Validação automatizada: 94 testes passaram. Há cobertura para normalização,
 Cada mensagem registra o tick em que foi aceita e permanece no snapshot por 720 ticks, equivalentes a 12 segundos. A expiração usa o relógio do servidor, de modo que clientes com atraso ou reconexão não mantenham linhas antigas por durações arbitrárias. O acknowledgement do remetente permanece depois da retirada visual para que uma repetição tardia não recrie a mensagem.
 
 Validação automatizada: 95 testes passaram. O caso novo confirma presença até o tick 720, remoção no 721 e preservação do acknowledgement. Lint, TypeScript e build PWA passaram. A leitura durante combate e o tempo subjetivo adequado ainda dependem de playtest humano. O multiplayer permanece EM ANDAMENTO.
+
+## Fase 2 — entrada de chat no celular
+
+O modo touch horizontal ganhou um botão CHAT discreto ao lado interno do analógico. Ele abre o mesmo campo confiável com `enterkeyhint=send`, limpa qualquer intenção mantida e oculta temporariamente os controles de movimento, mira e disparo para evitar ações involuntárias enquanto o teclado do sistema está aberto. Enviar ou usar o botão de fechar devolve os controles no quadro seguinte. O desktop conserva Enter e Escape.
+
+Validação: os 95 testes, lint, TypeScript e build PWA continuam aprovados. Em viewport 844×390, o botão apareceu em modo touch com 55 px de largura, começando em x=145; o analógico ativo ocupa até aproximadamente x=137, deixando separação entre os alvos. O foco e o teclado virtual reais, redimensionamento causado pelo teclado e envio em Android/iOS ainda dependem de aparelho físico. O multiplayer permanece EM ANDAMENTO.

@@ -54,6 +54,8 @@ O chat de equipe mostra as três mensagens mais recentes discretamente no canto 
 
 Cada mensagem permanece apresentável por 12 segundos medidos no tick autoritativo. Assim, as duas telas removem a mesma linha a partir do mesmo estado da partida, inclusive depois de uma reconexão breve.
 
+No modo touch horizontal, o botão CHAT abre o mesmo campo com indicação de envio para o teclado do sistema. Enquanto o campo está aberto, as entradas de movimento, câmera e disparo são limpas e os controles touch ficam ocultos; enviar ou tocar em fechar devolve os controles à partida.
+
 Para um playtest local com transporte degradado, use npm run coop:server:badnet. Esse perfil aplica deterministicamente cerca de 120 ms de RTT base, jitter, perda, duplicacao e reordenacao ao trafego WebSocket de entrada e saida. Ele serve para diagnostico e nao representa toda a variedade da internet real.
 
 Os testes automatizados incluem também um soak acelerado de 10.800 passos: dois clientes atravessam três ciclos pelo WebSocket degradado e precisam receber um estado idêntico no Dia 4. Esse teste isola transporte e calendário com spawns desativados; ele não substitui uma partida prolongada com combate.
