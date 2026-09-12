@@ -1,3 +1,4 @@
+import { installGame } from './Install';
 import type { DayCycle } from '../daycycle/DayCycle';
 import type { Pistol } from '../weapons/Pistol';
 import { C, nextBoss } from '../config/gameplay';
@@ -25,8 +26,8 @@ export class UI {
   on(id:string,callback:()=>void) {this.el<HTMLButtonElement>(id).addEventListener('click',callback);}
   menu(start:()=>void,settings:()=>void) {
     this.hud.classList.add('hidden');this.overlay.className='overlay home';
-    this.overlay.innerHTML=`<div class="home-content"><div class="edition"><span></span> UM JOGO DE SOBREVIVÊNCIA EM TINTA</div><h1>INKDAYS<span class="logo-dot">.</span></h1><h2>SOBREVIVA MAIS UM DIA.</h2><p>O mundo é uma folha em branco.<br>A noite tem outros planos.</p><button class="primary" id="play">JOGAR <span>↗</span></button><button class="secondary" id="settings">CONFIGURAÇÕES <span>⚙</span></button><div class="home-note"><i></i> Uma pessoa. Uma pistola. Quantos dias?</div><div class="home-controls">WASD para explorar &nbsp;·&nbsp; Mouse para mirar e atirar</div></div><div class="map-caption"><span>01 / VALE DO PAPEL</span><p>Antes da noite,<br>aprenda os caminhos.</p><i>↓</i></div>`;
-    this.on('#play',start);this.on('#settings',settings);
+    this.overlay.innerHTML=`<div class="home-content"><div class="edition"><span></span> UM JOGO DE SOBREVIVÊNCIA EM TINTA</div><h1>INKDAYS<span class="logo-dot">.</span></h1><h2>SOBREVIVA MAIS UM DIA.</h2><p>O mundo é uma folha em branco.<br>A noite tem outros planos.</p><button class="primary" id="play">JOGAR <span>↗</span></button><button class="secondary" id="settings">CONFIGURAÇÕES <span>⚙</span></button><button class="install-button" id="install">↓ INSTALE AQUI</button><div class="home-note"><i></i> Uma pessoa. Uma pistola. Quantos dias?</div><div class="home-controls">WASD para explorar &nbsp;·&nbsp; Mouse para mirar e atirar</div></div><div class="map-caption"><span>01 / VALE DO PAPEL</span><p>Antes da noite,<br>aprenda os caminhos.</p><i>↓</i></div>`;
+    this.on('#install',()=>{void installGame();});this.on('#play',start);this.on('#settings',settings);
   }
   playing() {this.overlay.className='overlay hidden';this.hud.classList.remove('hidden');}
   pause(resume:()=>void,settings:()=>void,menu:()=>void) {this.overlay.className='overlay modal';this.overlay.innerHTML=`<div class="card"><span class="eyebrow">RESPIRE UM POUCO</span><h2>O papel<br>pode esperar.</h2><p>Partida pausada. A horda também espera.</p><button class="primary" id="resume">CONTINUAR <span>↗</span></button><button class="secondary" id="settings">CONFIGURAÇÕES</button><button class="text-button" id="menu">VOLTAR AO MENU</button></div>`;this.on('#resume',resume);this.on('#settings',settings);this.on('#menu',menu);}
@@ -50,3 +51,4 @@ export class UI {
   hurt() {this.damageTimer=C.effects.damageLife;}
   reward() {const el=this.el('#reward');el.textContent=`+$${C.enemy.reward}`;el.classList.remove('reward-pop');void el.offsetWidth;el.classList.add('reward-pop');}
 }
+

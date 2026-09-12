@@ -19,7 +19,7 @@ npm run lint
 npm test
 ```
 
-`dist/` contém os arquivos estáticos de distribuição. Não requer API, conta, serviços remotos, CDN nem IA durante a partida. Sem PWA nesta fase: offline significa execução local e nenhuma dependência de rede do gameplay, não instalação/cache via service worker.
+`dist/` contém os arquivos estáticos de distribuição. Não requer API, conta, serviços remotos, CDN nem IA durante a partida. PWA disponível: use INSTALE AQUI no menu. O primeiro carregamento completo prepara o cache offline; atualizações são ativadas depois de fechar as janelas antigas do jogo.
 
 ## Controles
 WASD mover; Shift correr; espaço pular; C agachar; mouse mirar; clique esquerdo disparar (segurar mantém cadência); R recarregar; Esc pausar; F3 métricas. Se Pointer Lock estiver indisponível, segure o botão direito para mover a câmera.
@@ -38,10 +38,11 @@ Arte construída com geometria própria e materiais compartilhados. Não há ass
 Projeto isolado em `apps/inkdays`; não altera nenhum portal existente. Para reverter a instalação local, pare o servidor e remova apenas esta pasta após guardar o que desejar. Nada foi publicado. Veja INKDAYS_PROGRESS.md para evidências e pendências; INKDAYS_BACKLOG.md descreve trabalho futuro.
 
 ## Celular horizontal
-Controles automáticos em aparelhos touch: analógico esquerdo para mover; arrastar à direita para mirar; segurar ATIRAR dispara e permite arrastar a mira. Botões de recarga, pulo, corrida e agachamento; pausa no canto superior direito. Girar para vertical pausa a partida. Interface validada em viewport mobile; desempenho e multitoque em aparelho físico ainda precisam de teste. PWA e multiplayer continuam fora deste slice.
+Controles automáticos em aparelhos touch: analógico esquerdo para mover; arrastar à direita para mirar; segurar ATIRAR dispara e permite arrastar a mira. Botões de recarga, pulo, corrida e agachamento; pausa no canto superior direito. Girar para vertical pausa a partida. Interface validada em viewport mobile; desempenho e multitoque em aparelho físico ainda precisam de teste. Multiplayer continua fora deste slice.
 
 
 ## Jogar online
 GitHub Pages: https://ynsanuz.github.io/inkdays/
 Cada envio para main executa lint, testes e build antes de atualizar o jogo automaticamente.
+
 
