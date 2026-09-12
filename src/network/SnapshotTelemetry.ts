@@ -9,6 +9,7 @@ export class SnapshotTelemetry {
     this.prune();return true;
   }
   get jitter(){return this.jitterValue;}
+  get latestTick(){return this.latest;}
   get lossPercent(){
     if(this.first<0)return 0;const finalized=this.latest-this.reorderWindowTicks;if(finalized<this.first)return 0;
     const end=this.first+Math.floor((finalized-this.first)/this.intervalTicks)*this.intervalTicks,start=Math.max(this.first,end-this.windowTicks+this.intervalTicks);let expected=0,received=0;

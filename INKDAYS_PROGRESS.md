@@ -161,3 +161,9 @@ A compensação de tiro agora filtra os candidatos pelo conjunto de inimigos que
 
 Validacao automatizada: 57 testes passaram. O caso novo cria o histórico sem inimigo, faz o alvo surgir depois, dispara solicitando o tick anterior e confirma vida intacta, `hit: false` e rewind de um tick. Os testes anteriores continuam verificando acerto em alvo que existia e se moveu, restauração imediata da posição atual, dano e recompensa únicos. Lint, TypeScript e build PWA passaram. A coerência perceptiva com alvos em movimento sob internet real continua pendente de playtest físico. O multiplayer permanece EM ANDAMENTO.
 
+
+## Fase 2 — snapshots monotônicos e tick visual do tiro
+O cliente agora separa a aceitação de estado da coleta de telemetria. Um snapshot reordenado ainda pode preencher uma lacuna e corrigir a taxa de perda, porém não pode substituir snapshot mais novo, reconciliar a posição local para trás ou regredir vida, munição, inimigos e Dia/Horda. Duplicatas também deixam de executar efeitos novamente. O `viewTick` enviado no disparo passou a considerar o tempo transcorrido desde a chegada do snapshot e o atraso real de seis ticks da interpolação. Ele avança junto com a apresentação e é limitado ao estado mais novo, evitando até cerca de 50 ms de rewind adicional entre snapshots de 20 Hz.
+
+Validacao automatizada: 58 testes passaram. Os novos casos confirmam que a telemetria conserva o maior tick diante de reordenação e que o tick apresentado avança corretamente sem extrapolar além do snapshot disponível. Lint, TypeScript e build PWA passaram. A eliminação da regressão está coberta em nível de lógica; observação de teleportes e sensação do tiro em uma sessão física prolongada continuam pendentes. O multiplayer permanece EM ANDAMENTO.
+

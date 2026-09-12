@@ -58,6 +58,8 @@ Ao final do playtest, use BAIXAR RELATÓRIO em cada aparelho. O JSON contém dur
 
 O relatório também inclui o maior tempo de compensação histórica aplicado aos tiros. No rewind, o servidor considera somente inimigos que já existiam no tick apresentado ao jogador; alvos surgidos depois desse momento não podem receber o acerto retroativo.
 
+Snapshots atrasados ou duplicados podem completar a telemetria de perda, mas nunca substituem o estado mais novo já aplicado. O `viewTick` do tiro acompanha o ponto exato da linha temporal usado pela interpolação no instante do comando, limitado ao snapshot mais recente para impedir extrapolação.
+
 O jogador local usa predicao e reconciliacao com replay das entradas ainda nao confirmadas. Jogadores remotos e inimigos usam um buffer de interpolacao de 100 ms, que ordena snapshots atrasados e nao extrapola alem do ultimo estado conhecido. Uma queda breve tenta reconectar automaticamente por cinco segundos e preserva identidade e estado no mesmo processo do servidor. A bancada mede ping e jitter separadamente. O servidor conserva 500 ms de historico dos inimigos e valida o tiro contra o tick apresentado ao atirador, mantendo dano, morte e recompensa autoritativos.
 
 A interpolacao remota inclui posição e rotação, escolhendo o menor arco ao atravessar o limite entre -180° e 180°. A bancada também expõe a maior correção de posição local e o total de ajustes acima de três unidades, para diferenciar suavidade visual de divergência real da predição.
