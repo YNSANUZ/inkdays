@@ -71,4 +71,8 @@ describe('combate controlado pelo servidor',()=>{
     a.enemies.active[0].avatar.root.position.set(0,0,7);a.enemies.active[1].avatar.root.position.set(2,0,7);for(const enemy of a.enemies.active)enemy.speed=0;a.step();
     expect(a.snapshot().enemies.map(enemy=>enemy.targetId)).toEqual(['a','b']);expect(a.snapshot().enemies.every(enemy=>enemy.state==='CHASE')).toBe(true);
   });
+  it('troca o alvo ao suspender e retomar o jogador mais próximo',()=>{
+    const a=new CombatAuthority();a.join('a');a.join('b');a.enemies.spawn(1,new Vector3(0,0,10));const enemy=a.enemies.active[0];enemy.avatar.root.position.set(0,0,7);enemy.speed=0;a.step();expect(a.snapshot().enemies[0].targetId).toBe('a');
+    a.suspend('a');a.step();expect(a.snapshot().enemies[0].targetId).toBe('b');a.resume('a');a.step();expect(a.snapshot().enemies[0].targetId).toBe('a');
+  });
 });
