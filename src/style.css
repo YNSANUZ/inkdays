@@ -4,3 +4,5 @@
 
 .install-button{display:block;margin-top:12px;padding:10px 16px;min-height:44px;background:#f3f1e9;color:#171918;border:1px solid #171918;cursor:pointer;font-weight:800;letter-spacing:1px}.install-dialog{max-width:min(460px,90vw);max-height:85dvh;overflow:auto;padding:24px;background:#f3f1e9;color:#171918;border:2px solid #171918;z-index:100;touch-action:pan-y}.install-dialog::backdrop{background:#17191899}.install-dialog p{line-height:1.6}.install-dialog .primary{max-width:100%}@media(max-height:450px){.touch-mode .home-content{top:3%}.touch-mode .home-note{display:none}.touch-mode .install-button{margin-top:6px;padding:8px 12px}.touch-mode .home p{margin:6px 0}.touch-mode h1{font-size:50px}}
 
+.nickname{display:block;margin:8px 0;font-size:11px;font-weight:800}.nickname input{display:block;width:100%;margin-top:4px;padding:7px 9px;border:2px solid #171918;background:#fff;color:#171918;font:700 14px system-ui}
+

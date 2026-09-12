@@ -66,6 +66,8 @@ Depois da derrota, qualquer participante conectado pode usar JOGAR NOVAMENTE. A 
 
 Cada inimigo escolhe autoritativamente o jogador vivo mais próximo. O `targetId` acompanha o inimigo no snapshot, permitindo que os dois clientes representem a mesma divisão da horda quando inimigos diferentes perseguem participantes diferentes.
 
+Antes de entrar no controle, cada participante pode informar um nick curto. O servidor normaliza e limita o nome, publica o mesmo valor nos snapshots e o preserva durante uma reconexão breve. O nick remoto continua aparecendo diretamente sobre o avatar, sem caixa ou balão.
+
 Se o alvo desconecta, morre ou deixa de estar elegível, a autoridade seleciona outro jogador vivo. Uma retomada dentro da tolerância preserva a identidade e permite que a IA volte a escolhê-lo pela distância; a troca é transmitida igualmente aos dois clientes.
 
 A morte individual também possui verificação dedicada: no passo seguinte, o participante caído deixa a seleção da IA, o inimigo restante recebe o ID do sobrevivente como alvo e `gameOver` continua falso.

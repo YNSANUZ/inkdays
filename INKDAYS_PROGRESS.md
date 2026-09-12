@@ -280,3 +280,9 @@ Validação automatizada: 78 testes passaram. Um caso de predição confirma rep
 O cliente agora mantém o serial visual dos disparos em um cursor isolado e redefine esse cursor sempre que recebe uma nova conexão ou retoma a sessão. O primeiro snapshot passa a ser uma referência silenciosa: tiros antigos ainda conservados pelo servidor não criam uma rajada falsa de traçantes e sons ao voltar. Os disparos ocorridos depois dessa referência continuam sendo apresentados exatamente uma vez.
 
 Validação automatizada: 80 testes passaram. Os casos novos cobrem referência inicial, eventos incrementais, snapshots repetidos e uma retomada que recebe três tiros históricos antes de um disparo realmente novo. Lint, TypeScript e build PWA passaram. A ausência perceptiva da rajada precisa ser confirmada em aparelho físico durante uma troca real de Wi-Fi. O multiplayer permanece EM ANDAMENTO.
+
+## Fase 2 — nick autoritativo e persistente
+
+A bancada permite informar um nick de até 16 caracteres antes de assumir os controles. A alteração percorre o WebSocket e somente o valor normalizado pelo servidor entra no snapshot compartilhado. Espaços são consolidados, marcação e símbolos fora do conjunto aceito são removidos, e nomes vazios são rejeitados. O nome fica associado à sessão autoritativa, permanece após reinício da partida e reconexão breve e continua sendo desenhado sem caixa sobre o companheiro.
+
+Validação automatizada: 83 testes passaram. Os casos novos cobrem acentos, espaços, marcação, caracteres de controle, limite Unicode, conteúdo vazio, transmissão pelo WebSocket e preservação do mesmo nick e ID após reconexão. Lint, TypeScript e build PWA passaram. A entrada pelo teclado virtual e a legibilidade do nome em telas pequenas ainda precisam de aparelho físico. O multiplayer permanece EM ANDAMENTO.

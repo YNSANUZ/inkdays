@@ -22,6 +22,14 @@ it('sincroniza dois clientes reais, limita a sala e remove quem desconecta',asyn
     a.socket.close();await until(()=>b.state.snapshot?.players.length===1);expect(b.state.snapshot!.players[0].id).toBe(b.state.id);
   }finally{for(const socket of sockets)socket.terminate();await instance.close();}
 },10000);
+it('sincroniza nick validado e o preserva na reconexão',async()=>{
+  const authority=new CombatAuthority(),instance=createMovementServer(authority.world,0,authority,500);const sockets:WebSocket[]=[];
+  try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');
+    const open=(resume='')=>new Promise<{socket:WebSocket;welcome:{id:string;token:string}}>((resolve,reject)=>{const socket=new WebSocket(`ws://127.0.0.1:${address.port}${resume?`?resume=${resume}`:''}`);sockets.push(socket);socket.once('error',reject);socket.on('message',raw=>{const packet=JSON.parse(raw.toString());if(packet.type==='welcome')resolve({socket,welcome:packet});});});
+    const first=await open();first.socket.send(JSON.stringify({type:'name',name:'  João <b>DF</b>  '}));const end=Date.now()+3000;while(Date.now()<end&&authority.snapshot().players[0]?.name!=='João DF')await new Promise(r=>setTimeout(r,10));expect(authority.snapshot().players[0]?.name).toBe('João DF');
+    await new Promise<void>(resolve=>{first.socket.once('close',()=>resolve());first.socket.close();});const resumed=await open(first.welcome.token);expect(resumed.welcome.id).toBe(first.welcome.id);expect(authority.snapshot().players[0]?.name).toBe('João DF');
+  }finally{for(const socket of sockets)socket.terminate();await instance.close();}
+},10000);
 it('preserva identidade e estado durante reconexão breve',async()=>{
   const instance=createMovementServer({move(p,x,z){p.x+=x;p.z+=z;}},0,undefined,500);
   const sockets:WebSocket[]=[];
