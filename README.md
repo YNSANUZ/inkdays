@@ -62,6 +62,8 @@ Outro cenário deixa um inimigo atacar um participante até a morte e exige que 
 
 Um cenário complementar mata os dois participantes, exige `gameOver` idêntico nos dois clientes e verifica, por mais 60 ticks, que calendário e inimigos permanecem congelados após a derrota coletiva.
 
+Depois da derrota, qualquer participante conectado pode usar JOGAR NOVAMENTE. A solicitação é repetida até a confirmação para tolerar perda condicionada; o servidor reinicia vida, munição, recompensas, inimigos e calendário para os dois clientes, preservando identidades e a monotonicidade do tick.
+
 Para testar em dois aparelhos da mesma rede Wi-Fi, execute npm run coop:server:lan e npm run dev:lan. O terminal mostra o endereço http://IP-LOCAL:5180/?coop=1 que deve ser aberto em cada aparelho. O cliente escolhe automaticamente o WebSocket do mesmo computador. Esse modo de desenvolvimento deve ser usado apenas em uma rede local confiável e não publica a sala na internet.
 
 Ao final do playtest, use BAIXAR RELATÓRIO em cada aparelho. O JSON contém duração, último dia/tick, médias e máximos de ping, jitter e perda, maior correção, ajustes bruscos, desconexões, retomadas e trocas de identidade. Ele não contém nick, identificador de jogador, comandos ou conteúdo pessoal.

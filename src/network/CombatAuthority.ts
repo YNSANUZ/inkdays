@@ -25,6 +25,15 @@ export class CombatAuthority {
   suspend(id:string){const p=this.players.get(id);if(p){p.connected=false;p.input.command=neutral();p.player.velocity.x=p.player.velocity.z=0;}}
   resume(id:string){const p=this.players.get(id);if(p)p.connected=true;}
   leave(id:string){const p=this.players.get(id);if(p)this.scene.remove(p.player.avatar.root);this.players.delete(id);if(!this.players.size)this.enemies.clear();}
+  restart(id:string){
+    const requester=this.players.get(id);if(!requester?.connected||!this.gameOver)return false;
+    this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.enemyHistory.clear();
+    for(const p of this.players.values()){
+      this.scene.remove(p.player.avatar.root);p.player=new Player();p.player.position.x=p.slot*2;this.scene.add(p.player.avatar.root);
+      p.weapon=new Pistol();p.input.command=neutral();p.age=Infinity;p.kills=0;p.money=0;
+    }
+    return true;
+  }
   receive(id:string,value:unknown){const p=this.players.get(id),packet=parseInput(value);if(!p?.connected||!packet||packet.sequence<=p.received)return false;
     packet.command.jump||=p.input.command.jump;packet.command.reload||=p.input.command.reload;packet.command.fire||=p.input.command.fire&&p.age===0;
     p.input=packet;p.received=packet.sequence;p.age=0;return true;
@@ -66,7 +75,8 @@ export class CombatAuthority {
     this.enemies.update(C.fixedStep,live.map(p=>p.player),()=>{});
     this.enemyHistory.set(this.tick,new Map(this.enemies.active.map(e=>[e.id,e.avatar.root.position.clone()])));while(this.enemyHistory.size>this.historyTicks)this.enemyHistory.delete(this.enemyHistory.keys().next().value!);
   }
-  snapshot(){return {version:1,tick:this.tick,day:this.cycle.day,phase:this.cycle.phase,remaining:this.cycle.remaining,gameOver:this.players.size>0&&[...this.players.values()].every(p=>p.player.health.dead),
+  private get gameOver(){return this.players.size>0&&[...this.players.values()].every(p=>p.player.health.dead);}
+  snapshot(){return {version:1,tick:this.tick,day:this.cycle.day,phase:this.cycle.phase,remaining:this.cycle.remaining,gameOver:this.gameOver,
     players:[...this.players].map(([id,p])=>({id,name:`Errante ${p.slot+1}`,connected:p.connected,acknowledged:p.applied,yaw:p.input.yaw,position:{...p.player.position},velocity:{...p.player.velocity},vertical:p.player.vertical,health:p.player.health.value,ammo:p.weapon.ammo,reserve:p.weapon.reserve,reloading:p.weapon.reloadTime>0,crouch:p.input.command.crouch,kills:p.kills,money:p.money})),
     enemies:this.enemies.active.map(e=>({id:e.id,position:{...e.avatar.root.position},yaw:e.avatar.root.rotation.y,health:e.health,state:e.state,speed:e.speed})),
     shots:this.shots.map(s=>({...s,from:{...s.from},to:{...s.to}}))};}

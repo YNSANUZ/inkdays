@@ -58,4 +58,12 @@ describe('combate controlado pelo servidor',()=>{
     for(let n=0;n<700;n++)a.step();expect(a.snapshot().gameOver).toBe(true);
     const time=a.cycle.remaining;for(let n=0;n<60;n++)a.step();expect(a.cycle.remaining).toBe(time);
   });
+  it('reinicia toda a partida sem trocar identidades ou regredir o tick',()=>{
+    const a=new CombatAuthority();a.join('a');a.join('b');a.enemies.spawn(1,new Vector3(0,0,10));const enemy=a.enemies.active[0];enemy.avatar.root.position.set(.85,0,0);enemy.speed=0;
+    a.receive('a',packet(0,true));a.step();for(let n=1;n<16;n++){a.receive('a',packet(n));a.step();}a.receive('a',packet(16,true));a.step();
+    a.enemies.spawn(1,new Vector3(1,0,10));a.enemies.active[0].avatar.root.position.set(1,0,10);a.enemies.active[0].speed=0;a.enemies.active[0].cooldown=0;
+    for(let n=0;n<1500&&!a.snapshot().gameOver;n++)a.step();expect(a.snapshot().gameOver).toBe(true);
+    const tick=a.tick;expect(a.restart('a')).toBe(true);expect(a.restart('b')).toBe(false);expect(a.tick).toBe(tick);
+    expect(a.snapshot()).toMatchObject({day:1,phase:'day',gameOver:false,enemies:[],shots:[],players:[{id:'a',health:100,ammo:8,reserve:48,kills:0,money:0},{id:'b',health:100,ammo:8,reserve:48,kills:0,money:0}]});
+  });
 });

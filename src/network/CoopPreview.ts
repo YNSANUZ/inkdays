@@ -21,15 +21,16 @@ export function mountCoopPreview(app:HTMLElement){
   const enemies=new Map<number,Avatar>(),labels=new Map<string,HTMLElement>(),playerBuffers=new Map<string,InterpolationBuffer>(),enemyBuffers=new Map<number,InterpolationBuffer>(),playerAngles=new Map<string,AngleInterpolationBuffer>(),enemyAngles=new Map<number,AngleInterpolationBuffer>();let lastShot=0;
   const crosshair=document.createElement('div');crosshair.textContent='+';Object.assign(crosshair.style,{position:'fixed',left:'50%',top:'50%',transform:'translate(-50%,-50%)',pointerEvents:'none',fontSize:'22px'});app.append(crosshair);
   const panel=document.createElement('div');Object.assign(panel.style,{position:'fixed',top:'12px',left:'12px',zIndex:'20',background:'#f3f1e9',padding:'12px',maxWidth:'360px'});
-  panel.innerHTML='<strong>COOP · TESTE DE COMBATE</strong><p role="status">Conectando…</p><button>CONTINUAR</button> <button class="report">BAIXAR RELATÓRIO</button><p class="help">WASD · mouse · R recarrega<br>Esc libera o mouse; a partida continua.<br>Para reiniciar, feche as duas abas e abra novamente.</p>';app.append(panel);
+  panel.innerHTML='<strong>COOP · TESTE DE COMBATE</strong><p role="status">Conectando…</p><button>CONTINUAR</button> <button class="report">BAIXAR RELATÓRIO</button><p class="help">WASD · mouse · R recarrega<br>Esc libera o mouse; a partida continua.<br>Após a derrota, qualquer jogador pode reiniciar a sala.</p>';app.append(panel);
   const status=panel.querySelector('p')!,button=panel.querySelector<HTMLButtonElement>('button:not(.report)')!,reportButton=panel.querySelector<HTMLButtonElement>('.report')!,help=panel.querySelector<HTMLElement>('.help')!,report=new SessionReport();
   let id='',snapshot:Snapshot|null=null,snapshotReceivedAt=0,sequence=0,last=0,connected=false,prediction:ClientPrediction|null=null,telemetry=new SnapshotTelemetry(),rtt=0,maxCorrection=0,snaps=0;
   const avatars=new Map<string,Avatar>(),inputClock=new InputClock();
   const pause=()=>{input.active=false;input.clear();touch.setActive(false);button.hidden=false;if(document.pointerLockElement)document.exitPointerLock();};
   const input=new Input(renderer.domElement,pause,()=>{}),touch=new TouchControls(input,pause,()=>{if(input.active)void renderer.domElement.requestPointerLock()?.catch(()=>{});});
-  button.onclick=()=>{if(!connected)return;input.active=true;audio.start();button.hidden=true;help.hidden=true;if(!touch.enabled)void renderer.domElement.requestPointerLock()?.catch(()=>{status.textContent='Segure o botão direito para mirar.';});};
+  let socket:WebSocket,reconnectTimer=0,restartTimer=0,pageLeaving=false,firstSnapshot=true;
+  const requestRestart=()=>{if(socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'restart'}));};
+  button.onclick=()=>{if(!connected)return;if(snapshot?.gameOver){requestRestart();clearInterval(restartTimer);restartTimer=window.setInterval(requestRestart,250);button.disabled=true;button.textContent='REINICIANDO…';return;}input.active=true;audio.start();button.hidden=true;help.hidden=true;if(!touch.enabled)void renderer.domElement.requestPointerLock()?.catch(()=>{status.textContent='Segure o botão direito para mirar.';});};
   reportButton.onclick=()=>{const blob=new Blob([JSON.stringify(report.summary(),null,2)],{type:'application/json'}),link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`inkdays-rede-${new Date().toISOString().replaceAll(':','-')}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);};
-  let socket:WebSocket,reconnectTimer=0,pageLeaving=false,firstSnapshot=true;
   const connect=()=>{
     const token=sessionStorage.getItem('inkdays-coop-token'),override=new URLSearchParams(location.search).get('server'),url=new URL(override??`${location.protocol==='https:'?'wss':'ws'}://${location.hostname}:8787`);if(token)url.searchParams.set('resume',token);socket=new WebSocket(url);
     socket.onmessage=e=>{
@@ -40,6 +41,7 @@ export function mountCoopPreview(app:HTMLElement){
       const state=packet as Snapshot,receivedAt=performance.now(),unique=telemetry.observe(state.tick,receivedAt);if(!unique||state.tick<telemetry.latestTick)return;snapshot=state;snapshotReceivedAt=receivedAt;const me=state.players.find(p=>p.id===id);
       if(me){const authoritative={acknowledged:me.acknowledged,position:me.position,velocity:me.velocity,vertical:me.vertical};if(!prediction)prediction=new ClientPrediction(world,authoritative);else{const error=prediction.reconcile(authoritative);maxCorrection=Math.max(maxCorrection,error);if(error>3)snaps++;}}
       status.textContent=`DIA ${state.day} · ${state.phase==='horde'?'HORDA':'PREPARAÇÃO'} ${Math.ceil(state.remaining)}s · ${state.players.filter(p=>p.connected).length}/2 | Vida ${me?.health??0} · ${me?.ammo??0}/${me?.reserve??0} ${me?.reloading?'RECARREGANDO':''} · $${me?.money??0} · ping ${rtt.toFixed(0)}ms · jitter ${telemetry.jitter.toFixed(0)}ms · perda ${telemetry.lossPercent.toFixed(0)}% · correção máx. ${(maxCorrection*100).toFixed(0)}cm · saltos ${snaps}${state.gameOver?' · FIM DE PARTIDA':me?.health===0?' · VOCÊ MORREU':''}`;
+      if(!state.gameOver&&restartTimer){clearInterval(restartTimer);restartTimer=0;}button.disabled=state.gameOver&&!!restartTimer;button.textContent=restartTimer?'REINICIANDO…':state.gameOver?'JOGAR NOVAMENTE':'CONTINUAR';
       report.sample({day:state.day,tick:state.tick,rtt,jitter:telemetry.jitter,loss:telemetry.lossPercent,correction:maxCorrection,snaps,rewindTicks:Math.max(0,...state.shots.map(shot=>shot.rewindTicks))});
       const ids=new Set((packet as Snapshot).players.map(p=>p.id));
       for(const [key,avatar] of avatars)if(!ids.has(key)){scene.remove(avatar.root);avatars.delete(key);playerBuffers.delete(key);playerAngles.delete(key);labels.get(key)?.remove();labels.delete(key);}
@@ -60,7 +62,7 @@ export function mountCoopPreview(app:HTMLElement){
   };
   connect();
   const pingTimer=window.setInterval(()=>{if(socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'ping',nonce:performance.now()}));},2000);
-  window.addEventListener('pagehide',()=>{pageLeaving=true;clearTimeout(reconnectTimer);clearInterval(pingTimer);socket.close();});
+  window.addEventListener('pagehide',()=>{pageLeaving=true;clearTimeout(reconnectTimer);clearInterval(restartTimer);clearInterval(pingTimer);socket.close();});
   window.addEventListener('pageshow',e=>{if(e.persisted)location.reload();});
   const resize=()=>{renderer.setSize(innerWidth,innerHeight);camera.camera.aspect=innerWidth/innerHeight;camera.camera.updateProjectionMatrix();};window.addEventListener('resize',resize);resize();
   function frame(now:number){
