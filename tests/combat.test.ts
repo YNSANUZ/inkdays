@@ -75,4 +75,8 @@ describe('combate controlado pelo servidor',()=>{
     const a=new CombatAuthority();a.join('a');a.join('b');a.enemies.spawn(1,new Vector3(0,0,10));const enemy=a.enemies.active[0];enemy.avatar.root.position.set(0,0,7);enemy.speed=0;a.step();expect(a.snapshot().enemies[0].targetId).toBe('a');
     a.suspend('a');a.step();expect(a.snapshot().enemies[0].targetId).toBe('b');a.resume('a');a.step();expect(a.snapshot().enemies[0].targetId).toBe('a');
   });
+  it('remove jogador morto da seleção de alvo no passo seguinte',()=>{
+    const a=new CombatAuthority();a.join('a');a.join('b');a.enemies.spawn(1,new Vector3(0,0,10));const enemy=a.enemies.active[0];enemy.avatar.root.position.set(0,0,9);enemy.speed=0;enemy.cooldown=0;
+    for(let n=0;n<900&&a.snapshot().players[0].health>0;n++)a.step();expect(a.snapshot().players[0].health).toBe(0);a.step();expect(a.snapshot().enemies[0].targetId).toBe('b');expect(a.snapshot().gameOver).toBe(false);
+  });
 });
