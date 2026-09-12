@@ -12,18 +12,18 @@ import type { InputPacket } from './Protocol';
 import { normalizePlayerName } from './PlayerName';
 import { normalizeChatText } from './Chat';
 const neutral=()=>({x:0,z:0,run:false,crouch:false,jump:false,fire:false,reload:false});
-interface Participant {slot:number;name:string;connected:boolean;player:Player;weapon:Pistol;camera:ThirdPerson;input:InputPacket;age:number;received:number;applied:number;viewed:number;kills:number;money:number;lastShot:number;shotPending:boolean;lastChat:number;lastChatTick:number}
+interface Participant {slot:number;name:string;connected:boolean;player:Player;weapon:Pistol;camera:ThirdPerson;input:InputPacket;age:number;received:number;applied:number;viewed:number;kills:number;money:number;lastShot:number;shotPending:number|null;lastChat:number;lastChatTick:number}
 export class CombatAuthority {
   readonly scene=new T.Scene();readonly world=new World(this.scene);readonly enemies=new Enemies(this.scene,this.world);
   cycle=new DayCycle();private horde=new Horde();private players=new Map<string,Participant>();tick=0;private round=1;
-  private shots:{serial:number;player:string;from:T.Vector3;to:T.Vector3;hit:boolean;rewindTicks:number}[]=[];private serial=0;
+  private shots:{serial:number;player:string;shotId?:number;from:T.Vector3;to:T.Vector3;hit:boolean;rewindTicks:number}[]=[];private serial=0;
   private messages:{serial:number;messageId:number;player:string;name:string;text:string;tick:number}[]=[];private chatSerial=0;private readonly chatLifetimeTicks=720;
   private enemyHistory=new Map<number,Map<number,T.Vector3>>();private readonly historyTicks=30;
   join(id:string){
     if(this.players.has(id)||this.players.size>=2)return false;
     if(!this.players.size){this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.messages=[];this.enemyHistory.clear();}
     const slot=[...this.players.values()].some(p=>p.slot===0)?1:0,player=new Player();player.position.x=slot*2;this.scene.add(player.avatar.root);
-    this.players.set(id,{slot,name:`Errante ${slot+1}`,connected:true,player,weapon:new Pistol(),camera:new ThirdPerson(),input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1,viewed:-1,kills:0,money:0,lastShot:-1,shotPending:false,lastChat:-1,lastChatTick:-Infinity});return true;
+    this.players.set(id,{slot,name:`Errante ${slot+1}`,connected:true,player,weapon:new Pistol(),camera:new ThirdPerson(),input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1,viewed:-1,kills:0,money:0,lastShot:-1,shotPending:null,lastChat:-1,lastChatTick:-Infinity});return true;
   }
   rename(id:string,value:unknown){const p=this.players.get(id),name=normalizePlayerName(value);if(!p?.connected||!name)return false;p.name=name;return true;}
   chat(id:string,messageId:unknown,value:unknown){const p=this.players.get(id),text=normalizeChatText(value);if(!p?.connected||!Number.isSafeInteger(messageId)||(messageId as number)<0||!text)return false;if((messageId as number)<=p.lastChat)return true;if(this.tick-p.lastChatTick<30)return false;p.lastChat=messageId as number;p.lastChatTick=this.tick;this.messages.push({serial:++this.chatSerial,messageId:p.lastChat,player:id,name:p.name,text,tick:this.tick});this.messages=this.messages.slice(-8);return true;}
@@ -35,16 +35,16 @@ export class CombatAuthority {
     this.round++;this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.enemyHistory.clear();
     for(const p of this.players.values()){
       this.scene.remove(p.player.avatar.root);p.player=new Player();p.player.position.x=p.slot*2;this.scene.add(p.player.avatar.root);
-      p.weapon=new Pistol();p.input.command=neutral();p.age=Infinity;p.kills=0;p.money=0;p.shotPending=false;
+      p.weapon=new Pistol();p.input.command=neutral();p.age=Infinity;p.kills=0;p.money=0;p.shotPending=null;
     }
     return true;
   }
   receive(id:string,value:unknown){const p=this.players.get(id),packet=parseInput(value);if(!p?.connected||!packet||packet.sequence<=p.received||packet.viewTick!==undefined&&packet.viewTick>this.tick)return false;
     if(packet.viewTick!==undefined){packet.viewTick=Math.max(packet.viewTick,p.viewed);p.viewed=packet.viewTick;}
     packet.command.jump||=p.input.command.jump;packet.command.reload||=p.input.command.reload;packet.command.fire||=p.input.command.fire&&p.age===0;
-    if(packet.shotId!==undefined&&packet.shotId>p.lastShot){p.lastShot=packet.shotId;p.shotPending=true;}p.input=packet;p.received=packet.sequence;p.age=0;return true;
+    if(packet.shotId!==undefined&&packet.shotId>p.lastShot){p.lastShot=packet.shotId;p.shotPending=packet.shotId;}p.input=packet;p.received=packet.sequence;p.age=0;return true;
   }
-  private fire(id:string,p:Participant){
+  private fire(id:string,p:Participant,shotId?:number){
     if(!p.weapon.fire())return;
     const requested=p.input.viewTick,rewindTick=requested===undefined?this.tick:Math.max(this.tick-this.historyTicks,Math.min(this.tick-1,requested)),history=requested===undefined?undefined:this.enemyHistory.get(rewindTick);
     const restored=new Map<number,T.Vector3>();if(history)for(const enemy of this.enemies.active){const old=enemy.avatar.root.position.clone(),past=history.get(enemy.id);if(past){restored.set(enemy.id,old);enemy.avatar.root.position.copy(past);}}
@@ -60,7 +60,7 @@ export class CombatAuthority {
     if(cover){to=cover.point;victim=undefined;}
     for(const enemy of this.enemies.active){const current=restored.get(enemy.id);if(current)enemy.avatar.root.position.copy(current);}this.scene.updateMatrixWorld(true);
     if(victim&&this.enemies.damage(victim,C.weapon.damage)){p.kills++;p.money+=C.enemy.reward;}
-    this.shots.push({serial:++this.serial,player:id,from,to,hit:!!victim,rewindTicks:this.tick-rewindTick});this.shots=this.shots.slice(-16);
+    this.shots.push({serial:++this.serial,player:id,shotId,from,to,hit:!!victim,rewindTicks:this.tick-rewindTick});this.shots=this.shots.slice(-16);
   }
   step(){
     this.tick++;if(!this.players.size)return;
@@ -71,7 +71,7 @@ export class CombatAuthority {
       if(p.player.health.dead)continue;
       p.player.update(C.fixedStep,p.input.command,p.input.yaw,this.world);p.weapon.update(C.fixedStep);
       p.camera.yaw=p.input.yaw;p.camera.pitch=p.input.pitch??.19;p.camera.update(C.fixedStep,p.player.position,this.world,true);
-      if(p.input.command.reload)p.weapon.reload();if(p.input.command.fire||p.shotPending)this.fire(id,p);p.shotPending=false;
+      if(p.input.command.reload)p.weapon.reload();if(p.input.command.fire||p.shotPending!==null)this.fire(id,p,p.shotPending??undefined);p.shotPending=null;
       p.applied=p.received;p.input.command.jump=p.input.command.reload=p.input.command.fire=false;
     }
     const event=this.cycle.update(C.fixedStep);

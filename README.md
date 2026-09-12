@@ -84,6 +84,8 @@ A morte individual também possui verificação dedicada: no passo seguinte, o p
 
 Os disparos são eventos autoritativos numerados. Ambos os clientes recebem o mesmo atirador, origem, destino, acerto e compensação histórica, enquanto somente a munição do autor é consumida. O cliente usa o serial para não reproduzir o mesmo efeito duas vezes em snapshots repetidos.
 
+Um clique local produz imediatamente apenas o som curto do gatilho para reduzir a sensação de atraso. O evento do servidor continua sendo necessário para traçante, impacto, munição, dano, morte e recompensa. Quando retorna, seu `shotId` elimina somente a duplicação sonora da previsão correspondente; eventos remotos e fogo contínuo permanecem associados ao estado autoritativo.
+
 Corrida e salto também atravessam o transporte como estado autoritativo. Posição, velocidade horizontal e velocidade vertical são comparadas no mesmo tick recebido pelos dois clientes; a apresentação remota usa esses valores no buffer de interpolação e na animação.
 
 Cada partida reiniciada possui uma geração `round` crescente, independente do tick contínuo do servidor. Ao detectar a nova geração, o cliente descarta predição e buffers antigos antes de posicionar os avatares no ponto inicial, impedindo uma interpolação longa desde o local da morte.
