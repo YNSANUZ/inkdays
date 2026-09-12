@@ -86,3 +86,12 @@ it('mantém dois clientes no mesmo ciclo por três dias sob transporte degradado
     expect(common).toMatchObject({day:4,phase:'day'});expect(common!.players).toHaveLength(2);expect(new Set(common!.players.map(p=>p.id)).size).toBe(2);
   }finally{for(const socket of sockets)socket.terminate();await instance.close();}
 },15000);
+it('mantém hordas reais sincronizadas até o terceiro dia sob transporte degradado',async()=>{
+  const authority=new CombatAuthority(),update=authority.enemies.update.bind(authority.enemies);authority.enemies.update=(dt,players,onAttack)=>{for(const player of Array.isArray(players)?players:[players])player.health.immunity=Infinity;update(dt,players,onAttack);};
+  const instance=createMovementServer(authority.world,0,authority,5000,{latencyMs:3,jitterMs:2,dropEvery:13,duplicateEvery:9,reorderEvery:7},'127.0.0.1',7000,{pulseMs:2,stepsPerPulse:30});const sockets:WebSocket[]=[];
+  try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');
+    const connect=()=>{const socket=new WebSocket(`ws://127.0.0.1:${address.port}`);sockets.push(socket);const state={frames:new Map<number,ReturnType<CombatAuthority['snapshot']>>(),maxEnemies:0};socket.on('message',raw=>{const packet=JSON.parse(raw.toString());if(packet.type==='snapshot'){state.frames.set(packet.tick,packet);state.maxEnemies=Math.max(state.maxEnemies,packet.enemies.length);if(state.frames.size>500)state.frames.delete(state.frames.keys().next().value!);}});return state;};const a=connect(),b=connect(),end=Date.now()+20000;let common:ReturnType<CombatAuthority['snapshot']>|undefined;
+    while(Date.now()<end&&!common){for(const [tick,left] of a.frames){const right=b.frames.get(tick);if(right&&left.day>=3){expect(left).toEqual(right);common=left;break;}}if(!common)await new Promise(r=>setTimeout(r,10));}
+    expect(a.maxEnemies).toBeGreaterThanOrEqual(5);expect(b.maxEnemies).toBeGreaterThanOrEqual(5);expect(common).toMatchObject({day:3,phase:'day',enemies:[]});expect(common!.players.every(player=>player.health===100)).toBe(true);
+  }finally{for(const socket of sockets)socket.terminate();await instance.close();}
+},30000);
