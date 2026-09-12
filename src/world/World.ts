@@ -1,5 +1,6 @@
 import * as T from 'three';
 import { C } from '../config/gameplay';
+import type { Point } from '../simulation/Movement';
 import { bake, box, cylinder, gray, ink, paper, shape, sphere, stroke } from './ink';
 export interface Obstacle { x: number; z: number; w: number; d: number; height: number }
 export class World {
@@ -41,7 +42,7 @@ export class World {
     this.group.updateMatrixWorld(true);
   }
   blocked(x:number,z:number,r:number) { return this.obstacles.some(o=>Math.abs(x-o.x)<o.w+r&&Math.abs(z-o.z)<o.d+r); }
-  move(pos:T.Vector3,dx:number,dz:number,r:number) {
+  move(pos:Point,dx:number,dz:number,r:number) {
     // Axis-separated movement slides along walls and stops at the clearing boundary.
     const nx=pos.x+dx; if (!this.blocked(nx,pos.z,r)) pos.x=nx;
     const nz=pos.z+dz; if (!this.blocked(pos.x,nz,r)) pos.z=nz;
