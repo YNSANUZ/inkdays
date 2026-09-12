@@ -13,6 +13,7 @@ export class MovementAuthority {
     const slot=Array.from(this.players.values()).some(p=>p.slot===0)?1:0;
     this.players.set(id,{slot,motion:{position:{x:slot*2,y:0,z:10},velocity:{x:0,y:0,z:0},vertical:0},input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1});return true;
   }
+  suspend(id:string){const player=this.players.get(id);if(player){player.input.command=neutral();player.motion.velocity.x=player.motion.velocity.z=0;}}
   leave(id:string){this.players.delete(id);}
   receive(id:string,value:unknown){
     const player=this.players.get(id),packet=parseInput(value);

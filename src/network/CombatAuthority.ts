@@ -21,6 +21,7 @@ export class CombatAuthority {
     const slot=[...this.players.values()].some(p=>p.slot===0)?1:0,player=new Player();player.position.x=slot*2;this.scene.add(player.avatar.root);
     this.players.set(id,{slot,player,weapon:new Pistol(),camera:new ThirdPerson(),input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1,kills:0,money:0});return true;
   }
+  suspend(id:string){const p=this.players.get(id);if(p){p.input.command=neutral();p.player.velocity.x=p.player.velocity.z=0;}}
   leave(id:string){const p=this.players.get(id);if(p)this.scene.remove(p.player.avatar.root);this.players.delete(id);if(!this.players.size)this.enemies.clear();}
   receive(id:string,value:unknown){const p=this.players.get(id),packet=parseInput(value);if(!p||!packet||packet.sequence<=p.received)return false;
     packet.command.jump||=p.input.command.jump;packet.command.reload||=p.input.command.reload;packet.command.fire||=p.input.command.fire&&p.age===0;
@@ -47,7 +48,7 @@ export class CombatAuthority {
       if(++p.age>15)p.input.command=neutral();
       if(p.player.health.dead)continue;
       p.player.update(C.fixedStep,p.input.command,p.input.yaw,this.world);p.weapon.update(C.fixedStep);
-      p.camera.yaw=p.input.yaw;p.camera.pitch=p.input.pitch??.19;p.camera.update(C.fixedStep,p.player.position,this.world);
+      p.camera.yaw=p.input.yaw;p.camera.pitch=p.input.pitch??.19;p.camera.update(C.fixedStep,p.player.position,this.world,true);
       if(p.input.command.reload)p.weapon.reload();if(p.input.command.fire)this.fire(id,p);
       p.applied=p.received;p.input.command.jump=p.input.command.reload=false;
     }
