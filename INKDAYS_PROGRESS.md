@@ -167,3 +167,8 @@ O cliente agora separa a aceitação de estado da coleta de telemetria. Um snaps
 
 Validacao automatizada: 58 testes passaram. Os novos casos confirmam que a telemetria conserva o maior tick diante de reordenação e que o tick apresentado avança corretamente sem extrapolar além do snapshot disponível. Lint, TypeScript e build PWA passaram. A eliminação da regressão está coberta em nível de lógica; observação de teleportes e sensação do tiro em uma sessão física prolongada continuam pendentes. O multiplayer permanece EM ANDAMENTO.
 
+
+## Fase 2 — retomada sem rajada de comandos
+Corrigido acúmulo de tempo enquanto o cliente estava desconectado ou aguardava seu primeiro snapshot. Esse tempo podia gerar centenas de comandos no mesmo quadro ao retomar, atingir o limite do servidor e causar nova desconexão. O relógio de entradas agora descarta tempo offline e limita a recuperação a seis passos por quadro. Toda conexão recomeça a predição a partir do primeiro estado recebido e limpa os buffers visuais antigos, preservando a sequência quando a identidade é retomada.
+
+Validação automatizada: 60 testes passaram; os novos casos simulam 60 segundos offline, travamento de dez segundos e cadência a 30, 60 e 144 FPS. Lint e build passaram. Esta entrega não foi validada visualmente em navegador nem em aparelho físico. Multiplayer permanece em desenvolvimento; a contagem de testes não substitui a partida humana prolongada.

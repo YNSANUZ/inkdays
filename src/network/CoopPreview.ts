@@ -11,6 +11,7 @@ import { ClientPrediction } from './ClientPrediction';
 import { AngleInterpolationBuffer, InterpolationBuffer, interpolationTick } from './Interpolation';
 import { SnapshotTelemetry } from './SnapshotTelemetry';
 import { SessionReport } from './SessionReport';
+import { InputClock } from './InputClock';
 type Snapshot=ReturnType<CombatAuthority['snapshot']>;
 export function mountCoopPreview(app:HTMLElement){
   const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));app.append(renderer.domElement);
@@ -22,8 +23,8 @@ export function mountCoopPreview(app:HTMLElement){
   const panel=document.createElement('div');Object.assign(panel.style,{position:'fixed',top:'12px',left:'12px',zIndex:'20',background:'#f3f1e9',padding:'12px',maxWidth:'360px'});
   panel.innerHTML='<strong>COOP · TESTE DE COMBATE</strong><p role="status">Conectando…</p><button>CONTINUAR</button> <button class="report">BAIXAR RELATÓRIO</button><p class="help">WASD · mouse · R recarrega<br>Esc libera o mouse; a partida continua.<br>Para reiniciar, feche as duas abas e abra novamente.</p>';app.append(panel);
   const status=panel.querySelector('p')!,button=panel.querySelector<HTMLButtonElement>('button:not(.report)')!,reportButton=panel.querySelector<HTMLButtonElement>('.report')!,help=panel.querySelector<HTMLElement>('.help')!,report=new SessionReport();
-  let id='',snapshot:Snapshot|null=null,snapshotReceivedAt=0,sequence=0,last=0,elapsed=0,connected=false,prediction:ClientPrediction|null=null,telemetry=new SnapshotTelemetry(),rtt=0,maxCorrection=0,snaps=0;
-  const avatars=new Map<string,Avatar>();
+  let id='',snapshot:Snapshot|null=null,snapshotReceivedAt=0,sequence=0,last=0,connected=false,prediction:ClientPrediction|null=null,telemetry=new SnapshotTelemetry(),rtt=0,maxCorrection=0,snaps=0;
+  const avatars=new Map<string,Avatar>(),inputClock=new InputClock();
   const pause=()=>{input.active=false;input.clear();touch.setActive(false);button.hidden=false;if(document.pointerLockElement)document.exitPointerLock();};
   const input=new Input(renderer.domElement,pause,()=>{}),touch=new TouchControls(input,pause,()=>{if(input.active)void renderer.domElement.requestPointerLock()?.catch(()=>{});});
   button.onclick=()=>{if(!connected)return;input.active=true;audio.start();button.hidden=true;help.hidden=true;if(!touch.enabled)void renderer.domElement.requestPointerLock()?.catch(()=>{status.textContent='Segure o botão direito para mirar.';});};
@@ -34,7 +35,7 @@ export function mountCoopPreview(app:HTMLElement){
     socket.onmessage=e=>{
     const packet=JSON.parse(e.data);
     if(packet.type==='pong'){const sample=performance.now()-packet.nonce;rtt=rtt?rtt*.8+sample*.2:sample;return;}
-    if(packet.type==='welcome'){telemetry=new SnapshotTelemetry();rtt=0;if(packet.resumed)report.resumed();if(id&&id!==packet.id){report.newIdentity();prediction=null;sequence=0;maxCorrection=snaps=0;firstSnapshot=true;}id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada.':'Conectado. Abra outra aba em /?coop=1.';}
+    if(packet.type==='welcome'){prediction=null;inputClock.advance(0,false);playerBuffers.clear();playerAngles.clear();enemyBuffers.clear();enemyAngles.clear();telemetry=new SnapshotTelemetry();rtt=0;if(packet.resumed)report.resumed();if(id&&id!==packet.id){report.newIdentity();prediction=null;sequence=0;maxCorrection=snaps=0;firstSnapshot=true;}id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada.':'Conectado. Abra outra aba em /?coop=1.';}
     if(packet.type==='snapshot'){
       const state=packet as Snapshot,receivedAt=performance.now(),unique=telemetry.observe(state.tick,receivedAt);if(!unique||state.tick<telemetry.latestTick)return;snapshot=state;snapshotReceivedAt=receivedAt;const me=state.players.find(p=>p.id===id);
       if(me){const authoritative={acknowledged:me.acknowledged,position:me.position,velocity:me.velocity,vertical:me.vertical};if(!prediction)prediction=new ClientPrediction(world,authoritative);else{const error=prediction.reconcile(authoritative);maxCorrection=Math.max(maxCorrection,error);if(error>3)snaps++;}}
@@ -63,10 +64,11 @@ export function mountCoopPreview(app:HTMLElement){
   window.addEventListener('pageshow',e=>{if(e.persisted)location.reload();});
   const resize=()=>{renderer.setSize(innerWidth,innerHeight);camera.camera.aspect=innerWidth/innerHeight;camera.camera.updateProjectionMatrix();};window.addEventListener('resize',resize);resize();
   function frame(now:number){
-    requestAnimationFrame(frame);const dt=Math.min(.1,(now-(last||now))/1000);last=now;elapsed+=dt;
+    requestAnimationFrame(frame);const dt=Math.min(.1,(now-(last||now))/1000);last=now;
     camera.look(input.lookX,input.lookY,1);input.lookX=input.lookY=0;touch.setActive(input.active&&innerWidth>innerHeight);
-    while(connected&&socket.readyState===WebSocket.OPEN&&prediction&&elapsed>=ClientPrediction.fixedStep){
-      elapsed-=ClientPrediction.fixedStep;const sent=sequence++,command=prediction.prepare(sent,input.consume()),yaw=Math.atan2(Math.sin(camera.yaw),Math.cos(camera.yaw)),viewTick=Math.max(0,Math.floor(interpolationTick(snapshot?.tick??6,snapshotReceivedAt||now,now)));prediction.submit({sequence:sent,yaw,command});socket.send(JSON.stringify({version:1,sequence:sent,yaw,pitch:camera.pitch,viewTick,command}));
+    const steps=inputClock.advance(dt,connected&&socket.readyState===WebSocket.OPEN&&prediction!==null);
+    for(let step=0;step<steps&&prediction;step++){
+      const sent=sequence++,command=prediction.prepare(sent,input.consume()),yaw=Math.atan2(Math.sin(camera.yaw),Math.cos(camera.yaw)),viewTick=Math.max(0,Math.floor(interpolationTick(snapshot?.tick??6,snapshotReceivedAt||now,now)));prediction.submit({sequence:sent,yaw,command});socket.send(JSON.stringify({version:1,sequence:sent,yaw,pitch:camera.pitch,viewTick,command}));
     }
     if(snapshot)for(const player of snapshot.players){
       const avatar=avatars.get(player.id)!;if(player.id===id&&prediction){prediction.updateRender(dt);avatar.root.position.copy(prediction.renderPosition);avatar.root.rotation.y=player.yaw+Math.PI;}else{const sampled=playerBuffers.get(player.id)?.sample(now),angle=playerAngles.get(player.id)?.sample(now);if(sampled)avatar.root.position.copy(sampled);if(angle!==null&&angle!==undefined)avatar.root.rotation.y=angle;}avatar.animate(now/1000,Math.hypot(player.velocity.x,player.velocity.z),player.crouch);avatar.body.rotation.z=player.health===0?1.5:0;
