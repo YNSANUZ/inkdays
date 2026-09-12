@@ -13,6 +13,7 @@ import { SnapshotTelemetry } from './SnapshotTelemetry';
 import { SessionReport } from './SessionReport';
 import { InputClock } from './InputClock';
 import { ShotEventCursor } from './ShotEventCursor';
+import { ReliablePlayerName } from './ReliablePlayerName';
 type Snapshot=ReturnType<CombatAuthority['snapshot']>;
 export function mountCoopPreview(app:HTMLElement){
   const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));app.append(renderer.domElement);
@@ -25,12 +26,12 @@ export function mountCoopPreview(app:HTMLElement){
   panel.innerHTML='<strong>COOP · TESTE DE COMBATE</strong><p role="status">Conectando…</p><label class="nickname">SEU NOME <input maxlength="16" autocomplete="nickname"></label><button>CONTINUAR</button> <button class="report">BAIXAR RELATÓRIO</button><p class="help">WASD · mouse · R recarrega<br>Esc libera o mouse; a partida continua.<br>Após a derrota, qualquer jogador pode reiniciar a sala.</p>';app.append(panel);
   const status=panel.querySelector('p')!,button=panel.querySelector<HTMLButtonElement>('button:not(.report)')!,reportButton=panel.querySelector<HTMLButtonElement>('.report')!,help=panel.querySelector<HTMLElement>('.help')!,nickname=panel.querySelector<HTMLInputElement>('input')!,report=new SessionReport();nickname.value=localStorage.getItem('inkdays-nickname')??'';
   let id='',snapshot:Snapshot|null=null,snapshotReceivedAt=0,sequence=0,last=0,connected=false,prediction:ClientPrediction|null=null,telemetry=new SnapshotTelemetry(),rtt=0,maxCorrection=0,snaps=0,round=0;
-  const avatars=new Map<string,Avatar>(),inputClock=new InputClock();
+  const avatars=new Map<string,Avatar>(),inputClock=new InputClock(),reliableName=new ReliablePlayerName();
   const pause=()=>{input.active=false;input.clear();touch.setActive(false);button.hidden=false;if(document.pointerLockElement)document.exitPointerLock();};
   const input=new Input(renderer.domElement,pause,()=>{}),touch=new TouchControls(input,pause,()=>{if(input.active)void renderer.domElement.requestPointerLock()?.catch(()=>{});});
   let socket:WebSocket,reconnectTimer=0,restartTimer=0,pageLeaving=false;
   const requestRestart=()=>{if(socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'restart'}));};
-  button.onclick=()=>{if(!connected)return;if(snapshot?.gameOver){requestRestart();clearInterval(restartTimer);restartTimer=window.setInterval(requestRestart,250);button.disabled=true;button.textContent='REINICIANDO…';return;}const name=nickname.value.trim();if(name){localStorage.setItem('inkdays-nickname',name);socket.send(JSON.stringify({type:'name',name}));}input.active=true;audio.start();button.hidden=true;nickname.parentElement!.hidden=true;help.hidden=true;if(!touch.enabled)void renderer.domElement.requestPointerLock()?.catch(()=>{status.textContent='Segure o botão direito para mirar.';});};
+  button.onclick=()=>{if(!connected)return;if(snapshot?.gameOver){requestRestart();clearInterval(restartTimer);restartTimer=window.setInterval(requestRestart,250);button.disabled=true;button.textContent='REINICIANDO…';return;}const name=reliableName.set(nickname.value);if(name)localStorage.setItem('inkdays-nickname',name);input.active=true;audio.start();button.hidden=true;nickname.parentElement!.hidden=true;help.hidden=true;if(!touch.enabled)void renderer.domElement.requestPointerLock()?.catch(()=>{status.textContent='Segure o botão direito para mirar.';});};
   reportButton.onclick=()=>{const blob=new Blob([JSON.stringify(report.summary(),null,2)],{type:'application/json'}),link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`inkdays-rede-${new Date().toISOString().replaceAll(':','-')}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);};
   const connect=()=>{
     const token=sessionStorage.getItem('inkdays-coop-token'),override=new URLSearchParams(location.search).get('server'),url=new URL(override??`${location.protocol==='https:'?'wss':'ws'}://${location.hostname}:8787`);if(token)url.searchParams.set('resume',token);socket=new WebSocket(url);
@@ -40,7 +41,7 @@ export function mountCoopPreview(app:HTMLElement){
     if(packet.type==='welcome'){prediction=null;inputClock.advance(0,false);playerBuffers.clear();playerAngles.clear();enemyBuffers.clear();enemyAngles.clear();shotEvents.reset();telemetry=new SnapshotTelemetry();rtt=0;if(packet.resumed)report.resumed();if(id&&id!==packet.id){report.newIdentity();prediction=null;sequence=0;maxCorrection=snaps=0;}id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada.':'Conectado. Abra outra aba em /?coop=1.';}
     if(packet.type==='snapshot'){
       const state=packet as Snapshot,receivedAt=performance.now(),unique=telemetry.observe(state.tick,receivedAt);if(!unique||state.tick<telemetry.latestTick)return;if(round&&state.round!==round){prediction=null;playerBuffers.clear();playerAngles.clear();enemyBuffers.clear();enemyAngles.clear();maxCorrection=snaps=0;}round=state.round;snapshot=state;snapshotReceivedAt=receivedAt;const me=state.players.find(p=>p.id===id);
-      if(me){const authoritative={acknowledged:me.acknowledged,position:me.position,velocity:me.velocity,vertical:me.vertical};if(!prediction)prediction=new ClientPrediction(world,authoritative);else{const error=prediction.reconcile(authoritative);maxCorrection=Math.max(maxCorrection,error);if(error>3)snaps++;}}
+      if(me){reliableName.observe(me.name);const authoritative={acknowledged:me.acknowledged,position:me.position,velocity:me.velocity,vertical:me.vertical};if(!prediction)prediction=new ClientPrediction(world,authoritative);else{const error=prediction.reconcile(authoritative);maxCorrection=Math.max(maxCorrection,error);if(error>3)snaps++;}}
       status.textContent=`DIA ${state.day} · ${state.phase==='horde'?'HORDA':'PREPARAÇÃO'} ${Math.ceil(state.remaining)}s · ${state.players.filter(p=>p.connected).length}/2 | Vida ${me?.health??0} · ${me?.ammo??0}/${me?.reserve??0} ${me?.reloading?'RECARREGANDO':''} · $${me?.money??0} · ping ${rtt.toFixed(0)}ms · jitter ${telemetry.jitter.toFixed(0)}ms · perda ${telemetry.lossPercent.toFixed(0)}% · correção máx. ${(maxCorrection*100).toFixed(0)}cm · saltos ${snaps}${state.gameOver?' · FIM DE PARTIDA':me?.health===0?' · VOCÊ MORREU':''}`;
       if(!state.gameOver&&restartTimer){clearInterval(restartTimer);restartTimer=0;}button.disabled=state.gameOver&&!!restartTimer;button.textContent=restartTimer?'REINICIANDO…':state.gameOver?'JOGAR NOVAMENTE':'CONTINUAR';
       report.sample({day:state.day,tick:state.tick,rtt,jitter:telemetry.jitter,loss:telemetry.lossPercent,correction:maxCorrection,snaps,rewindTicks:Math.max(0,...state.shots.map(shot=>shot.rewindTicks))});
@@ -67,6 +68,7 @@ export function mountCoopPreview(app:HTMLElement){
   const resize=()=>{renderer.setSize(innerWidth,innerHeight);camera.camera.aspect=innerWidth/innerHeight;camera.camera.updateProjectionMatrix();};window.addEventListener('resize',resize);resize();
   function frame(now:number){
     requestAnimationFrame(frame);const dt=Math.min(.1,(now-(last||now))/1000);last=now;
+    const namePacket=connected&&socket.readyState===WebSocket.OPEN?reliableName.packet(now):null;if(namePacket)socket.send(JSON.stringify(namePacket));
     camera.look(input.lookX,input.lookY,1);input.lookX=input.lookY=0;touch.setActive(input.active&&innerWidth>innerHeight);
     const steps=inputClock.advance(dt,connected&&socket.readyState===WebSocket.OPEN&&prediction!==null);
     for(let step=0;step<steps&&prediction;step++){

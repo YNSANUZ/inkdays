@@ -286,3 +286,9 @@ Validação automatizada: 80 testes passaram. Os casos novos cobrem referência 
 A bancada permite informar um nick de até 16 caracteres antes de assumir os controles. A alteração percorre o WebSocket e somente o valor normalizado pelo servidor entra no snapshot compartilhado. Espaços são consolidados, marcação e símbolos fora do conjunto aceito são removidos, e nomes vazios são rejeitados. O nome fica associado à sessão autoritativa, permanece após reinício da partida e reconexão breve e continua sendo desenhado sem caixa sobre o companheiro.
 
 Validação automatizada: 83 testes passaram. Os casos novos cobrem acentos, espaços, marcação, caracteres de controle, limite Unicode, conteúdo vazio, transmissão pelo WebSocket e preservação do mesmo nick e ID após reconexão. Lint, TypeScript e build PWA passaram. A entrada pelo teclado virtual e a legibilidade do nome em telas pequenas ainda precisam de aparelho físico. O multiplayer permanece EM ANDAMENTO.
+
+## Fase 2 — confirmação e reenvio do nick
+
+O nick solicitado agora permanece pendente no cliente até aparecer no estado autoritativo. Enquanto houver divergência, a solicitação é repetida no máximo uma vez a cada 400 ms; a confirmação do snapshot interrompe os envios. Isso cobre perda artificial de uma mensagem sem criar tráfego contínuo e também reaplica a escolha se a tolerância de reconexão expirar e o servidor atribuir uma identidade nova.
+
+Validação automatizada: 85 testes passaram. O teste de transporte posiciona deliberadamente a primeira solicitação no terceiro pacote descartado, verifica que o nome genérico permanece, envia a cópia seguinte e confirma o nick normalizado e preservado após reconexão. Testes unitários cobrem cadência, confirmação, nome vazio e uma nova escolha posterior. Lint, TypeScript e build PWA passaram. Perda durante uma conexão física ainda precisa de validação em dois aparelhos. O multiplayer permanece EM ANDAMENTO.
