@@ -137,3 +137,9 @@ O servidor agora envia heartbeat nativo do WebSocket e encerra conexões que dei
 
 Validacao automatizada: 50 testes passaram. O caso novo cria um cliente WebSocket que deliberadamente não responde ao heartbeat, confirma encerramento pelo código esperado e verifica que a vaga é removida após a tolerância. Clientes normais continuam respondendo ao heartbeat automaticamente nos demais testes de transporte. Lint, TypeScript e build PWA passaram. Detecção em suspensão real de celular e retomada após troca de Wi-Fi continuam pendentes de aparelho físico. O multiplayer permanece EM ANDAMENTO.
 
+
+## Fase 2 — telemetria confiável de perda e jitter
+A medição simples de intervalo foi substituída por telemetria baseada nos ticks autoritativos. Ela ignora snapshots duplicados, tolera reordenação por uma janela de 12 ticks e só classifica como perda posições já finalizadas. O jitter compara o tempo real de chegada com o intervalo esperado para a diferença de ticks, evitando interpretar um salto normal de sequência como instabilidade. A HUD da bancada agora mostra ping, jitter, perda percentual, maior correção local e quantidade de ajustes bruscos. Ping, jitter e perda reiniciam a cada conexão para não misturar o tempo offline com a qualidade do novo enlace.
+
+Validacao automatizada: 53 testes passaram. Os novos casos cobrem duplicatas, reordenação recuperada dentro da tolerância, perda realmente finalizada e variação de chegada sem perda. Lint, TypeScript e build PWA passaram. A precisão matemática da métrica está validada; limites aceitáveis para uma experiência boa ainda dependem do playtest prolongado em rede real e aparelhos físicos. O multiplayer permanece EM ANDAMENTO.
+

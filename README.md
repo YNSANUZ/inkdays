@@ -58,6 +58,8 @@ O jogador local usa predicao e reconciliacao com replay das entradas ainda nao c
 
 A interpolacao remota inclui posição e rotação, escolhendo o menor arco ao atravessar o limite entre -180° e 180°. A bancada também expõe a maior correção de posição local e o total de ajustes acima de três unidades, para diferenciar suavidade visual de divergência real da predição.
 
+A telemetria usa os ticks dos snapshots para mostrar jitter e perda estimada em uma janela móvel. Duplicatas não são contadas duas vezes e snapshots reordenados têm uma tolerância antes de serem considerados perdidos. Ping, jitter e perda reiniciam ao estabelecer uma nova conexão, sem classificar o tempo offline como perda da conexão retomada.
+
 Durante a janela de reconexao, o personagem fica marcado discretamente como reconectando, para de agir e deixa de ser alvo. Se os dois jogadores estiverem temporariamente desconectados, o ciclo e os inimigos ficam congelados. A retomada reativa o mesmo participante; depois de cinco segundos sem retorno, ele e removido da sala.
 
 O servidor usa heartbeat nativo do WebSocket para detectar conexões interrompidas mesmo quando o sistema não entrega imediatamente o evento de fechamento. Esse heartbeat não depende dos timers do jogo na aba e evita tratar uma aba minimizada como desconectada. Se a reserva já tiver expirado, o cliente recebe uma nova identidade e reinicia a predição e suas métricas locais.

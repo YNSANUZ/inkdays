@@ -9,6 +9,7 @@ import { Effects } from '../game/Effects';
 import { GameAudio } from '../audio/Audio';
 import { ClientPrediction } from './ClientPrediction';
 import { AngleInterpolationBuffer, InterpolationBuffer } from './Interpolation';
+import { SnapshotTelemetry } from './SnapshotTelemetry';
 type Snapshot=ReturnType<CombatAuthority['snapshot']>;
 export function mountCoopPreview(app:HTMLElement){
   const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));app.append(renderer.domElement);
@@ -20,7 +21,7 @@ export function mountCoopPreview(app:HTMLElement){
   const panel=document.createElement('div');Object.assign(panel.style,{position:'fixed',top:'12px',left:'12px',zIndex:'20',background:'#f3f1e9',padding:'12px',maxWidth:'360px'});
   panel.innerHTML='<strong>COOP · TESTE DE COMBATE</strong><p role="status">Conectando…</p><button>CONTINUAR</button><p class="help">WASD · mouse · R recarrega<br>Esc libera o mouse; a partida continua.<br>Para reiniciar, feche as duas abas e abra novamente.</p>';app.append(panel);
   const status=panel.querySelector('p')!,button=panel.querySelector('button')!,help=panel.querySelector<HTMLElement>('.help')!;
-  let id='',snapshot:Snapshot|null=null,sequence=0,last=0,elapsed=0,connected=false,prediction:ClientPrediction|null=null,lastSnapshotAt=0,jitter=0,rtt=0,maxCorrection=0,snaps=0;
+  let id='',snapshot:Snapshot|null=null,sequence=0,last=0,elapsed=0,connected=false,prediction:ClientPrediction|null=null,telemetry=new SnapshotTelemetry(),rtt=0,maxCorrection=0,snaps=0;
   const avatars=new Map<string,Avatar>();
   const pause=()=>{input.active=false;input.clear();touch.setActive(false);button.hidden=false;if(document.pointerLockElement)document.exitPointerLock();};
   const input=new Input(renderer.domElement,pause,()=>{}),touch=new TouchControls(input,pause,()=>{if(input.active)void renderer.domElement.requestPointerLock()?.catch(()=>{});});
@@ -31,12 +32,11 @@ export function mountCoopPreview(app:HTMLElement){
     socket.onmessage=e=>{
     const packet=JSON.parse(e.data);
     if(packet.type==='pong'){const sample=performance.now()-packet.nonce;rtt=rtt?rtt*.8+sample*.2:sample;return;}
-    if(packet.type==='welcome'){if(id&&id!==packet.id){prediction=null;sequence=0;maxCorrection=snaps=0;firstSnapshot=true;}id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada.':'Conectado. Abra outra aba em /?coop=1.';}
+    if(packet.type==='welcome'){telemetry=new SnapshotTelemetry();rtt=0;if(id&&id!==packet.id){prediction=null;sequence=0;maxCorrection=snaps=0;firstSnapshot=true;}id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada.':'Conectado. Abra outra aba em /?coop=1.';}
     if(packet.type==='snapshot'){
-      snapshot=packet;const state=packet as Snapshot,me=state.players.find(p=>p.id===id),receivedAt=performance.now();
-      if(lastSnapshotAt){const interval=receivedAt-lastSnapshotAt;jitter=jitter*.9+Math.abs(interval-50)*.1;}lastSnapshotAt=receivedAt;
+      snapshot=packet;const state=packet as Snapshot,me=state.players.find(p=>p.id===id),receivedAt=performance.now();telemetry.observe(state.tick,receivedAt);
       if(me){const authoritative={acknowledged:me.acknowledged,position:me.position,velocity:me.velocity,vertical:me.vertical};if(!prediction)prediction=new ClientPrediction(world,authoritative);else{const error=prediction.reconcile(authoritative);maxCorrection=Math.max(maxCorrection,error);if(error>3)snaps++;}}
-      status.textContent=`DIA ${state.day} · ${state.phase==='horde'?'HORDA':'PREPARAÇÃO'} ${Math.ceil(state.remaining)}s · ${state.players.filter(p=>p.connected).length}/2 | Vida ${me?.health??0} · ${me?.ammo??0}/${me?.reserve??0} ${me?.reloading?'RECARREGANDO':''} · $${me?.money??0} · ping ${rtt.toFixed(0)}ms · jitter ${jitter.toFixed(0)}ms · correção máx. ${(maxCorrection*100).toFixed(0)}cm · saltos ${snaps}${state.gameOver?' · FIM DE PARTIDA':me?.health===0?' · VOCÊ MORREU':''}`;
+      status.textContent=`DIA ${state.day} · ${state.phase==='horde'?'HORDA':'PREPARAÇÃO'} ${Math.ceil(state.remaining)}s · ${state.players.filter(p=>p.connected).length}/2 | Vida ${me?.health??0} · ${me?.ammo??0}/${me?.reserve??0} ${me?.reloading?'RECARREGANDO':''} · $${me?.money??0} · ping ${rtt.toFixed(0)}ms · jitter ${telemetry.jitter.toFixed(0)}ms · perda ${telemetry.lossPercent.toFixed(0)}% · correção máx. ${(maxCorrection*100).toFixed(0)}cm · saltos ${snaps}${state.gameOver?' · FIM DE PARTIDA':me?.health===0?' · VOCÊ MORREU':''}`;
       const ids=new Set((packet as Snapshot).players.map(p=>p.id));
       for(const [key,avatar] of avatars)if(!ids.has(key)){scene.remove(avatar.root);avatars.delete(key);playerBuffers.delete(key);playerAngles.delete(key);labels.get(key)?.remove();labels.delete(key);}
       for(const player of (packet as Snapshot).players)if(!avatars.has(player.id)){const avatar=new Avatar();avatar.root.position.copy(player.position);avatars.set(player.id,avatar);scene.add(avatar.root);}
