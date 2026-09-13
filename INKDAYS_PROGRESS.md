@@ -496,3 +496,9 @@ O fim do golpe circular agora gera um evento autoritativo independente do aviso.
 No impacto, uma onda de detritos de tinta se espalha pelo chão, toca um efeito grave em camadas e aplica tremor de câmera proporcional à distância. O aviso continua sendo apenas informativo; o evento de impacto e o dano continuam partindo do servidor. Reconexões usam o primeiro snapshot como referência e não reproduzem impactos antigos retidos no histórico.
 
 Validação automatizada: 116 testes passaram. O novo teste WebSocket executa o golpe com dois clientes sob latência, jitter, perda, duplicação e reordenação artificiais; ambos recebem um snapshot idêntico com a mesma sequência de impacto e a mesma redução de vida. Lint, TypeScript, build e geração da PWA passaram. Intensidade do tremor e graves ainda precisam ser avaliados em celular físico e fones.
+
+## Fase 2 — impulso autoritativo do impacto do Colosso
+
+O impacto circular passou a empurrar jogadores para longe do centro e levantá-los brevemente do chão. Direção, força horizontal e impulso vertical são calculados pelo servidor no mesmo passo que cria o evento e aplica o dano. O movimento resultante segue a colisão compartilhada, portanto não atravessa sólidos nem ultrapassa o limite da arena; o cliente recebe a velocidade no snapshot e a reconcilia pela mesma base usada na locomoção multiplayer.
+
+Validação automatizada: 117 testes passaram. O teste de combate confirma jogadores em lados opostos recebendo velocidades opostas e o mesmo impulso vertical. O teste de transporte degradado confirma que ambos os clientes observam dano, impulso e evento idênticos. Um caso adicional posiciona o jogador na borda e verifica que a colisão contém todo o deslocamento dentro do mapa. Lint, TypeScript, build e geração da PWA passaram. Força, altura e conforto visual ainda precisam de playtest humano com ping real.
