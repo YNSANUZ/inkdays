@@ -45,6 +45,8 @@ Controles automáticos em aparelhos touch: analógico esquerdo para mover; arras
 GitHub Pages: https://ynsanuz.github.io/inkdays/
 Cada envio para main executa lint, testes e build antes de atualizar o jogo automaticamente.
 
+O menu público inclui a entrada `JOGAR ONLINE · 2 PLAYERS`. O cliente multiplayer aceita `VITE_COOP_SERVER` no build para usar um servidor WebSocket público com TLS. O backend executa `npm start`, respeita a porta `PORT` da hospedagem e possui um Blueprint gratuito em `render.yaml`.
+
 
 
 ## Bancada cooperativa local (Fase 2)

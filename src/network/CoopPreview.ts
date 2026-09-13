@@ -50,7 +50,7 @@ export function mountCoopPreview(app:HTMLElement){
   chatForm.onsubmit=e=>{e.preventDefault();if(chatOutbox.submit(chatInput.value)){chatInput.value='';closeChat();}};
   window.addEventListener('keydown',e=>{if(e.code==='Enter'&&input.active&&!touch.enabled){if(!chatOpen){e.preventDefault();openChat();}else if(document.activeElement===chatInput){e.preventDefault();chatForm.requestSubmit();}}else if(e.code==='Escape'&&chatOpen){e.preventDefault();closeChat();}});
   const connect=()=>{
-    const token=sessionStorage.getItem('inkdays-coop-token'),override=new URLSearchParams(location.search).get('server'),url=new URL(override??`${location.protocol==='https:'?'wss':'ws'}://${location.hostname}:8787`);if(token)url.searchParams.set('resume',token);socket=new WebSocket(url);
+    const token=sessionStorage.getItem('inkdays-coop-token'),override=new URLSearchParams(location.search).get('server'),configured=import.meta.env.VITE_COOP_SERVER as string|undefined,url=new URL(override??configured??`${location.protocol==='https:'?'wss':'ws'}://${location.hostname}:8787`);if(token)url.searchParams.set('resume',token);socket=new WebSocket(url);
     socket.onmessage=e=>{
     const packet=JSON.parse(e.data);
     if(packet.type==='pong'){const sample=performance.now()-packet.nonce;rtt=rtt?rtt*.8+sample*.2:sample;return;}
