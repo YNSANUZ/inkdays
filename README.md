@@ -47,6 +47,8 @@ Cada envio para main executa lint, testes e build antes de atualizar o jogo auto
 
 O menu público inclui a entrada `JOGAR ONLINE · 2 PLAYERS`. O cliente multiplayer aceita `VITE_COOP_SERVER` no build para usar um servidor WebSocket público com TLS. O backend executa `npm start`, respeita a porta `PORT` da hospedagem e possui um Blueprint gratuito em `render.yaml`.
 
+Servidor experimental público: `wss://inkdays-multiplayer.onrender.com`. O plano gratuito do Render suspende a instância depois de um período sem tráfego; a primeira entrada após inatividade pode levar aproximadamente 50 segundos para acordar. A sala atual é única e comporta dois participantes.
+
 
 
 ## Bancada cooperativa local (Fase 2)
