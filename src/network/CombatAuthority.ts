@@ -61,7 +61,7 @@ export class CombatAuthority {
     const cover=new T.Raycaster(from,to.clone().sub(from).normalize(),0,from.distanceTo(to)).intersectObjects(this.world.solids,false)[0];
     if(cover){to=cover.point;victim=undefined;}
     for(const enemy of this.enemies.active){const current=restored.get(enemy.id);if(current)enemy.avatar.root.position.copy(current);}this.scene.updateMatrixWorld(true);
-    if(victim&&this.enemies.damage(victim,C.weapon.damage)){p.kills++;p.money+=C.enemy.reward;}
+    if(victim&&this.enemies.damage(victim,C.weapon.damage)){p.kills++;p.money+=victim.reward;}
     this.shots.push({serial:++this.serial,player:id,shotId,from,to,hit:!!victim,rewindTicks:this.tick-rewindTick});this.shots=this.shots.slice(-16);
   }
   step(){
@@ -77,7 +77,7 @@ export class CombatAuthority {
       p.applied=p.received;p.input.command.jump=p.input.command.reload=p.input.command.fire=false;
     }
     const event=this.cycle.update(C.fixedStep);
-    if(event==='horde')this.horde.begin(this.cycle.day,live.length);
+    if(event==='horde'){this.horde.begin(this.cycle.day,live.length);if(this.cycle.day%C.day.bossInterval===0)this.enemies.spawnBoss(this.cycle.day,live[0].player.position,live.length);}
     if(event==='dawn'){this.enemies.clear();for(const p of live){p.weapon.resupply();p.player.health.heal(C.day.dawnHeal);}}
     if(this.cycle.phase==='horde')this.horde.update(C.fixedStep,()=>this.enemies.spawn(this.cycle.day,live[this.horde.spawned%live.length].player.position));
     this.enemies.update(C.fixedStep,live.map(p=>p.player),()=>{});
@@ -86,6 +86,7 @@ export class CombatAuthority {
   private get gameOver(){return this.players.size>0&&[...this.players.values()].every(p=>p.player.health.dead);}
   snapshot(){const ids=new Map([...this.players].map(([id,p])=>[p.player,id]));return {version:1,tick:this.tick,round:this.round,day:this.cycle.day,phase:this.cycle.phase,remaining:this.cycle.remaining,gameOver:this.gameOver,
     players:[...this.players].map(([id,p])=>({id,name:p.name,connected:p.connected,acknowledged:p.applied,chatAcknowledged:p.lastChat,yaw:p.input.yaw,position:{...p.player.position},velocity:{...p.player.velocity},vertical:p.player.vertical,health:p.player.health.value,ammo:p.weapon.ammo,reserve:p.weapon.reserve,reloading:p.weapon.reloadTime>0,crouch:p.input.command.crouch,kills:p.kills,money:p.money})),
-    enemies:this.enemies.active.map(e=>({id:e.id,targetId:e.target?ids.get(e.target)??null:null,position:{...e.avatar.root.position},yaw:e.avatar.root.rotation.y,health:e.health,state:e.state,speed:e.speed})),
+    enemies:this.enemies.active.map(e=>({id:e.id,kind:e.kind,maxHealth:e.maxHealth,targetId:e.target?ids.get(e.target)??null:null,position:{...e.avatar.root.position},yaw:e.avatar.root.rotation.y,health:e.health,state:e.state,speed:e.speed})),
+    boss:(()=>{const boss=this.enemies.active.find(e=>e.kind==='boss');return boss?{id:boss.id,name:C.boss.name,health:boss.health,maxHealth:boss.maxHealth}:null;})(),
     shots:this.shots.map(s=>({...s,from:{...s.from},to:{...s.to}})),messages:this.messages.filter(message=>this.tick-message.tick<=this.chatLifetimeTicks).map(message=>({...message}))};}
 }

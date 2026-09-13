@@ -448,3 +448,11 @@ O pós-processamento de contorno passou a ignorar os materiais do cenário, que 
 Soldados e zumbis ficaram mais baixos pela redução das coxas e canelas no rig, com cabeça, tronco e quadril arredondados maiores em relação às pernas. Os zumbis compartilham agora uma máscara facial escura e olhos vermelhos. O esqueleto, as animações, a colisão, a mira e a sincronização de rede foram preservados.
 
 Validação visual local: cenário sem contorno duplicado, personagem com os pés apoiados no chão e proporção mais próxima da referência a 1280×720. Build PWA, lint e 111 testes passaram antes da revisão final. A leitura da máscara dos zumbis em horda cheia e a proporção em celular físico ainda devem ser confirmadas após a publicação.
+
+## Fase 2 — fundação autoritativa do chefão do Dia 10
+
+O calendário deixou de ser apenas uma promessa de interface. Ao começar a horda de cada múltiplo de dez dias, o servidor cria `O COLOSSO` como entidade especial, com vida dimensionada pelo patamar do dia e pela quantidade de jogadores vivos. Tamanho, velocidade, alcance, dano, intervalo de ataque e recompensa são próprios. Dano, morte e os $500 da eliminação permanecem autoritativos; somente o jogador responsável pelo último tiro recebe a recompensa.
+
+O snapshot compartilhado identifica o chefão, sua vida atual e máxima. Enquanto ele existir, todos os clientes exibem no topo `DIA 10 — O COLOSSO`, uma grande barra vermelha e o valor de vida, e renderizam o inimigo em escala superior à horda comum. A barra desaparece pelo mesmo snapshot que confirma sua morte. Hordas comuns continuam usando suas regras anteriores.
+
+Validação automatizada: 112 testes passaram. O caso novo força a transição autoritativa para a horda do Dia 10, confirma identidade, escala e vida cooperativa do chefão, realiza a eliminação e verifica remoção compartilhada, recompensa exclusiva do autor e ausência de dinheiro para o companheiro. Lint, TypeScript e build PWA passaram. Esta entrega cria o primeiro chefão jogável, mas a arte exclusiva, golpes próprios, anúncio musical específico, telemetria prolongada e balanceamento humano do Dia 10 continuam pendentes; por isso o sistema de chefões permanece EM ANDAMENTO.

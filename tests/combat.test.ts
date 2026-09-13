@@ -2,6 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {Vector3} from 'three';
 import {CombatAuthority} from '../src/network/CombatAuthority';
 import {parseInput} from '../src/network/Protocol';
+import {C} from '../src/config/gameplay';
 const packet=(sequence:number,fire=false,reload=false)=>({version:1,sequence,yaw:0,pitch:0,command:{x:0,z:0,run:false,crouch:false,jump:false,fire,reload}});
 describe('combate controlado pelo servidor',()=>{
   it('aceita oito participantes com spawns e nomes distintos e recusa o nono',()=>{const a=new CombatAuthority();for(let n=0;n<8;n++)expect(a.join(`p${n}`)).toBe(true);expect(a.join('p8')).toBe(false);const players=a.snapshot().players;expect(new Set(players.map(player=>`${player.position.x}:${player.position.z}`)).size).toBe(8);expect(new Set(players.map(player=>player.name)).size).toBe(8);});
@@ -22,6 +23,15 @@ describe('combate controlado pelo servidor',()=>{
     a.receive('a',packet(1,false));for(let n=0;n<16;n++)a.step();
     a.receive('a',packet(2,true));a.step();expect(a.enemies.active).toHaveLength(0);expect(a.snapshot().players[0]).toMatchObject({kills:1,money:20});
     for(let n=0;n<60;n++)a.step();expect(a.snapshot().players[0].money).toBe(20);
+  });
+  it('cria um chefão autoritativo no Dia 10 e paga sua recompensa ao autor da eliminação',()=>{
+    const a=new CombatAuthority();a.join('a');a.join('b');a.cycle.day=10;a.cycle.remaining=0;a.step();
+    const state=a.snapshot(),boss=a.enemies.active.find(enemy=>enemy.kind==='boss')!;
+    expect(state.boss).toMatchObject({id:boss.id,name:'O COLOSSO',health:boss.health,maxHealth:boss.maxHealth});
+    expect(boss.maxHealth).toBeGreaterThan(1200);expect(boss.avatar.root.scale.x).toBeGreaterThan(2);
+    boss.health=C.weapon.damage;boss.avatar.root.position.set(.85,0,0);boss.speed=0;
+    a.receive('a',packet(0,true));a.step();
+    expect(a.snapshot().boss).toBeNull();expect(a.snapshot().players[0]).toMatchObject({kills:1,money:C.boss.reward});expect(a.snapshot().players[1].money).toBe(0);
   });
   it('cobertura bloqueia disparo e não concede recompensa',()=>{
     const a=new CombatAuthority();a.join('a');a.enemies.spawn(1,new Vector3(0,0,10));
