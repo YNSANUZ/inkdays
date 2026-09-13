@@ -45,7 +45,7 @@ Controles automáticos em aparelhos touch: analógico esquerdo para mover; arras
 GitHub Pages: https://ynsanuz.github.io/inkdays/
 Cada envio para main executa lint, testes e build antes de atualizar o jogo automaticamente.
 
-O áudio é sintetizado em tempo real para manter a PWA leve: tiro em camadas, recarga metálica sequencial, passos de caminhada e corrida, música calma durante preparação e progressão de ação durante a horda. No multiplayer, efeitos ligados ao estado usam confirmações autoritativas sempre que afetam a leitura da partida.
+O áudio é sintetizado em tempo real para manter a PWA leve: tiro em cinco camadas, recarga metálica sequencial, passos de caminhada e corrida, vento e aves discretos, música calma durante preparação e progressão de ação durante a horda. As trilhas usam barramentos separados e cruzam gradualmente em 1,15 segundo; o ambiente recua durante o combate. No multiplayer, efeitos ligados ao estado usam confirmações autoritativas sempre que afetam a leitura da partida, e um limitador evita picos quando vários jogadores atiram no mesmo instante.
 
 O menu público inclui a entrada `MULTIPLAYER`. O cliente multiplayer aceita `VITE_COOP_SERVER` no build para usar um servidor WebSocket público com TLS. O backend executa `npm start`, respeita a porta `PORT` da hospedagem e possui um Blueprint gratuito em `render.yaml`.
 
