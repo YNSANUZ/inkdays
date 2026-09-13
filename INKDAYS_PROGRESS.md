@@ -404,3 +404,11 @@ A preparação ganhou uma camada ambiente procedural de vento com aparições es
 O tiro da pistola passou de três para cinco componentes: transiente filtrado em altas frequências, corpo de ruído, mecanismo médio, impacto grave e uma reflexão curta. Um limitador permite no máximo seis disparos sonoros novos em cada janela de 50 ms, reduzindo estouro e custo quando vários participantes atiram simultaneamente sem alterar eventos, munição, dano ou traçantes autoritativos.
 
 Validação técnica: lint, TypeScript, build PWA e 109 testes passaram. O pacote permanece sem amostras externas e o principal JavaScript cresceu cerca de 1,3 kB antes de gzip; a PWA continua precacheando oito arquivos. Timbre, equilíbrio entre música e efeitos, repetição do ambiente e reprodução em alto-falantes de celular e fones ainda exigem escuta humana. Esta é uma melhoria da base procedural, não a mixagem definitiva.
+
+## Fase 2 — HUD de gameplay multiplayer
+
+A leitura técnica extensa deixou de ocupar permanentemente o canto superior esquerdo. Depois de `CONTINUAR`, o painel de entrada é recolhido para um pequeno controle `REDE`; ao abri-lo, o jogador ainda pode baixar o relatório de diagnóstico. Foi corrigido também o CSS que mantinha o campo de nick visível mesmo depois de receber o atributo `hidden`.
+
+O multiplayer agora apresenta dia, fase e cronômetro no topo central; dinheiro, eliminações e calendário do chefão no topo direito; corações, barra e valor de vida no canto inferior esquerdo; pistola, munição, reserva e recarga no canto inferior direito. Os valores vêm do mesmo snapshot autoritativo usado pela simulação. O chat foi elevado no desktop para não cobrir a vida, enquanto o layout touch move vida e munição para o topo, respeita áreas seguras e evita os analógicos. Água permanece fora da HUD porque ainda não existe como recurso real do jogo.
+
+Validação: lint, TypeScript, build PWA e 109 testes passaram. Em inspeção visual automatizada a 1280×720, após `CONTINUAR` ficaram visíveis apenas o pequeno botão `REDE` no canto superior esquerdo, dia/tempo, dinheiro/eliminações, vida/corações e munição; o campo de nome e o bloco técnico desapareceram corretamente. O CSS possui adaptações para celular horizontal, mas a captura em aparelho físico que originou o pedido ainda precisa ser repetida após a publicação.

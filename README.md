@@ -58,6 +58,8 @@ Execute npm run coop:server e npm run dev -- --port 5180. Abra http://127.0.0.1:
 
 O chat de equipe mostra as três mensagens mais recentes discretamente no canto inferior esquerdo. No PC, Enter abre o campo e Enter envia; Escape fecha sem enviar. O servidor normaliza o texto, limita cada mensagem a 100 caracteres, aceita no máximo uma a cada 500 ms e distribui um histórico curto comum à sala. Mensagens pendentes são repetidas até o snapshot confirmar seu identificador.
 
+A partida online usa uma HUD própria compacta com dia, fase, cronômetro, vida, corações, munição, reserva, recarga, dinheiro, eliminações e próximo dia de chefão. O painel de telemetria fica recolhido no botão `REDE` durante o gameplay. Água ainda não integra as regras da partida e, por isso, não aparece como recurso fictício na HUD.
+
 Cada mensagem permanece apresentável por 12 segundos medidos no tick autoritativo. Assim, as duas telas removem a mesma linha a partir do mesmo estado da partida, inclusive depois de uma reconexão breve.
 
 No modo touch horizontal, o botão CHAT abre o mesmo campo com indicação de envio para o teclado do sistema. Enquanto o campo está aberto, as entradas de movimento, câmera e disparo são limpas e os controles touch ficam ocultos; enviar ou tocar em fechar devolve os controles à partida.
