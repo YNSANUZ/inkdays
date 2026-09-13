@@ -8,9 +8,8 @@ const version=hash.digest('hex').slice(0,16);
 await writeFile('dist/sw.js',`const CACHE='inkdays-${version}';
 const FILES=${JSON.stringify(files)};
 const BASE=self.registration.scope;
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new URL(f,BASE).href)))));
-// Wait for existing game windows to close before switching versions.
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('inkdays-')&&k!==CACHE).map(k=>caches.delete(k))))));
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new URL(f,BASE).href))).then(()=>self.skipWaiting())));
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('inkdays-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
  if(e.request.method!=='GET'||!e.request.url.startsWith(BASE))return;
  const url=new URL(e.request.url);
