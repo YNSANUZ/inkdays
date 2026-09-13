@@ -480,3 +480,11 @@ O primeiro chefão ganhou uma segunda etapa autoritativa. Ao atingir metade da v
 Durante a fúria, a barra acrescenta `FÚRIA`, pulsa discretamente em vermelho e o modelo grande recebe uma respiração visual curta. A presença do chefão também seleciona uma frase musical exclusiva mais grave, rápida e pesada do que a música normal da horda; entrada e saída continuam seguindo o sistema dinâmico de áudio já existente.
 
 Validação automatizada: 114 testes passaram. O caso novo reduz a vida do chefão até o limiar e confirma fúria, velocidade maior, ataque mais frequente, dano maior e publicação do estado no snapshot. Lint, TypeScript e build PWA passaram. Golpes com áreas telegráficas, modelo exclusivo e balanceamento humano prolongado continuam pendentes.
+
+## Fase 2 — impacto telegrafado de O Colosso
+
+O Colosso ganhou seu primeiro golpe próprio com contrajogo legível. Quando um jogador entra no alcance, o servidor fixa no chão uma área circular de 4,2 metros e publica 1,25 segundo de aviso para todos os participantes. O círculo pulsa e fica mais intenso até o impacto; a barra do chefão mostra `IMPACTO` durante a preparação e um sinal sonoro curto chama atenção sem cobrir a música.
+
+Posição, raio, sequência, tempo restante e dano pertencem à autoridade. O cliente apenas apresenta o aviso. Ao terminar a preparação, o servidor causa 42 de dano nos jogadores que ainda estão dentro da área. Em fúria, o intervalo entre impactos diminui, mas a janela de reação permanece igual. Reconexão limpa avisos antigos e cada sequência sonora é reproduzida uma única vez.
+
+Validação automatizada: 115 testes passaram. O caso novo força o golpe em uma partida com dois participantes, confirma que o snapshot compartilhado contém o mesmo aviso e verifica que o dano só é aplicado pelo servidor após o término da janela. Lint, TypeScript, build e geração da PWA passaram. A clareza do círculo sob uma horda cheia, a sensação dos 1,25 segundo com latência real e o balanceamento dos 42 pontos ainda dependem de teste humano em computador e celular.
