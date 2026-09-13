@@ -92,4 +92,8 @@ describe('combate controlado pelo servidor',()=>{
     const a=new CombatAuthority();a.join('a');a.join('b');a.enemies.spawn(1,new Vector3(0,0,10));const enemy=a.enemies.active[0];enemy.avatar.root.position.set(0,0,9);enemy.speed=0;enemy.cooldown=0;
     for(let n=0;n<900&&a.snapshot().players[0].health>0;n++)a.step();expect(a.snapshot().players[0].health).toBe(0);a.step();expect(a.snapshot().enemies[0].targetId).toBe('b');expect(a.snapshot().gameOver).toBe(false);
   });
+  it('permite reviver imediatamente em modo de teste sem reiniciar a partida',()=>{
+    const a=new CombatAuthority();a.join('a');a.join('b');const player=a.snapshot().players[0];a.enemies.spawn(1,new Vector3(0,0,10));const enemy=a.enemies.active[0];enemy.avatar.root.position.copy(player.position).add(new Vector3(0,0,-1));enemy.speed=0;enemy.cooldown=0;
+    for(let n=0;n<900&&a.snapshot().players[0].health>0;n++)a.step();const round=a.snapshot().round;expect(a.snapshot().players[0].health).toBe(0);expect(a.revive('a')).toBe(true);expect(a.revive('a')).toBe(false);expect(a.snapshot()).toMatchObject({round,gameOver:false});expect(a.snapshot().players.find(player=>player.id==='a')).toMatchObject({health:100,position:{x:0,y:0,z:10}});
+  });
 });

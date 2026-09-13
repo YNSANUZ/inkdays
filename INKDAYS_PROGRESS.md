@@ -466,3 +466,9 @@ O pacote externo `17-weapons-and-attachments.zip` foi inspecionado somente como 
 O arquivo externo `94-weapons.rar` também foi catalogado apenas como referência, inclusive para uma futura bazuca. Ele reúne uma coleção única em `.blend`, `.fbx`, `.obj` e `.x3d`, mas não contém licença ou autoria verificável dentro do pacote. Nenhum desses arquivos foi extraído para os ativos públicos. A arma pesada será projetada como conteúdo próprio quando suas regras de explosão, munição rara e autoridade multiplayer entrarem no plano.
 
 Validação visual local: a pistola carregou presa à mão do rig, preservou o personagem compacto e apresentou cano e empunhadura distintos na câmera normal. Lint, TypeScript, build PWA e os 112 testes permaneceram aprovados.
+
+## Ferramenta de teste — reviver imediatamente
+
+Enquanto o multiplayer estiver em teste, qualquer jogador que chegar a zero de vida recebe no centro da tela o painel `VOCÊ CAIU — MODO DE TESTE` e o botão `REVIVER AGORA`. O pedido é processado pelo servidor: o jogador reaparece em sua vaga inicial com vida completa, velocidade zerada e dois segundos de proteção, preservando dinheiro, eliminações, dia e estado da sala. Se todos caírem, o primeiro revive também libera novamente o ciclo sem reiniciar a partida.
+
+O cliente repete o pedido até observar a vida restaurada no snapshot, cobrindo perda artificial de mensagem, e então remove o painel automaticamente. Pedidos para um jogador vivo são rejeitados. Validação automatizada: 113 testes passaram, incluindo morte, reaparecimento, posição, vida, preservação da geração e rejeição de revive duplicado. Lint, TypeScript e build PWA passaram. O recurso é deliberadamente identificado como modo de teste; o sistema final continuará prevendo resgate por companheiros e regras próprias de derrota.

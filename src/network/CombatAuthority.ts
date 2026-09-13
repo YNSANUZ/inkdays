@@ -41,6 +41,10 @@ export class CombatAuthority {
     }
     return true;
   }
+  revive(id:string){
+    const p=this.players.get(id);if(!p?.connected||!p.player.health.dead)return false;
+    const point=spawn(p.slot);p.player.position.set(point.x,0,point.z);p.player.velocity.set(0,0,0);p.player.vertical=0;p.player.health.revive();p.input.command=neutral();p.age=Infinity;return true;
+  }
   receive(id:string,value:unknown){const p=this.players.get(id),packet=parseInput(value);if(!p?.connected||!packet||packet.sequence<=p.received||packet.viewTick!==undefined&&packet.viewTick>this.tick)return false;
     if(packet.viewTick!==undefined){packet.viewTick=Math.max(packet.viewTick,p.viewed);p.viewed=packet.viewTick;}
     packet.command.jump||=p.input.command.jump;packet.command.reload||=p.input.command.reload;packet.command.fire||=p.input.command.fire&&p.age===0;
