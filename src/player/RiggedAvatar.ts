@@ -42,18 +42,19 @@ export class RiggedAvatar {
   private async install(){
     const assets=await getLibrary();
     const model=clone(assets.model);
-    const white=new T.MeshToonMaterial({color:0xf5f3e9});
+    const white=new T.MeshToonMaterial({color:0xe5e2d8});
     const black=new T.MeshToonMaterial({color:0x171b19});
     const skins:T.SkinnedMesh[]=[];
     model.traverse(node=>{if(node instanceof T.SkinnedMesh){node.material=white;node.castShadow=true;node.receiveShadow=true;skins.push(node);}});
-    for(const skin of skins){const outline=skin.clone();outline.material=new T.MeshBasicMaterial({color:0x161a18,side:T.BackSide});outline.scale.multiplyScalar(1.018);outline.castShadow=false;skin.parent?.add(outline);}
+    for(const skin of skins){const outline=skin.clone();outline.material=new T.MeshBasicMaterial({color:0x161a18,side:T.BackSide});outline.scale.multiplyScalar(1.035);outline.castShadow=false;skin.parent?.add(outline);}
     const bone=(pattern:RegExp)=>{let found:T.Object3D|undefined;model.traverse(node=>{if(!found&&pattern.test(node.name))found=node;});return found;};
     if(this.role==='player'){
       const hand=bone(/RightHand$/i),spine=bone(/Spine1$/i)??bone(/Spine$/i);
       if(hand){const gun=new T.Mesh(new T.BoxGeometry(.075,.08,.42),black);gun.position.set(0,.05,.2);gun.rotation.x=Math.PI/2;hand.add(gun);}
       if(spine){const pack=new T.Mesh(new T.BoxGeometry(.32,.42,.14),new T.MeshToonMaterial({color:0xb9bbb3}));pack.position.set(0,.06,-.16);spine.add(pack);}
+      const head=bone(/Head$/i);if(head){for(const x of [-.052,.052]){const eye=new T.Mesh(new T.SphereGeometry(.018,8,6),black);eye.position.set(x,.075,.14);head.add(eye);}}
     } else {
-      model.traverse(node=>{if(node instanceof T.SkinnedMesh)node.material=new T.MeshToonMaterial({color:0xe6e3d8});});
+      model.traverse(node=>{if(node instanceof T.SkinnedMesh&&(node.material as T.Material).side!==T.BackSide)node.material=new T.MeshToonMaterial({color:0xceccc3});});
       const head=bone(/Head$/i);if(head){for(const x of [-.065,.065]){const eye=new T.Mesh(new T.SphereGeometry(.025,8,6),new T.MeshBasicMaterial({color:0xb20d14}));eye.position.set(x,.08,.13);head.add(eye);}}
     }
     this.root.add(model);
