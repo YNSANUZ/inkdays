@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { C } from '../config/gameplay';
 import { World } from '../world/World';
 import { Player } from '../player/Player';
@@ -15,11 +16,11 @@ import { UI } from '../ui/UI';
 import { loadSettings, saveSettings } from '../ui/Settings';
 type Mode='menu'|'playing'|'paused'|'dead'|'settings';
 export class Game {
-  touch:TouchControls;
+  touch:TouchControls;outline:OutlineEffect;
   renderer:T.WebGLRenderer;scene=new T.Scene();world:World;player=new Player();camera=new ThirdPerson();input:Input;pistol=new Pistol();enemies:Enemies;horde=new Horde();cycle=new DayCycle();audio=new GameAudio();effects:Effects;ui:UI;
   mode:Mode='menu';kills=0;money=0;settings=loadSettings();private accumulator=0;private last=0;private ray=new T.Raycaster();private debug=false;private fps=60;private light:T.DirectionalLight;private lastCommand={crouch:false,run:false};private contextLost=false;
   constructor(app:HTMLElement) {
-    this.renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});this.renderer.setClearColor(0xf3f1e9);this.renderer.outputColorSpace=T.SRGBColorSpace;app.append(this.renderer.domElement);this.renderer.domElement.setAttribute('aria-label','Mundo 3D do INKDAYS');
+    this.renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});this.renderer.setClearColor(0xf3f1e9);this.renderer.outputColorSpace=T.SRGBColorSpace;this.outline=new OutlineEffect(this.renderer,{defaultThickness:.006,defaultColor:[.06,.07,.06],defaultAlpha:1,defaultKeepAlive:true});app.append(this.renderer.domElement);this.renderer.domElement.setAttribute('aria-label','Mundo 3D do INKDAYS');
     this.scene.background=new T.Color(0xf3f1e9);this.scene.fog=new T.Fog(0xf3f1e9,43,130);
     this.scene.add(new T.HemisphereLight(0xffffff,0xb4b7af,2.1));this.light=new T.DirectionalLight(0xffffff,2.3);this.light.position.set(-20,35,10);this.scene.add(this.light);
     this.world=new World(this.scene);this.scene.add(this.player.avatar.root);this.enemies=new Enemies(this.scene,this.world);this.effects=new Effects(this.scene);this.ui=new UI(app);
@@ -32,7 +33,7 @@ export class Game {
     this.menu();requestAnimationFrame(this.frame);
   }
   private applySettings(){this.renderer.setPixelRatio(Math.min(devicePixelRatio,this.settings.quality==='high'?1.5:.85));this.audio.setVolume(this.settings.volume);this.resize();}
-  private resize(){const w=window.innerWidth,h=window.innerHeight;this.renderer.setSize(w,h);this.camera.camera.aspect=w/h;this.camera.camera.updateProjectionMatrix();if(this.ui){const scale=Math.min(1.5,Math.max(1,Math.min(w/1280,h/720)));Object.assign(this.ui.hud.style,{position:'absolute',width:`${w/scale}px`,height:`${h/scale}px`,transform:`scale(${scale})`,transformOrigin:'top left'});}}
+  private resize(){const w=window.innerWidth,h=window.innerHeight;this.outline.setSize(w,h);this.camera.camera.aspect=w/h;this.camera.camera.updateProjectionMatrix();if(this.ui){const scale=Math.min(1.5,Math.max(1,Math.min(w/1280,h/720)));Object.assign(this.ui.hud.style,{position:'absolute',width:`${w/scale}px`,height:`${h/scale}px`,transform:`scale(${scale})`,transformOrigin:'top left'});}}
   start() {
     this.enemies.clear();this.effects.clear();this.scene.remove(this.player.avatar.root);this.player=new Player();this.scene.add(this.player.avatar.root);this.pistol=new Pistol();this.cycle=new DayCycle();this.horde=new Horde();this.camera=new ThirdPerson();this.resize();this.kills=this.money=0;this.ui.toastTimer=this.ui.hitTimer=this.ui.damageTimer=0;this.ui.el('.damage-flash').style.opacity='0';this.ui.el('#reward').textContent='';this.resume();this.ui.toast('DIA 1 · Explore. A noite chega em 40 segundos.');
   }
@@ -87,7 +88,7 @@ export class Game {
       this.camera.camera.position.set(9,4.6,19);this.camera.camera.lookAt(-4,3,-14);this.world.sails.rotation.z+=dt*.12;
       (this.scene.background as T.Color).set(0xf3f1e9);(this.scene.fog as T.Fog).color.set(0xf3f1e9);this.light.intensity=2.3;
     }
-    this.renderer.render(this.scene,this.camera.camera);
+    this.outline.render(this.scene,this.camera.camera);
     if(this.debug)this.ui.el('#debug').textContent=`${Math.round(this.fps)} FPS · ${this.enemies.active.length} inimigos · ${this.renderer.info.render.calls} draw calls · ${this.renderer.info.render.triangles.toLocaleString('pt-BR')} triângulos`;
   };
 }

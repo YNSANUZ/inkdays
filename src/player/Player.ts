@@ -12,6 +12,6 @@ export class Player {
     this.time+=dt;this.health.update(dt);
     movePlayer(this,c,yaw,world,dt);
     this.avatar.root.rotation.y=yaw+Math.PI;
-    this.avatar.animate(this.time,this.velocity.length(),c.crouch);
+    this.avatar.animate(this.time,this.velocity.length(),c.crouch,false,this.velocity);
   }
 }

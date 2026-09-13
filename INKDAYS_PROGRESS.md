@@ -17,6 +17,20 @@ O cliente cooperativo passou a reproduzir também o ataque esquelético do inimi
 
 Validação pública automatizada: dois contextos independentes do Chrome entraram simultaneamente em `https://ynsanuz.github.io/inkdays/?coop=1`, carregaram os novos personagens, receberam o mesmo dia/cronômetro e localizaram o nome do companheiro. Após 1,5 s de movimento de um cliente, foram observados aproximadamente 159–162 ms de ping, 2 ms de jitter, 0% de perda, correção máxima de 13 cm e zero ajustes bruscos; o cliente parado registrou 0 cm. Em uma segunda conexão, a mensagem `Bruno Rede: teste sincronizado` apareceu igualmente nos dois clientes. Não houve erro de console. A contagem temporária de 4/8 incluiu conexões reservadas pelo intervalo de reconexão dos ensaios anteriores e retornou depois do prazo; não indica quatro pessoas reais. A automação confirma regressão técnica, mas não substitui avaliação humana em dois aparelhos físicos.
 
+## Fase 2 — locomoção visual direcional
+
+O jogador agora escolhe animações distintas para avançar, recuar e deslocar-se para esquerda ou direita. A direção é calculada da velocidade autoritativa em relação ao rumo do personagem, portanto os demais clientes veem a mesma intenção de locomoção publicada no snapshot. Velocidades muito baixas conservam a direção frontal para impedir alternância nervosa durante a desaceleração. Foram acrescentados somente 73 KB de animações quantizadas; o conjunto visual completo permanece em aproximadamente 0,83 MB.
+
+Validação: testes unitários cobrem as quatro direções, rotação de 90 graus e estabilidade em baixa velocidade. Uma execução real percorreu W, S, A e D, confirmou HTTP 200 para os três novos GLBs e terminou sem erro de carregamento ou console. A captura está em `qa/directional-locomotion.png`. A aparência e o ritmo ainda precisam ser julgados por uma pessoa em jogo, especialmente no touch e sob interpolação de um jogador remoto.
+
+## Fase 2 — primeira silhueta autoral e noite em tinta
+
+O esqueleto Mixamo passou a dirigir uma apresentação mais próxima da referência: cabeça esférica ampliada, tronco arredondado, corpo visualmente compacto, olhos mínimos, mochila e arma. Jogadores permanecem brancos; inimigos usam cinza mais marcado e olhos vermelhos. O contorno duplicado por malha foi removido e substituído por `OutlineEffect`, que desenha uma espessura coerente também durante deformações do esqueleto. Isso aproxima a leitura de ilustração viva e reduz a aparência de manequim técnico.
+
+Durante a horda, fundo, névoa, luz direcional e uma vinheta radial passam gradualmente a tons mais escuros. O centro conserva contraste para mira e identificação de alvos, enquanto as bordas comunicam a noite. Não foi criada barra de chefão nesta entrega porque ainda não existe uma entidade de boss autoritativa cuja vida possa alimentar a interface; exibir uma barra sem boss real produziria estado enganoso.
+
+Validação visual automatizada: dia com um inimigo, horda com cinco inimigos e horda em 844×390 com quatro inimigos, sem erros de console. As capturas estão em `qa/stylized-character-day.png`, `qa/stylized-character-horde.png` e `qa/stylized-character-mobile-horde.png`. O efeito de contorno aumenta o custo de renderização e ainda precisa de medição em celular físico; qualidade baixa poderá precisar desativar ou reduzir esse passe conforme o resultado real.
+
 ## Ambiente e tecnologia escolhida
 Projeto novo isolado em apps/inkdays. Node 24.18 e npm 11 disponíveis. Não altera o portal Saiu no DF. TypeScript estrito, Vite e Three.js/WebGL2: renderizador web leve, materiais toon, controle direto do desenho e ecossistema tipado. Babylon também seria viável, mas os sistemas deste slice não precisam de sua camada adicional. Dependências empacotadas localmente; sem CDN em runtime.
 

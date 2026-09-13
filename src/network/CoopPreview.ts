@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { World } from '../world/World';
 import { Avatar } from '../player/Avatar';
 import { ThirdPerson } from '../camera/ThirdPerson';
@@ -26,7 +27,7 @@ import { MAX_PLAYERS } from './MovementAuthority';
 import { C, nextBoss } from '../config/gameplay';
 type Snapshot=ReturnType<CombatAuthority['snapshot']>;
 export function mountCoopPreview(app:HTMLElement){
-  const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));app.append(renderer.domElement);
+  const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));const outline=new OutlineEffect(renderer,{defaultThickness:.006,defaultColor:[.06,.07,.06],defaultAlpha:1,defaultKeepAlive:true});app.append(renderer.domElement);
   const scene=new T.Scene();scene.background=new T.Color(0xf3f1e9);scene.fog=new T.Fog(0xf3f1e9,43,130);scene.add(new T.HemisphereLight(0xffffff,0xb4b7af,2.1));
   const light=new T.DirectionalLight(0xffffff,2.3);light.position.set(-20,35,10);scene.add(light);
   const world=new World(scene),camera=new ThirdPerson(),effects=new Effects(scene),audio=new GameAudio();
@@ -88,7 +89,7 @@ export function mountCoopPreview(app:HTMLElement){
   const pingTimer=window.setInterval(()=>{if(socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'ping',nonce:performance.now()}));},2000);
   window.addEventListener('pagehide',()=>{pageLeaving=true;clearTimeout(reconnectTimer);clearInterval(restartTimer);clearInterval(pingTimer);socket.close();});
   window.addEventListener('pageshow',e=>{if(e.persisted)location.reload();});
-  const resize=()=>{renderer.setSize(innerWidth,innerHeight);camera.camera.aspect=innerWidth/innerHeight;camera.camera.updateProjectionMatrix();};window.addEventListener('resize',resize);resize();
+  const resize=()=>{outline.setSize(innerWidth,innerHeight);camera.camera.aspect=innerWidth/innerHeight;camera.camera.updateProjectionMatrix();};window.addEventListener('resize',resize);resize();
   function frame(now:number){
     requestAnimationFrame(frame);const dt=Math.min(.1,(now-(last||now))/1000);last=now;if(connected&&snapshotFreshness.stale(now)){connected=false;input.clear();status.textContent='Estado desatualizado. Reconectando…';socket.close(4000,'Estado autoritativo expirou');}
     const namePacket=connected&&socket.readyState===WebSocket.OPEN?reliableName.packet(now):null;if(namePacket)socket.send(JSON.stringify(namePacket));const chatPacket=connected&&socket.readyState===WebSocket.OPEN?chatOutbox.packet(now):null;if(chatPacket)socket.send(JSON.stringify(chatPacket));
@@ -98,12 +99,12 @@ export function mountCoopPreview(app:HTMLElement){
       const sent=sequence++,raw=input.consume(),command=prediction.prepare(sent,raw);if(raw.shot&&prediction.shotId!==undefined){audio.cue('shot');predictedShots.predict(prediction.shotId,now);}const yaw=Math.atan2(Math.sin(camera.yaw),Math.cos(camera.yaw)),viewTick=Math.max(0,Math.floor(interpolationTick(snapshot?.tick??6,snapshotReceivedAt||now,now)));prediction.submit({sequence:sent,yaw,command});socket.send(JSON.stringify({version:1,sequence:sent,yaw,pitch:camera.pitch,viewTick,shotId:prediction.shotId,command}));
     }
     if(snapshot)for(const player of snapshot.players){
-      const avatar=avatars.get(player.id)!;if(player.id===id&&prediction){prediction.updateRender(dt);avatar.root.position.copy(prediction.renderPosition);avatar.root.rotation.y=player.yaw+Math.PI;}else{const sampled=playerBuffers.get(player.id)?.sample(now),angle=playerAngles.get(player.id)?.sample(now);if(sampled)avatar.root.position.copy(sampled);if(angle!==null&&angle!==undefined)avatar.root.rotation.y=angle;}avatar.animate(now/1000,Math.hypot(player.velocity.x,player.velocity.z),player.crouch);avatar.body.rotation.z=player.health===0?1.5:0;
+      const avatar=avatars.get(player.id)!;if(player.id===id&&prediction){prediction.updateRender(dt);avatar.root.position.copy(prediction.renderPosition);avatar.root.rotation.y=player.yaw+Math.PI;}else{const sampled=playerBuffers.get(player.id)?.sample(now),angle=playerAngles.get(player.id)?.sample(now);if(sampled)avatar.root.position.copy(sampled);if(angle!==null&&angle!==undefined)avatar.root.rotation.y=angle;}avatar.animate(now/1000,Math.hypot(player.velocity.x,player.velocity.z),player.crouch,false,player.velocity);avatar.body.rotation.z=player.health===0?1.5:0;
     }
     if(snapshot)for(const enemy of snapshot.enemies){const avatar=enemies.get(enemy.id)!,sampled=enemyBuffers.get(enemy.id)?.sample(now),angle=enemyAngles.get(enemy.id)?.sample(now);if(sampled)avatar.root.position.copy(sampled);if(angle!==null&&angle!==undefined)avatar.root.rotation.y=angle;avatar.animate(now/1000,enemy.state==='CHASE'?enemy.speed:0,false,enemy.state==='ATTACK');}
     camera.update(dt,avatars.get(id)?.root.position??new T.Vector3(0,0,10),world,true);
     for(const [key,label] of labels){const point=avatars.get(key)!.root.position.clone().add(new T.Vector3(0,2.5,0)).project(camera.camera);label.hidden=point.z>1||point.z< -1;label.style.left=`${(point.x+1)*innerWidth/2}px`;label.style.top=`${(1-point.y)*innerHeight/2}px`;}
-    effects.update(dt);if(connected&&snapshot){const me=snapshot.players.find(player=>player.id===id);audio.update(dt,snapshot.phase==='horde',me?Math.hypot(me.velocity.x,me.velocity.z):0,me?.crouch??false);(scene.background as T.Color).lerp(new T.Color(snapshot.phase==='horde'?0xa9b1ad:0xf3f1e9),dt*1.8);(scene.fog as T.Fog).color.copy(scene.background as T.Color);}renderer.render(scene,camera.camera);
+    effects.update(dt);if(connected&&snapshot){const me=snapshot.players.find(player=>player.id===id);audio.update(dt,snapshot.phase==='horde',me?Math.hypot(me.velocity.x,me.velocity.z):0,me?.crouch??false);(scene.background as T.Color).lerp(new T.Color(snapshot.phase==='horde'?0x737b78:0xf3f1e9),dt*1.35);(scene.fog as T.Fog).color.copy(scene.background as T.Color);light.intensity=T.MathUtils.damp(light.intensity,snapshot.phase==='horde'?.85:2.3,1.8,dt);}outline.render(scene,camera.camera);
   }
   requestAnimationFrame(frame);
 }
