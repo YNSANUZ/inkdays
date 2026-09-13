@@ -11,6 +11,12 @@ Os oito GLBs foram convertidos para glTF 2.0, reamostrados a 30 FPS e quantizado
 
 Validação: TypeScript e build PWA passaram; o jogo abriu em 1280×720, carregou o jogador e um inimigo criado pela bancada sem erros de console. Uma horda real chegou a quatro inimigos animados, manteve 60 FPS na sessão automatizada e registrou 71 draw calls e 313.950 triângulos no instante medido. As capturas estão em `qa/rigged-avatar-desktop.png`, `qa/rigged-avatar-enemy.png`, `qa/rigged-avatar-optimized.png`, `qa/rigged-avatar-horde.png` e `qa/rigged-avatar-mobile.png`. O módulo 3D é carregado sob demanda e mantém o boneco procedural caso algum GLB falhe. Ainda faltam movimento por toque e desempenho em celular físico; o modelo técnico X Bot ainda não representa a aparência final do soldado. A próxima entrega deve avaliar movimento humano e ajustar arma/mochila antes da substituição pela malha definitiva.
 
+## Fase 2 — rig no multiplayer público
+
+O cliente cooperativo passou a reproduzir também o ataque esquelético do inimigo a partir do estado `ATTACK` recebido no snapshot autoritativo. A animação continua apenas apresentacional: escolha de alvo, alcance, dano e morte permanecem calculados pelo servidor.
+
+Validação pública automatizada: dois contextos independentes do Chrome entraram simultaneamente em `https://ynsanuz.github.io/inkdays/?coop=1`, carregaram os novos personagens, receberam o mesmo dia/cronômetro e localizaram o nome do companheiro. Após 1,5 s de movimento de um cliente, foram observados aproximadamente 159–162 ms de ping, 2 ms de jitter, 0% de perda, correção máxima de 13 cm e zero ajustes bruscos; o cliente parado registrou 0 cm. Em uma segunda conexão, a mensagem `Bruno Rede: teste sincronizado` apareceu igualmente nos dois clientes. Não houve erro de console. A contagem temporária de 4/8 incluiu conexões reservadas pelo intervalo de reconexão dos ensaios anteriores e retornou depois do prazo; não indica quatro pessoas reais. A automação confirma regressão técnica, mas não substitui avaliação humana em dois aparelhos físicos.
+
 ## Ambiente e tecnologia escolhida
 Projeto novo isolado em apps/inkdays. Node 24.18 e npm 11 disponíveis. Não altera o portal Saiu no DF. TypeScript estrito, Vite e Three.js/WebGL2: renderizador web leve, materiais toon, controle direto do desenho e ecossistema tipado. Babylon também seria viável, mas os sistemas deste slice não precisam de sua camada adicional. Dependências empacotadas localmente; sem CDN em runtime.
 
