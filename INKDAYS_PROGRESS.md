@@ -488,3 +488,11 @@ O Colosso ganhou seu primeiro golpe próprio com contrajogo legível. Quando um 
 Posição, raio, sequência, tempo restante e dano pertencem à autoridade. O cliente apenas apresenta o aviso. Ao terminar a preparação, o servidor causa 42 de dano nos jogadores que ainda estão dentro da área. Em fúria, o intervalo entre impactos diminui, mas a janela de reação permanece igual. Reconexão limpa avisos antigos e cada sequência sonora é reproduzida uma única vez.
 
 Validação automatizada: 115 testes passaram. O caso novo força o golpe em uma partida com dois participantes, confirma que o snapshot compartilhado contém o mesmo aviso e verifica que o dano só é aplicado pelo servidor após o término da janela. Lint, TypeScript, build e geração da PWA passaram. A clareza do círculo sob uma horda cheia, a sensação dos 1,25 segundo com latência real e o balanceamento dos 42 pontos ainda dependem de teste humano em computador e celular.
+
+## Fase 2 — confirmação compartilhada do impacto do Colosso
+
+O fim do golpe circular agora gera um evento autoritativo independente do aviso. Todos os clientes recebem a mesma sequência, posição, raio e tick do impacto. A apresentação consome cada sequência apenas uma vez, evitando repetir efeitos quando snapshots chegam duplicados ou reordenados.
+
+No impacto, uma onda de detritos de tinta se espalha pelo chão, toca um efeito grave em camadas e aplica tremor de câmera proporcional à distância. O aviso continua sendo apenas informativo; o evento de impacto e o dano continuam partindo do servidor. Reconexões usam o primeiro snapshot como referência e não reproduzem impactos antigos retidos no histórico.
+
+Validação automatizada: 116 testes passaram. O novo teste WebSocket executa o golpe com dois clientes sob latência, jitter, perda, duplicação e reordenação artificiais; ambos recebem um snapshot idêntico com a mesma sequência de impacto e a mesma redução de vida. Lint, TypeScript, build e geração da PWA passaram. Intensidade do tremor e graves ainda precisam ser avaliados em celular físico e fones.

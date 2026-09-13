@@ -5,6 +5,7 @@ import {createMovementServer} from '../src/network/Server';
 import type {MovementAuthority} from '../src/network/MovementAuthority';
 import {CombatAuthority} from '../src/network/CombatAuthority';
 import {resumeInputSequence} from '../src/network/InputSequence';
+import {C} from '../src/config/gameplay';
 type Snapshot=ReturnType<MovementAuthority['snapshot']>;
 it('sincroniza oito clientes reais, limita a sala e remove quem desconecta',async()=>{
   const instance=createMovementServer({move(p,x,z){p.x+=x;p.z+=z;}},0,undefined,50);
@@ -175,6 +176,15 @@ it('entrega o mesmo disparo remoto aos dois clientes',async()=>{
     const connect=()=>{const socket=new WebSocket(`ws://127.0.0.1:${address.port}`);sockets.push(socket);const state={id:'',frames:new Map<number,ReturnType<CombatAuthority['snapshot']>>()};socket.on('message',raw=>{const packet=JSON.parse(raw.toString());if(packet.type==='welcome')state.id=packet.id;if(packet.type==='snapshot')state.frames.set(packet.tick,packet);});return {socket,state};},a=connect(),b=connect();while(Date.now()<end&&(!a.state.id||!b.state.id||authority.snapshot().players.length<2))await new Promise(r=>setTimeout(r,10));
     a.socket.send(JSON.stringify({version:1,sequence:0,yaw:0,pitch:0,command:{x:0,z:0,run:false,crouch:false,jump:false,fire:true,reload:false}}));let common:ReturnType<CombatAuthority['snapshot']>|undefined;while(Date.now()<end&&!common){for(const [tick,left] of a.state.frames){const right=b.state.frames.get(tick),shot=left.shots.at(-1);if(right&&shot?.player===a.state.id){expect(left).toEqual(right);common=left;break;}}if(!common)await new Promise(r=>setTimeout(r,10));}
     const shot=common!.shots.at(-1)!;expect(shot).toMatchObject({serial:1,player:a.state.id,hit:false,rewindTicks:0});expect(Number.isFinite(shot.from.x)&&Number.isFinite(shot.to.z)).toBe(true);expect(common!.players.find(player=>player.id===a.state.id)?.ammo).toBe(7);expect(common!.players.find(player=>player.id===b.state.id)?.ammo).toBe(8);
+  }finally{for(const socket of sockets)socket.terminate();await instance.close();}
+},15000);
+it('entrega o mesmo aviso, impacto e dano do Colosso sob rede degradada',async()=>{
+  const authority=new CombatAuthority(),instance=createMovementServer(authority.world,0,authority,5000,{latencyMs:8,jitterMs:5,dropEvery:13,duplicateEvery:7,reorderEvery:5},'127.0.0.1',7000,{pulseMs:3,stepsPerPulse:2});const sockets:WebSocket[]=[];
+  try{await new Promise<void>(resolve=>instance.server.once('listening',resolve));const address=instance.server.address();if(!address||typeof address==='string')throw Error('Endereço inválido');const end=Date.now()+10000;
+    const connect=()=>{const socket=new WebSocket(`ws://127.0.0.1:${address.port}`);sockets.push(socket);const frames=new Map<number,ReturnType<CombatAuthority['snapshot']>>();socket.on('message',raw=>{const packet=JSON.parse(raw.toString());if(packet.type==='snapshot')frames.set(packet.tick,packet);});return frames;},a=connect(),b=connect();while(Date.now()<end&&authority.snapshot().players.length<2)await new Promise(r=>setTimeout(r,10));expect(authority.snapshot().players).toHaveLength(2);
+    authority.enemies.spawnBoss(10,new Vector3(0,0,10),2);const boss=authority.enemies.active[0];boss.avatar.root.position.set(1,0,10);boss.speed=0;boss.specialCooldown=0;let sawWarning=false,common:ReturnType<CombatAuthority['snapshot']>|undefined;
+    while(Date.now()<end&&!common){for(const [tick,left] of a){const right=b.get(tick);if(!right)continue;if(left.boss?.slam)sawWarning=true;if(left.impacts.length&&left.players.every(player=>player.health===100-C.boss.slamDamage)){expect(left).toEqual(right);common=left;break;}}if(!common)await new Promise(r=>setTimeout(r,10));}
+    expect(sawWarning).toBe(true);expect(common!.impacts.at(-1)).toMatchObject({serial:1,bossId:boss.id,radius:C.boss.slamRadius,position:{x:1,y:0,z:10}});expect(common!.players.every(player=>player.health===58)).toBe(true);
   }finally{for(const socket of sockets)socket.terminate();await instance.close();}
 },15000);
 it('sincroniza corrida e salto do outro jogador',async()=>{

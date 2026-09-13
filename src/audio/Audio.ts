@@ -1,4 +1,4 @@
-export type Cue='shot'|'reload'|'impact'|'damage'|'enemy'|'ui';
+export type Cue='shot'|'reload'|'impact'|'damage'|'enemy'|'ui'|'slam';
 
 export class GameAudio {
   private context:AudioContext|null=null;private master:GainNode|null=null;private music:GainNode|null=null;private calm:GainNode|null=null;private action:GainNode|null=null;private ambience:GainNode|null=null;private beat=0;private musicTimer=0;private stepTimer=0;private ambienceTimer=1;private ambienceBeat=0;private hordeMode=false;private bossMode=false;private effectWindow=0;private effectVoices=0;volume=.35;
@@ -9,7 +9,8 @@ export class GameAudio {
   cue(c:Cue){
     if(c==='shot'){if(!this.allowEffect())return;this.noise(.018,.88,3600,0,undefined,'highpass');this.noise(.085,.42,1350);this.tone(132,.085,'sawtooth',.56,0,.38);this.tone(52,.16,'triangle',.34,0,.5);this.noise(.05,.11,760,.075);return;}
     if(c==='reload'){this.noise(.035,.2,2800);this.tone(920,.045,'triangle',.28,0,.76);this.tone(610,.055,'square',.18,.32,.72);this.tone(1180,.04,'triangle',.22,.76,.8);return;}
-    const notes:Record<Exclude<Cue,'shot'|'reload'>,[number,number,OscillatorType,number]>={impact:[92,.07,'square',.24],damage:[54,.2,'sawtooth',.34],enemy:[72,.3,'triangle',.32],ui:[440,.08,'sine',.2]};const [f,d,t,v]=notes[c];this.tone(f,d,t,v);
+    if(c==='slam'){if(!this.allowEffect())return;this.noise(.42,.5,190);this.tone(38,.5,'sawtooth',.62,0,.35);this.tone(64,.22,'square',.22,.035,.4);return;}
+    const notes:Record<Exclude<Cue,'shot'|'reload'|'slam'>,[number,number,OscillatorType,number]>={impact:[92,.07,'square',.24],damage:[54,.2,'sawtooth',.34],enemy:[72,.3,'triangle',.32],ui:[440,.08,'sine',.2]};const [f,d,t,v]=notes[c];this.tone(f,d,t,v);
   }
   update(dt:number,horde:boolean,speed=0,crouch=false,boss=false){
     if(horde!==this.hordeMode||boss!==this.bossMode){this.hordeMode=horde;this.bossMode=boss;this.beat=0;this.musicTimer=0;this.crossfade(horde);if(boss)this.cue('enemy');}

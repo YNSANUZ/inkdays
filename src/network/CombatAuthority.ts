@@ -19,11 +19,12 @@ export class CombatAuthority {
   readonly scene=new T.Scene();readonly world=new World(this.scene);readonly enemies=new Enemies(this.scene,this.world);
   cycle=new DayCycle();private horde=new Horde();private players=new Map<string,Participant>();tick=0;private round=1;
   private shots:{serial:number;player:string;shotId?:number;from:T.Vector3;to:T.Vector3;hit:boolean;rewindTicks:number}[]=[];private serial=0;
+  private impacts:{serial:number;bossId:number;position:T.Vector3;radius:number;tick:number}[]=[];private impactSerial=0;
   private messages:{serial:number;messageId:number;player:string;name:string;text:string;tick:number}[]=[];private chatSerial=0;private readonly chatLifetimeTicks=720;
   private enemyHistory=new Map<number,Map<number,T.Vector3>>();private readonly historyTicks=30;
   join(id:string){
     if(this.players.has(id)||this.players.size>=MAX_PLAYERS)return false;
-    if(!this.players.size){this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.messages=[];this.enemyHistory.clear();}
+    if(!this.players.size){this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.impacts=[];this.messages=[];this.enemyHistory.clear();}
     const used=new Set([...this.players.values()].map(p=>p.slot)),slot=Array.from({length:MAX_PLAYERS},(_,index)=>index).find(index=>!used.has(index))!,player=new Player(),point=spawn(slot);player.position.set(point.x,0,point.z);this.scene.add(player.avatar.root);
     this.players.set(id,{slot,name:`Errante ${slot+1}`,connected:true,player,weapon:new Pistol(),camera:new ThirdPerson(),input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1,viewed:-1,kills:0,money:0,lastShot:-1,shotPending:null,lastChat:-1,lastChatTick:-Infinity});return true;
   }
@@ -34,7 +35,7 @@ export class CombatAuthority {
   leave(id:string){const p=this.players.get(id);if(p)this.scene.remove(p.player.avatar.root);this.players.delete(id);if(!this.players.size)this.enemies.clear();}
   restart(id:string){
     const requester=this.players.get(id);if(!requester?.connected||!this.gameOver)return false;
-    this.round++;this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.enemyHistory.clear();
+    this.round++;this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.impacts=[];this.enemyHistory.clear();
     for(const p of this.players.values()){
       this.scene.remove(p.player.avatar.root);p.player=new Player();const point=spawn(p.slot);p.player.position.set(point.x,0,point.z);this.scene.add(p.player.avatar.root);
       p.weapon=new Pistol();p.input.command=neutral();p.age=Infinity;p.kills=0;p.money=0;p.shotPending=null;
@@ -84,7 +85,7 @@ export class CombatAuthority {
     if(event==='horde'){this.horde.begin(this.cycle.day,live.length);if(this.cycle.day%C.day.bossInterval===0)this.enemies.spawnBoss(this.cycle.day,live[0].player.position,live.length);}
     if(event==='dawn'){this.enemies.clear();for(const p of live){p.weapon.resupply();p.player.health.heal(C.day.dawnHeal);}}
     if(this.cycle.phase==='horde')this.horde.update(C.fixedStep,()=>this.enemies.spawn(this.cycle.day,live[this.horde.spawned%live.length].player.position));
-    this.enemies.update(C.fixedStep,live.map(p=>p.player),()=>{},(_boss,center)=>{for(const p of live){const offset=p.player.position.clone().sub(center);offset.y=0;if(offset.length()<=C.boss.slamRadius)p.player.health.damage(C.boss.slamDamage);}});
+    this.enemies.update(C.fixedStep,live.map(p=>p.player),()=>{},(boss,center)=>{this.impacts.push({serial:++this.impactSerial,bossId:boss.id,position:center.clone(),radius:C.boss.slamRadius,tick:this.tick});this.impacts=this.impacts.slice(-8);for(const p of live){const offset=p.player.position.clone().sub(center);offset.y=0;if(offset.length()<=C.boss.slamRadius)p.player.health.damage(C.boss.slamDamage);}});
     this.enemyHistory.set(this.tick,new Map(this.enemies.active.map(e=>[e.id,e.avatar.root.position.clone()])));while(this.enemyHistory.size>this.historyTicks)this.enemyHistory.delete(this.enemyHistory.keys().next().value!);
   }
   private get gameOver(){return this.players.size>0&&[...this.players.values()].every(p=>p.player.health.dead);}
@@ -92,5 +93,5 @@ export class CombatAuthority {
     players:[...this.players].map(([id,p])=>({id,name:p.name,connected:p.connected,acknowledged:p.applied,chatAcknowledged:p.lastChat,yaw:p.input.yaw,position:{...p.player.position},velocity:{...p.player.velocity},vertical:p.player.vertical,health:p.player.health.value,ammo:p.weapon.ammo,reserve:p.weapon.reserve,reloading:p.weapon.reloadTime>0,crouch:p.input.command.crouch,kills:p.kills,money:p.money})),
     enemies:this.enemies.active.map(e=>({id:e.id,kind:e.kind,enraged:e.enraged,maxHealth:e.maxHealth,targetId:e.target?ids.get(e.target)??null:null,position:{...e.avatar.root.position},yaw:e.avatar.root.rotation.y,health:e.health,state:e.state,speed:e.speed})),
     boss:(()=>{const boss=this.enemies.active.find(e=>e.kind==='boss');return boss?{id:boss.id,name:C.boss.name,health:boss.health,maxHealth:boss.maxHealth,enraged:boss.enraged,slam:boss.specialWindup>0?{serial:boss.specialSerial,position:{...boss.specialCenter},radius:C.boss.slamRadius,remaining:boss.specialWindup}:null}:null;})(),
-    shots:this.shots.map(s=>({...s,from:{...s.from},to:{...s.to}})),messages:this.messages.filter(message=>this.tick-message.tick<=this.chatLifetimeTicks).map(message=>({...message}))};}
+    shots:this.shots.map(s=>({...s,from:{...s.from},to:{...s.to}})),impacts:this.impacts.map(impact=>({...impact,position:{...impact.position}})),messages:this.messages.filter(message=>this.tick-message.tick<=this.chatLifetimeTicks).map(message=>({...message}))};}
 }
