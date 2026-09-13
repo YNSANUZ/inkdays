@@ -36,6 +36,17 @@ async function loadLibrary():Promise<RigLibrary> {
 
 function getLibrary(){return library??=loadLibrary();}
 
+function inkPistol(material:T.Material){
+  const gun=new T.Group();
+  const part=(geometry:T.BufferGeometry,position:[number,number,number],rotation:[number,number,number]=[0,0,0])=>{const mesh=new T.Mesh(geometry,material);mesh.position.set(...position);mesh.rotation.set(...rotation);mesh.castShadow=true;gun.add(mesh);};
+  part(new T.BoxGeometry(.105,.1,.38),[0,.035,.19]);
+  part(new T.BoxGeometry(.09,.055,.3),[0,.105,.18]);
+  part(new T.BoxGeometry(.095,.23,.115),[0,-.115,.055],[-.22,0,0]);
+  part(new T.CylinderGeometry(.036,.036,.13,8),[0,.035,.42],[Math.PI/2,0,0]);
+  part(new T.BoxGeometry(.035,.04,.035),[0,.145,.08]);
+  gun.rotation.x=Math.PI/2;return gun;
+}
+
 export class RiggedAvatar {
   readonly root=new T.Group();
   private mixer?:T.AnimationMixer;
@@ -66,7 +77,7 @@ export class RiggedAvatar {
     const hips=bone(/Hips$/i);if(hips){const pelvis=new T.Mesh(new T.SphereGeometry(.24,12,9),white);pelvis.scale.set(1,.76,.78);pelvis.position.set(0,.08,0);pelvis.castShadow=true;hips.add(pelvis);}
     if(this.role==='player'){
       const hand=bone(/RightHand$/i);
-      if(hand){const gun=new T.Mesh(new T.BoxGeometry(.075,.08,.42),black);gun.position.set(0,.05,.2);gun.rotation.x=Math.PI/2;hand.add(gun);}
+      if(hand){const gun=inkPistol(black);gun.position.set(0,.05,.02);hand.add(gun);}
       if(spine){const pack=new T.Mesh(new T.BoxGeometry(.32,.42,.14),new T.MeshToonMaterial({color:0xb9bbb3}));pack.position.set(0,.06,-.16);spine.add(pack);}
       if(head){for(const x of [-.06,.06]){const eye=new T.Mesh(new T.SphereGeometry(.018,8,6),black);eye.position.set(x,.115,.284);head.add(eye);}}
     } else {

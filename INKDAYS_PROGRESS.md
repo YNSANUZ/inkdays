@@ -456,3 +456,13 @@ O calendário deixou de ser apenas uma promessa de interface. Ao começar a hord
 O snapshot compartilhado identifica o chefão, sua vida atual e máxima. Enquanto ele existir, todos os clientes exibem no topo `DIA 10 — O COLOSSO`, uma grande barra vermelha e o valor de vida, e renderizam o inimigo em escala superior à horda comum. A barra desaparece pelo mesmo snapshot que confirma sua morte. Hordas comuns continuam usando suas regras anteriores.
 
 Validação automatizada: 112 testes passaram. O caso novo força a transição autoritativa para a horda do Dia 10, confirma identidade, escala e vida cooperativa do chefão, realiza a eliminação e verifica remoção compartilhada, recompensa exclusiva do autor e ausência de dinheiro para o companheiro. Lint, TypeScript e build PWA passaram. Esta entrega cria o primeiro chefão jogável, mas a arte exclusiva, golpes próprios, anúncio musical específico, telemetria prolongada e balanceamento humano do Dia 10 continuam pendentes; por isso o sistema de chefões permanece EM ANDAMENTO.
+
+## Polimento visual — pistola estilizada própria
+
+O bloco retangular preso à mão do soldado foi substituído por uma pistola original construída com cinco volumes leves: corpo, ferrolho, empunhadura inclinada, cano e massa de mira. A arma mantém o acabamento preto e o contorno do personagem, produz uma silhueta reconhecível sem adicionar textura ou arquivo pesado à PWA.
+
+O pacote externo `17-weapons-and-attachments.zip` foi inspecionado somente como referência e não foi copiado para o repositório: a página do download o identifica como `Licença de Uso Pessoal`, condição insuficiente para a distribuição pública e uma eventual publicação comercial do INKDAYS. Uma licença comercial verificável ou um modelo próprio poderá substituir a arma procedural no futuro.
+
+O arquivo externo `94-weapons.rar` também foi catalogado apenas como referência, inclusive para uma futura bazuca. Ele reúne uma coleção única em `.blend`, `.fbx`, `.obj` e `.x3d`, mas não contém licença ou autoria verificável dentro do pacote. Nenhum desses arquivos foi extraído para os ativos públicos. A arma pesada será projetada como conteúdo próprio quando suas regras de explosão, munição rara e autoridade multiplayer entrarem no plano.
+
+Validação visual local: a pistola carregou presa à mão do rig, preservou o personagem compacto e apresentou cano e empunhadura distintos na câmera normal. Lint, TypeScript, build PWA e os 112 testes permaneceram aprovados.
