@@ -20,7 +20,7 @@ it('sincroniza oito clientes reais, limita a sala e remove quem desconecta',asyn
     a.socket.send(JSON.stringify({version:1,sequence:1,yaw:0,command:{x:0,z:1,run:false,crouch:false,jump:false,fire:false,reload:false}}));
     await until(()=>!!b.state.snapshot?.players.some(p=>p.id===a.state.id&&p.position.z<9.9));
     expect(b.state.snapshot!.players.find(p=>p.id===b.state.id)!.position.z).toBe(10);
-    const ninth=connect();const code=await new Promise<number>(resolve=>ninth.socket.once('close',resolve));expect(code).toBe(1008);
+    const ninth=connect(),full=await new Promise<{type:string;capacity:number}>(resolve=>ninth.socket.on('message',raw=>{const packet=JSON.parse(raw.toString());if(packet.type==='room-full')resolve(packet);})),code=await new Promise<number>(resolve=>ninth.socket.once('close',resolve));expect(full).toEqual({type:'room-full',capacity:8});expect(code).toBe(1008);
     a.socket.close();await until(()=>b.state.snapshot?.players.length===7);expect(b.state.snapshot!.players.some(player=>player.id===a.state.id)).toBe(false);
   }finally{for(const socket of sockets)socket.terminate();await instance.close();}
 },10000);

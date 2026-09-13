@@ -42,7 +42,7 @@ export function mountCoopPreview(app:HTMLElement){
   const avatars=new Map<string,Avatar>(),inputClock=new InputClock(),reliableName=new ReliablePlayerName(),healthEvents=new HealthEvents(),predictedShots=new PredictedShotFeedback(),moneyEvents=new CounterIncrease(),phaseEvents=new PhaseEvents(),snapshotFreshness=new SnapshotFreshness();
   const pause=()=>{input.active=false;input.clear();touch.setActive(false);button.hidden=false;if(document.pointerLockElement)document.exitPointerLock();};
   const input=new Input(renderer.domElement,pause,()=>{}),touch=new TouchControls(input,pause,()=>{if(input.active)void renderer.domElement.requestPointerLock()?.catch(()=>{});});
-  let socket:WebSocket,reconnectTimer=0,restartTimer=0,pageLeaving=false;
+  let socket:WebSocket,reconnectTimer=0,restartTimer=0,pageLeaving=false,roomFull=false;
   const requestRestart=()=>{if(socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'restart'}));};
   button.onclick=()=>{if(!connected)return;if(snapshot?.gameOver){requestRestart();clearInterval(restartTimer);restartTimer=window.setInterval(requestRestart,250);button.disabled=true;button.textContent='REINICIANDO…';return;}const name=reliableName.set(nickname.value);if(name)localStorage.setItem('inkdays-nickname',name);input.active=true;audio.start();button.hidden=true;nickname.parentElement!.hidden=true;help.hidden=true;if(!touch.enabled)void renderer.domElement.requestPointerLock()?.catch(()=>{status.textContent='Segure o botão direito para mirar.';});};
   reportButton.onclick=()=>{const blob=new Blob([JSON.stringify(report.summary(),null,2)],{type:'application/json'}),link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`inkdays-rede-${new Date().toISOString().replaceAll(':','-')}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);};
@@ -54,6 +54,7 @@ export function mountCoopPreview(app:HTMLElement){
     const token=sessionStorage.getItem('inkdays-coop-token'),override=new URLSearchParams(location.search).get('server'),configured=import.meta.env.VITE_COOP_SERVER as string|undefined,url=new URL(override??configured??`${location.protocol==='https:'?'wss':'ws'}://${location.hostname}:8787`);if(token)url.searchParams.set('resume',token);socket=new WebSocket(url);
     socket.onmessage=e=>{
     const packet=JSON.parse(e.data);
+    if(packet.type==='room-full'){roomFull=true;connected=false;input.clear();status.textContent=`SALA CHEIA · ${packet.capacity??MAX_PLAYERS}/${packet.capacity??MAX_PLAYERS} JOGADORES`;button.disabled=true;button.textContent='SALA CHEIA';return;}
     if(packet.type==='pong'){const sample=performance.now()-packet.nonce;rtt=rtt?rtt*.8+sample*.2:sample;return;}
     if(packet.type==='welcome'){prediction=null;lastReloading=null;input.clear();inputClock.advance(0,false);playerBuffers.clear();playerAngles.clear();enemyBuffers.clear();enemyAngles.clear();shotEvents.reset();healthEvents.reset();predictedShots.reset();moneyEvents.reset();phaseEvents.reset();snapshotFreshness.reset();telemetry=new SnapshotTelemetry();rtt=0;if(packet.resumed)report.resumed();if(id&&id!==packet.id){report.newIdentity();prediction=null;sequence=0;maxCorrection=snaps=0;}id=packet.id;sessionStorage.setItem('inkdays-coop-token',packet.token);connected=true;status.textContent=packet.resumed?'Conexão recuperada. Aguardando estado…':'Conectado. Aguardando estado…';}
     if(packet.type==='snapshot'){
@@ -77,7 +78,7 @@ export function mountCoopPreview(app:HTMLElement){
       if(me?.health===0&&input.active)pause();
     }
     };
-    socket.onclose=e=>{connected=false;input.clear();if(!pageLeaving)report.disconnected();status.textContent=e.reason||'Reconectando…';if(!pageLeaving)reconnectTimer=window.setTimeout(connect,1000);};
+    socket.onclose=e=>{connected=false;input.clear();if(!pageLeaving&&!roomFull)report.disconnected();if(roomFull)return;status.textContent=e.reason||'Reconectando…';if(!pageLeaving)reconnectTimer=window.setTimeout(connect,1000);};
     socket.onerror=()=>{status.textContent='Conexão interrompida. Tentando recuperar…';};
   };
   connect();

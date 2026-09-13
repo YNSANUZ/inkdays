@@ -77,7 +77,7 @@ export class CombatAuthority {
       p.applied=p.received;p.input.command.jump=p.input.command.reload=p.input.command.fire=false;
     }
     const event=this.cycle.update(C.fixedStep);
-    if(event==='horde')this.horde.begin(this.cycle.day);
+    if(event==='horde')this.horde.begin(this.cycle.day,live.length);
     if(event==='dawn'){this.enemies.clear();for(const p of live){p.weapon.resupply();p.player.health.heal(C.day.dawnHeal);}}
     if(this.cycle.phase==='horde')this.horde.update(C.fixedStep,()=>this.enemies.spawn(this.cycle.day,live[this.horde.spawned%live.length].player.position));
     this.enemies.update(C.fixedStep,live.map(p=>p.player),()=>{});

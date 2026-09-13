@@ -49,14 +49,14 @@ O áudio é sintetizado em tempo real para manter a PWA leve: tiro em camadas, r
 
 O menu público inclui a entrada `MULTIPLAYER`. O cliente multiplayer aceita `VITE_COOP_SERVER` no build para usar um servidor WebSocket público com TLS. O backend executa `npm start`, respeita a porta `PORT` da hospedagem e possui um Blueprint gratuito em `render.yaml`.
 
-Servidor experimental público: `wss://inkdays-multiplayer.onrender.com`. O plano gratuito do Render suspende a instância depois de um período sem tráfego; a primeira entrada após inatividade pode levar aproximadamente 50 segundos para acordar. A sala atual é única e comporta até oito participantes. O balanceamento e o desempenho com três a oito pessoas ainda são experimentais.
+Servidor experimental público: `wss://inkdays-multiplayer.onrender.com`. O plano gratuito do Render suspende a instância depois de um período sem tráfego; a primeira entrada após inatividade pode levar aproximadamente 50 segundos para acordar. A sala atual é única e comporta até oito participantes. Quando ela está cheia, o servidor avisa o cliente antes de encerrar a conexão. A quantidade da horda cresce 45% por participante adicional, sempre limitada ao teto global; o balanceamento e o desempenho com três a oito pessoas ainda são experimentais.
 
 
 
 ## Bancada cooperativa local (Fase 2)
 Execute npm run coop:server e npm run dev -- --port 5180. Abra http://127.0.0.1:5180/?coop=1 em duas abas e clique CONTINUAR em cada uma. O servidor em 127.0.0.1:8787 aceita dois jogadores; uma terceira conexao recebe Sala cheia. WASD move, mouse mira, espaco pula. Esc libera o mouse. A bancada sincroniza movimento, combate, inimigos, vida, municao, recompensas e ciclo de hordas, com nomes sem fundo sobre os participantes.
 
-O chat de equipe mostra as três mensagens mais recentes discretamente no canto inferior esquerdo. No PC, Enter abre o campo e Enter envia; Escape fecha sem enviar. O servidor normaliza o texto, limita cada mensagem a 100 caracteres, aceita no máximo uma a cada 500 ms e distribui um histórico curto comum aos dois jogadores. Mensagens pendentes são repetidas até o snapshot confirmar seu identificador.
+O chat de equipe mostra as três mensagens mais recentes discretamente no canto inferior esquerdo. No PC, Enter abre o campo e Enter envia; Escape fecha sem enviar. O servidor normaliza o texto, limita cada mensagem a 100 caracteres, aceita no máximo uma a cada 500 ms e distribui um histórico curto comum à sala. Mensagens pendentes são repetidas até o snapshot confirmar seu identificador.
 
 Cada mensagem permanece apresentável por 12 segundos medidos no tick autoritativo. Assim, as duas telas removem a mesma linha a partir do mesmo estado da partida, inclusive depois de uma reconexão breve.
 

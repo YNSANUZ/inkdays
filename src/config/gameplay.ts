@@ -12,4 +12,8 @@ export function difficulty(day: number) {
   const n = Math.max(0, Math.floor(day) - 1);
   return { count: Math.min(C.day.maxEnemies, C.day.baseEnemies + n * C.day.enemyGrowth), health: Math.min(C.enemy.maxHealth, C.enemy.health + n * C.enemy.healthGrowth), speed: Math.min(C.enemy.maxSpeed, C.enemy.speed + n * C.enemy.speedGrowth) };
 }
+export function hordeCount(day:number,players=1){
+  const party=Number.isFinite(players)?Math.max(1,Math.min(8,Math.floor(players))):1;
+  return Math.min(C.day.maxEnemies,Math.round(difficulty(day).count*(1+.45*(party-1))));
+}
 export const nextBoss = (day: number) => Math.ceil(Math.max(1, day) / C.day.bossInterval) * C.day.bossInterval;

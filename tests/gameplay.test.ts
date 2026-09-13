@@ -1,5 +1,5 @@
 import { describe,it,expect } from 'vitest';
-import { C,difficulty,nextBoss } from '../src/config/gameplay';
+import { C,difficulty,hordeCount,nextBoss } from '../src/config/gameplay';
 import { DayCycle } from '../src/daycycle/DayCycle';
 import { Health } from '../src/health/Health';
 import { Pistol } from '../src/weapons/Pistol';
@@ -7,6 +7,7 @@ import { Horde } from '../src/horde/Horde';
 describe('ciclo de sobrevivência',()=>{
   it('avisa e passa de preparação a horda, depois ao dia 2',()=>{const d=new DayCycle();for(let i=0;i<1800;i++)d.update(1/60);expect(d.remaining).toBeCloseTo(10);for(let i=0;i<600;i++)d.update(1/60);expect(d.phase).toBe('horde');expect(d.day).toBe(1);for(let i=0;i<1200;i++)d.update(1/60);expect(d.phase).toBe('day');expect(d.day).toBe(2);expect(d.elapsed).toBeCloseTo(60);});
   it('escala 5, 7, 9 sem crescimento ilimitado de vida ou velocidade',()=>{expect([1,2,3].map(d=>difficulty(d).count)).toEqual([5,7,9]);expect(difficulty(2).speed).toBeGreaterThan(difficulty(1).speed);expect(difficulty(1000).health).toBe(C.enemy.maxHealth);expect(difficulty(1000).count).toBe(C.day.maxEnemies);});
+  it('dimensiona a horda pela equipe sem ultrapassar o limite',()=>{expect([1,2,4,8].map(players=>hordeCount(1,players))).toEqual([5,7,12,21]);expect(hordeCount(1000,8)).toBe(C.day.maxEnemies);expect(hordeCount(1,99)).toBe(21);expect(hordeCount(1,Number.NaN)).toBe(5);});
   it('agenda chefões em múltiplos de dez',()=>{expect([1,9,10,11,20,21].map(nextBoss)).toEqual([10,10,10,20,20,30]);});
   it('distribui a horda e tenta de novo se não há spawn seguro',()=>{const h=new Horde();h.begin(1);h.update(.01,()=>false);expect(h.spawned).toBe(0);h.update(2,()=>true);expect(h.spawned).toBe(1);for(let i=0;i<1200;i++)h.update(1/60,()=>true);expect(h.spawned).toBe(5);});
 });
