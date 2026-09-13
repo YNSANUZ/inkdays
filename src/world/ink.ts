@@ -7,6 +7,11 @@ export const dark = new T.MeshToonMaterial({ color: 0x303331, gradientMap: gradi
 export const ink = new T.MeshBasicMaterial({ color: 0x171b19 });
 export const red = new T.MeshBasicMaterial({ color: 0xe94b40 });
 const outline = new T.MeshBasicMaterial({ color: 0x181b19, side: T.BackSide });
+// O cenário já recebe seu traço pelo casco invertido criado em `shape`.
+// Impede que o OutlineEffect desenhe uma segunda linha sobre o mapa.
+for (const material of [paper, gray, dark, ink, red, outline]) {
+  material.userData.outlineParameters = { visible: false };
+}
 const boxGeo = new T.BoxGeometry(1, 1, 1);
 const sphereGeo = new T.SphereGeometry(1, 16, 12);
 const cylinderGeo = new T.CylinderGeometry(1, 1, 1, 10);
@@ -32,6 +37,7 @@ export function bake(group: T.Group) {
 }
 const shadowGeometry=new T.CircleGeometry(1,24);
 const shadowMaterial=new T.MeshBasicMaterial({color:0x343934,transparent:true,opacity:.12,depthWrite:false});
+shadowMaterial.userData.outlineParameters={visible:false};
 export function shadow(parent: T.Object3D, size: number) {
   const m = new T.Mesh(shadowGeometry, shadowMaterial);m.scale.setScalar(size); m.rotation.x = -Math.PI / 2; m.position.y = .018; parent.add(m); return m;
 }

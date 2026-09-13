@@ -440,3 +440,11 @@ A leitura técnica extensa deixou de ocupar permanentemente o canto superior esq
 O multiplayer agora apresenta dia, fase e cronômetro no topo central; dinheiro, eliminações e calendário do chefão no topo direito; corações, barra e valor de vida no canto inferior esquerdo; pistola, munição, reserva e recarga no canto inferior direito. Os valores vêm do mesmo snapshot autoritativo usado pela simulação. O chat foi elevado no desktop para não cobrir a vida, enquanto o layout touch move vida e munição para o topo, respeita áreas seguras e evita os analógicos. Água permanece fora da HUD porque ainda não existe como recurso real do jogo.
 
 Validação: lint, TypeScript, build PWA e 109 testes passaram. Em inspeção visual automatizada a 1280×720, após `CONTINUAR` ficaram visíveis apenas o pequeno botão `REDE` no canto superior esquerdo, dia/tempo, dinheiro/eliminações, vida/corações e munição; o campo de nome e o bloco técnico desapareceram corretamente. O CSS possui adaptações para celular horizontal, mas a captura em aparelho físico que originou o pedido ainda precisa ser repetida após a publicação.
+
+## Direção visual — traço do cenário e silhuetas compactas
+
+O pós-processamento de contorno passou a ignorar os materiais do cenário, que já possuem o próprio casco de tinta. Isso remove a segunda linha grossa que aparecia em árvores, construções, cercas, pedras e vegetação, recuperando o traço fino anterior do mapa. O contorno novo permanece nos personagens animados.
+
+Soldados e zumbis ficaram mais baixos pela redução das coxas e canelas no rig, com cabeça, tronco e quadril arredondados maiores em relação às pernas. Os zumbis compartilham agora uma máscara facial escura e olhos vermelhos. O esqueleto, as animações, a colisão, a mira e a sincronização de rede foram preservados.
+
+Validação visual local: cenário sem contorno duplicado, personagem com os pés apoiados no chão e proporção mais próxima da referência a 1280×720. Build PWA, lint e 111 testes passaram antes da revisão final. A leitura da máscara dos zumbis em horda cheia e a proporção em celular físico ainda devem ser confirmadas após a publicação.

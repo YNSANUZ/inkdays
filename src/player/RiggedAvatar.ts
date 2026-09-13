@@ -51,17 +51,31 @@ export class RiggedAvatar {
     const skins:T.SkinnedMesh[]=[];
     model.traverse(node=>{if(node instanceof T.SkinnedMesh){node.material=white;node.castShadow=true;node.receiveShadow=true;skins.push(node);}});
     const bone=(pattern:RegExp)=>{let found:T.Object3D|undefined;model.traverse(node=>{if(!found&&pattern.test(node.name))found=node;});return found;};
+    // Silhueta baixa e compacta: encurta as duas partes das pernas no próprio rig,
+    // mantendo as animações Mixamo, o collider e a lógica de rede inalterados.
+    for(const side of ['Left','Right']){
+      const thigh=bone(new RegExp(`${side}UpLeg$`,'i'));
+      const shin=bone(new RegExp(`${side}Leg$`,'i'));
+      if(thigh)thigh.scale.set(1.08,.72,1.08);
+      if(shin)shin.scale.set(1.1,.72,1.1);
+    }
+    model.position.y=-.25;
     // Volumes autorais sobre o rig: a animação continua Mixamo, a silhueta passa a ser INKDAYS.
-    const head=bone(/Head$/i);if(head){const face=new T.Mesh(new T.SphereGeometry(.26,16,12),white);face.scale.set(1,.93,.92);face.position.set(0,.105,.015);face.castShadow=true;head.add(face);}
-    const spine=bone(/Spine1$/i)??bone(/Spine$/i);if(spine){const torso=new T.Mesh(new T.SphereGeometry(.25,14,10),white);torso.scale.set(1.05,1.35,.78);torso.position.set(0,.045,0);torso.castShadow=true;spine.add(torso);}
+    const head=bone(/Head$/i);if(head){const face=new T.Mesh(new T.SphereGeometry(.3,16,12),white);face.scale.set(1,.94,.9);face.position.set(0,.105,.015);face.castShadow=true;head.add(face);}
+    const spine=bone(/Spine1$/i)??bone(/Spine$/i);if(spine){const torso=new T.Mesh(new T.SphereGeometry(.29,14,10),white);torso.scale.set(1.05,1.28,.8);torso.position.set(0,.035,0);torso.castShadow=true;spine.add(torso);}
+    const hips=bone(/Hips$/i);if(hips){const pelvis=new T.Mesh(new T.SphereGeometry(.24,12,9),white);pelvis.scale.set(1,.76,.78);pelvis.position.set(0,.08,0);pelvis.castShadow=true;hips.add(pelvis);}
     if(this.role==='player'){
       const hand=bone(/RightHand$/i);
       if(hand){const gun=new T.Mesh(new T.BoxGeometry(.075,.08,.42),black);gun.position.set(0,.05,.2);gun.rotation.x=Math.PI/2;hand.add(gun);}
       if(spine){const pack=new T.Mesh(new T.BoxGeometry(.32,.42,.14),new T.MeshToonMaterial({color:0xb9bbb3}));pack.position.set(0,.06,-.16);spine.add(pack);}
-      if(head){for(const x of [-.052,.052]){const eye=new T.Mesh(new T.SphereGeometry(.018,8,6),black);eye.position.set(x,.115,.247);head.add(eye);}}
+      if(head){for(const x of [-.06,.06]){const eye=new T.Mesh(new T.SphereGeometry(.018,8,6),black);eye.position.set(x,.115,.284);head.add(eye);}}
     } else {
       const enemyWhite=new T.MeshToonMaterial({color:0xceccc3});model.traverse(node=>{if(node instanceof T.Mesh&&node.material===white)node.material=enemyWhite;});
-      if(head){for(const x of [-.065,.065]){const eye=new T.Mesh(new T.SphereGeometry(.027,8,6),new T.MeshBasicMaterial({color:0xb20d14}));eye.position.set(x,.115,.247);head.add(eye);}}
+      if(head){
+        const mask=new T.Mesh(new T.SphereGeometry(.235,14,10),black);mask.scale.set(.82,.72,.18);mask.position.set(0,.1,.275);head.add(mask);
+        const eyeRed=new T.MeshBasicMaterial({color:0xb20d14});
+        for(const x of [-.065,.065]){const eye=new T.Mesh(new T.SphereGeometry(.03,8,6),eyeRed);eye.position.set(x,.12,.321);head.add(eye);}
+      }
     }
     this.root.add(model);
     this.mixer=new T.AnimationMixer(model);
