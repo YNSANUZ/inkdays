@@ -4,6 +4,7 @@ import {CombatAuthority} from '../src/network/CombatAuthority';
 import {parseInput} from '../src/network/Protocol';
 const packet=(sequence:number,fire=false,reload=false)=>({version:1,sequence,yaw:0,pitch:0,command:{x:0,z:0,run:false,crouch:false,jump:false,fire,reload}});
 describe('combate controlado pelo servidor',()=>{
+  it('aceita oito participantes com spawns e nomes distintos e recusa o nono',()=>{const a=new CombatAuthority();for(let n=0;n<8;n++)expect(a.join(`p${n}`)).toBe(true);expect(a.join('p8')).toBe(false);const players=a.snapshot().players;expect(new Set(players.map(player=>`${player.position.x}:${player.position.z}`)).size).toBe(8);expect(new Set(players.map(player=>player.name)).size).toBe(8);});
   it('rejeita mira inválida e controla munição, cadência e recarga por jogador',()=>{
     expect(parseInput({...packet(0),pitch:Infinity})).toBeNull();
     const a=new CombatAuthority();a.join('a');a.join('b');

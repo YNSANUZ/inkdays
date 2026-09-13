@@ -11,7 +11,9 @@ import { parseInput } from './Protocol';
 import type { InputPacket } from './Protocol';
 import { normalizePlayerName } from './PlayerName';
 import { normalizeChatText } from './Chat';
+import { MAX_PLAYERS } from './MovementAuthority';
 const neutral=()=>({x:0,z:0,run:false,crouch:false,jump:false,fire:false,reload:false});
+const spawn=(slot:number)=>({x:(slot%4)*2,z:10+Math.floor(slot/4)*2});
 interface Participant {slot:number;name:string;connected:boolean;player:Player;weapon:Pistol;camera:ThirdPerson;input:InputPacket;age:number;received:number;applied:number;viewed:number;kills:number;money:number;lastShot:number;shotPending:number|null;lastChat:number;lastChatTick:number}
 export class CombatAuthority {
   readonly scene=new T.Scene();readonly world=new World(this.scene);readonly enemies=new Enemies(this.scene,this.world);
@@ -20,9 +22,9 @@ export class CombatAuthority {
   private messages:{serial:number;messageId:number;player:string;name:string;text:string;tick:number}[]=[];private chatSerial=0;private readonly chatLifetimeTicks=720;
   private enemyHistory=new Map<number,Map<number,T.Vector3>>();private readonly historyTicks=30;
   join(id:string){
-    if(this.players.has(id)||this.players.size>=2)return false;
+    if(this.players.has(id)||this.players.size>=MAX_PLAYERS)return false;
     if(!this.players.size){this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.messages=[];this.enemyHistory.clear();}
-    const slot=[...this.players.values()].some(p=>p.slot===0)?1:0,player=new Player();player.position.x=slot*2;this.scene.add(player.avatar.root);
+    const used=new Set([...this.players.values()].map(p=>p.slot)),slot=Array.from({length:MAX_PLAYERS},(_,index)=>index).find(index=>!used.has(index))!,player=new Player(),point=spawn(slot);player.position.set(point.x,0,point.z);this.scene.add(player.avatar.root);
     this.players.set(id,{slot,name:`Errante ${slot+1}`,connected:true,player,weapon:new Pistol(),camera:new ThirdPerson(),input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1,viewed:-1,kills:0,money:0,lastShot:-1,shotPending:null,lastChat:-1,lastChatTick:-Infinity});return true;
   }
   rename(id:string,value:unknown){const p=this.players.get(id),name=normalizePlayerName(value);if(!p?.connected||!name)return false;p.name=name;return true;}
@@ -34,7 +36,7 @@ export class CombatAuthority {
     const requester=this.players.get(id);if(!requester?.connected||!this.gameOver)return false;
     this.round++;this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.shots=[];this.enemyHistory.clear();
     for(const p of this.players.values()){
-      this.scene.remove(p.player.avatar.root);p.player=new Player();p.player.position.x=p.slot*2;this.scene.add(p.player.avatar.root);
+      this.scene.remove(p.player.avatar.root);p.player=new Player();const point=spawn(p.slot);p.player.position.set(point.x,0,point.z);this.scene.add(p.player.avatar.root);
       p.weapon=new Pistol();p.input.command=neutral();p.age=Infinity;p.kills=0;p.money=0;p.shotPending=null;
     }
     return true;

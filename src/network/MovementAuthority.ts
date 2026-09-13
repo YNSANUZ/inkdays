@@ -3,15 +3,17 @@ import type { Motion, CollisionWorld } from '../simulation/Movement';
 import { parseInput, PROTOCOL_VERSION } from './Protocol';
 import type { InputPacket } from './Protocol';
 const neutral=()=>({x:0,z:0,run:false,crouch:false,jump:false,fire:false,reload:false});
+export const MAX_PLAYERS=8;
+const spawn=(slot:number)=>({x:(slot%4)*2,y:0,z:10+Math.floor(slot/4)*2});
 /** Movement-only authority prototype. Connections must supply their own server-assigned ID. */
 export class MovementAuthority {
   private players=new Map<string,{slot:number;connected:boolean;motion:Motion;input:InputPacket;age:number;received:number;applied:number}>();
   tick=0;
   constructor(private world:CollisionWorld){}
   join(id:string){
-    if(this.players.has(id)||this.players.size>=2)return false;
-    const slot=Array.from(this.players.values()).some(p=>p.slot===0)?1:0;
-    this.players.set(id,{slot,connected:true,motion:{position:{x:slot*2,y:0,z:10},velocity:{x:0,y:0,z:0},vertical:0},input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1});return true;
+    if(this.players.has(id)||this.players.size>=MAX_PLAYERS)return false;
+    const used=new Set([...this.players.values()].map(player=>player.slot)),slot=Array.from({length:MAX_PLAYERS},(_,index)=>index).find(index=>!used.has(index))!;
+    this.players.set(id,{slot,connected:true,motion:{position:spawn(slot),velocity:{x:0,y:0,z:0},vertical:0},input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1});return true;
   }
   suspend(id:string){const player=this.players.get(id);if(player){player.connected=false;player.input.command=neutral();player.motion.velocity.x=player.motion.velocity.z=0;}}
   resume(id:string){const player=this.players.get(id);if(player)player.connected=true;}

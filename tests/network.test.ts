@@ -17,10 +17,11 @@ describe('base autoritativa de movimentação',()=>{
     expect(parseInput({...input(0),viewTick:1.5})).toBeNull();
     expect(parseInput({...input(0),command:{...input(0).command,x:2}})).toBeNull();
   });
-  it('limita a dois jogadores e rejeita comandos de conexão desconhecida ou repetidos',()=>{
-    const a=new MovementAuthority(world);expect(a.join('a')).toBe(true);expect(a.join('b')).toBe(true);expect(a.join('c')).toBe(false);
-    expect(a.receive('c',input(0))).toBe(false);expect(a.receive('a',input(2))).toBe(true);expect(a.receive('a',input(1))).toBe(false);expect(a.receive('a',input(2))).toBe(false);
-    a.leave('b');expect(a.join('c')).toBe(true);
+  it('limita a oito jogadores, reaproveita vaga e rejeita comandos desconhecidos ou repetidos',()=>{
+    const a=new MovementAuthority(world);for(let n=0;n<8;n++)expect(a.join(`p${n}`)).toBe(true);expect(a.join('extra')).toBe(false);
+    const positions=a.snapshot().players.map(player=>`${player.position.x}:${player.position.z}`);expect(new Set(positions).size).toBe(8);
+    expect(a.receive('extra',input(0))).toBe(false);expect(a.receive('p0',input(2))).toBe(true);expect(a.receive('p0',input(1))).toBe(false);expect(a.receive('p0',input(2))).toBe(false);
+    a.leave('p3');expect(a.join('extra')).toBe(true);expect(a.snapshot().players).toHaveLength(8);
   });
   it('confirma o comando somente depois de simular o tick',()=>{
     const a=new MovementAuthority(world);a.join('a');a.receive('a',input(8));

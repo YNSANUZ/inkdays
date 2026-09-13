@@ -47,9 +47,9 @@ Cada envio para main executa lint, testes e build antes de atualizar o jogo auto
 
 O áudio é sintetizado em tempo real para manter a PWA leve: tiro em camadas, recarga metálica sequencial, passos de caminhada e corrida, música calma durante preparação e progressão de ação durante a horda. No multiplayer, efeitos ligados ao estado usam confirmações autoritativas sempre que afetam a leitura da partida.
 
-O menu público inclui a entrada `JOGAR ONLINE · 2 PLAYERS`. O cliente multiplayer aceita `VITE_COOP_SERVER` no build para usar um servidor WebSocket público com TLS. O backend executa `npm start`, respeita a porta `PORT` da hospedagem e possui um Blueprint gratuito em `render.yaml`.
+O menu público inclui a entrada `JOGAR ONLINE · ATÉ 8`. O cliente multiplayer aceita `VITE_COOP_SERVER` no build para usar um servidor WebSocket público com TLS. O backend executa `npm start`, respeita a porta `PORT` da hospedagem e possui um Blueprint gratuito em `render.yaml`.
 
-Servidor experimental público: `wss://inkdays-multiplayer.onrender.com`. O plano gratuito do Render suspende a instância depois de um período sem tráfego; a primeira entrada após inatividade pode levar aproximadamente 50 segundos para acordar. A sala atual é única e comporta dois participantes.
+Servidor experimental público: `wss://inkdays-multiplayer.onrender.com`. O plano gratuito do Render suspende a instância depois de um período sem tráfego; a primeira entrada após inatividade pode levar aproximadamente 50 segundos para acordar. A sala atual é única e comporta até oito participantes. O balanceamento e o desempenho com três a oito pessoas ainda são experimentais.
 
 
 
