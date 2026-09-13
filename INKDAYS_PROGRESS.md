@@ -3,6 +3,14 @@
 ## Visão do projeto
 Sobreviva mais um dia. Jogo cooperativo futuro, terceira pessoa, tinta preta sobre papel. Fase 1: vertical slice solo offline, sem serviços externos.
 
+## Fase 2 — primeira integração de rig Mixamo
+
+Foi criada a ponte visual entre a simulação existente e um personagem esquelético. O X Bot contido nos pacotes fornecidos foi usado como base técnica temporária, com materiais brancos, sombra, contorno preto, mochila/arma e olhos vermelhos somente nos inimigos. Jogador e Borrão possuem transições independentes de idle, corrida, agachamento, salto, caminhada de zumbi e ataque. A movimentação horizontal gravada nos FBX é removida: as animações não controlam posição, colisão, dano ou autoridade de rede.
+
+Os oito GLBs foram convertidos para glTF 2.0, reamostrados a 30 FPS e quantizados, totalizando aproximadamente 1,35 MB. O modelo é carregado uma vez e clonado com esqueleto compartilhando geometrias; a arte procedural anterior permanece como fallback enquanto os arquivos carregam ou se houver falha. Isso permite trocar depois a malha-base por um soldado Mixamo escolhido ou por um modelo autoral sem reestruturar multiplayer.
+
+Validação: TypeScript e build PWA passaram; o jogo abriu em 1280×720, carregou o jogador e um inimigo criado pela bancada sem erros de console. As capturas estão em `qa/rigged-avatar-desktop.png`, `qa/rigged-avatar-enemy.png` e `qa/rigged-avatar-mobile.png`. O módulo 3D é carregado sob demanda e mantém o boneco procedural caso algum GLB falhe. Ainda faltam movimento por toque, horda cheia e desempenho em celular físico; o modelo técnico X Bot ainda não representa a aparência final do soldado. A próxima entrega deve avaliar movimento em jogo e ajustar proporção/arma/mochila antes de publicar.
+
 ## Ambiente e tecnologia escolhida
 Projeto novo isolado em apps/inkdays. Node 24.18 e npm 11 disponíveis. Não altera o portal Saiu no DF. TypeScript estrito, Vite e Three.js/WebGL2: renderizador web leve, materiais toon, controle direto do desenho e ecossistema tipado. Babylon também seria viável, mas os sistemas deste slice não precisam de sua camada adicional. Dependências empacotadas localmente; sem CDN em runtime.
 

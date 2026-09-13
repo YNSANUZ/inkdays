@@ -49,7 +49,7 @@ export class Enemies {
       }
       if(e.state==='ATTACK'&&separation.lengthSq()>.0001){separation.normalize();this.world.move(p,separation.x*e.speed*.35*dt,separation.z*e.speed*.35*dt,C.enemy.radius);}
       e.avatar.root.rotation.y=Math.atan2(direction.x,direction.z);
-      e.avatar.animate(e.age,e.state==='CHASE'?e.speed:0);
+      e.avatar.animate(e.age,e.state==='CHASE'?e.speed:0,false,e.state==='ATTACK');
       e.avatar.arm.rotation.x=e.state==='ATTACK'?-Math.sin(e.cooldown/C.enemy.attackCooldown*Math.PI)*1.3:0;
     }
   }
