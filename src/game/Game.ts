@@ -69,7 +69,7 @@ export class Game {
     if(event==='dawn'){this.enemies.clear();this.pistol.resupply();this.player.health.heal(C.day.dawnHeal);this.ui.toast(`DIA ${this.cycle.day} · Você resistiu. +${C.day.dawnHeal} vida · +${C.day.dawnAmmo} munição`);}
     if(this.cycle.phase==='horde')this.horde.update(dt,()=>this.enemies.spawn(this.cycle.day,this.player.position));
     this.enemies.update(dt,this.player,()=>{this.ui.hurt();this.audio.cue('damage');this.camera.shake=.25;});
-    this.effects.update(dt);this.audio.update(dt,this.cycle.phase==='horde');
+    this.effects.update(dt);this.audio.update(dt,this.cycle.phase==='horde',Math.hypot(this.player.velocity.x,this.player.velocity.z),command.crouch);
     if(this.player.health.dead)this.die();
   }
   private frame=(ms:number)=>{
