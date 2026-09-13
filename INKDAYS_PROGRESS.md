@@ -472,3 +472,11 @@ Validação visual local: a pistola carregou presa à mão do rig, preservou o p
 Enquanto o multiplayer estiver em teste, qualquer jogador que chegar a zero de vida recebe no centro da tela o painel `VOCÊ CAIU — MODO DE TESTE` e o botão `REVIVER AGORA`. O pedido é processado pelo servidor: o jogador reaparece em sua vaga inicial com vida completa, velocidade zerada e dois segundos de proteção, preservando dinheiro, eliminações, dia e estado da sala. Se todos caírem, o primeiro revive também libera novamente o ciclo sem reiniciar a partida.
 
 O cliente repete o pedido até observar a vida restaurada no snapshot, cobrindo perda artificial de mensagem, e então remove o painel automaticamente. Pedidos para um jogador vivo são rejeitados. Validação automatizada: 113 testes passaram, incluindo morte, reaparecimento, posição, vida, preservação da geração e rejeição de revive duplicado. Lint, TypeScript e build PWA passaram. O recurso é deliberadamente identificado como modo de teste; o sistema final continuará prevendo resgate por companheiros e regras próprias de derrota.
+
+## Fase 2 — fúria e música própria de O Colosso
+
+O primeiro chefão ganhou uma segunda etapa autoritativa. Ao atingir metade da vida, O Colosso entra em fúria uma única vez: velocidade aumenta 35%, o intervalo entre ataques cai 38% e o dano aumenta 20%. Esse estado faz parte do snapshot, portanto todos os jogadores observam a mesma transição e os mesmos atributos de combate.
+
+Durante a fúria, a barra acrescenta `FÚRIA`, pulsa discretamente em vermelho e o modelo grande recebe uma respiração visual curta. A presença do chefão também seleciona uma frase musical exclusiva mais grave, rápida e pesada do que a música normal da horda; entrada e saída continuam seguindo o sistema dinâmico de áudio já existente.
+
+Validação automatizada: 114 testes passaram. O caso novo reduz a vida do chefão até o limiar e confirma fúria, velocidade maior, ataque mais frequente, dano maior e publicação do estado no snapshot. Lint, TypeScript e build PWA passaram. Golpes com áreas telegráficas, modelo exclusivo e balanceamento humano prolongado continuam pendentes.

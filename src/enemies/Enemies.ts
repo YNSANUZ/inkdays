@@ -5,7 +5,7 @@ import type { Player } from '../player/Player';
 import type { World } from '../world/World';
 export type EnemyState='IDLE'|'CHASE'|'ATTACK'|'DEAD';
 export type EnemyKind='horde'|'boss';
-export interface Enemy { id:number; kind:EnemyKind; avatar:Avatar; health:number; maxHealth:number; speed:number; damage:number; attackRange:number; attackCooldown:number; radius:number; reward:number; cooldown:number; state:EnemyState; age:number; target?:Player }
+export interface Enemy { id:number; kind:EnemyKind; enraged:boolean; avatar:Avatar; health:number; maxHealth:number; speed:number; damage:number; attackRange:number; attackCooldown:number; radius:number; reward:number; cooldown:number; state:EnemyState; age:number; target?:Player }
 export class Enemies {
   active:Enemy[]=[]; private serial=0;
   constructor(private scene:T.Scene, private world:World) {}
@@ -16,7 +16,7 @@ export class Enemies {
       const x=player.x+Math.sin(a)*r,z=player.z+Math.cos(a)*r;
       if(Math.hypot(x,z)>C.world.radius-1||this.world.blocked(x,z,C.enemy.radius+1))continue;
       const avatar=new Avatar(true);avatar.root.position.set(x,0,z);this.scene.add(avatar.root);
-      this.active.push({id:++this.serial,kind:'horde',avatar,health:stats.health,maxHealth:stats.health,speed:stats.speed,damage:C.enemy.damage,attackRange:C.enemy.attackRange,attackCooldown:C.enemy.attackCooldown,radius:C.enemy.radius,reward:C.enemy.reward,cooldown:C.enemy.attackCooldown,state:'IDLE',age:0});return true;
+      this.active.push({id:++this.serial,kind:'horde',enraged:false,avatar,health:stats.health,maxHealth:stats.health,speed:stats.speed,damage:C.enemy.damage,attackRange:C.enemy.attackRange,attackCooldown:C.enemy.attackCooldown,radius:C.enemy.radius,reward:C.enemy.reward,cooldown:C.enemy.attackCooldown,state:'IDLE',age:0});return true;
     } return false;
   }
   spawnBoss(day:number,player:T.Vector3,players=1) {
@@ -26,7 +26,7 @@ export class Enemies {
       const a=Math.random()*Math.PI*2,r=C.enemy.spawnMax,x=player.x+Math.sin(a)*r,z=player.z+Math.cos(a)*r;
       if(Math.hypot(x,z)>C.world.radius-2||this.world.blocked(x,z,C.boss.radius+1))continue;
       const avatar=new Avatar(true);avatar.root.position.set(x,0,z);avatar.root.scale.setScalar(C.boss.scale);this.scene.add(avatar.root);
-      this.active.push({id:++this.serial,kind:'boss',avatar,health,maxHealth:health,speed:C.boss.speed,damage:C.boss.damage,attackRange:C.boss.attackRange,attackCooldown:C.boss.attackCooldown,radius:C.boss.radius,reward:C.boss.reward,cooldown:C.boss.attackCooldown,state:'IDLE',age:0});return true;
+      this.active.push({id:++this.serial,kind:'boss',enraged:false,avatar,health,maxHealth:health,speed:C.boss.speed,damage:C.boss.damage,attackRange:C.boss.attackRange,attackCooldown:C.boss.attackCooldown,radius:C.boss.radius,reward:C.boss.reward,cooldown:C.boss.attackCooldown,state:'IDLE',age:0});return true;
     }
     return false;
   }
@@ -65,6 +65,6 @@ export class Enemies {
       e.avatar.arm.rotation.x=e.state==='ATTACK'?-Math.sin(e.cooldown/e.attackCooldown*Math.PI)*1.3:0;
     }
   }
-  damage(e:Enemy,amount:number) { if(e.state==='DEAD')return false;e.health-=amount;if(e.health>0)return false;e.state='DEAD';this.scene.remove(e.avatar.root);this.active=this.active.filter(o=>o!==e);return true; }
+  damage(e:Enemy,amount:number) { if(e.state==='DEAD')return false;e.health-=amount;if(e.kind==='boss'&&!e.enraged&&e.health>0&&e.health<=e.maxHealth/2){e.enraged=true;e.speed*=1.35;e.attackCooldown*=.62;e.cooldown=Math.min(e.cooldown,e.attackCooldown);e.damage=Math.round(e.damage*1.2);}if(e.health>0)return false;e.state='DEAD';this.scene.remove(e.avatar.root);this.active=this.active.filter(o=>o!==e);return true; }
   clear() {for(const e of this.active)this.scene.remove(e.avatar.root);this.active=[];}
 }

@@ -1,7 +1,7 @@
 export type Cue='shot'|'reload'|'impact'|'damage'|'enemy'|'ui';
 
 export class GameAudio {
-  private context:AudioContext|null=null;private master:GainNode|null=null;private music:GainNode|null=null;private calm:GainNode|null=null;private action:GainNode|null=null;private ambience:GainNode|null=null;private beat=0;private musicTimer=0;private stepTimer=0;private ambienceTimer=1;private ambienceBeat=0;private hordeMode=false;private effectWindow=0;private effectVoices=0;volume=.35;
+  private context:AudioContext|null=null;private master:GainNode|null=null;private music:GainNode|null=null;private calm:GainNode|null=null;private action:GainNode|null=null;private ambience:GainNode|null=null;private beat=0;private musicTimer=0;private stepTimer=0;private ambienceTimer=1;private ambienceBeat=0;private hordeMode=false;private bossMode=false;private effectWindow=0;private effectVoices=0;volume=.35;
   start(){try{this.context??=new AudioContext();if(!this.master){this.master=this.context.createGain();this.music=this.context.createGain();this.calm=this.context.createGain();this.action=this.context.createGain();this.ambience=this.context.createGain();this.music.gain.value=.42;this.calm.gain.value=1;this.action.gain.value=0;this.ambience.gain.value=.8;this.calm.connect(this.music);this.action.connect(this.music);this.music.connect(this.master);this.ambience.connect(this.master);this.master.connect(this.context.destination);}void this.context.resume();this.setVolume(this.volume);}catch{/* The game remains playable without Web Audio. */}}
   setVolume(v:number){this.volume=v;if(this.master&&this.context)this.master.gain.setTargetAtTime(v*.32,this.context.currentTime,.04);}
   pause(){void this.context?.suspend();}
@@ -11,17 +11,17 @@ export class GameAudio {
     if(c==='reload'){this.noise(.035,.2,2800);this.tone(920,.045,'triangle',.28,0,.76);this.tone(610,.055,'square',.18,.32,.72);this.tone(1180,.04,'triangle',.22,.76,.8);return;}
     const notes:Record<Exclude<Cue,'shot'|'reload'>,[number,number,OscillatorType,number]>={impact:[92,.07,'square',.24],damage:[54,.2,'sawtooth',.34],enemy:[72,.3,'triangle',.32],ui:[440,.08,'sine',.2]};const [f,d,t,v]=notes[c];this.tone(f,d,t,v);
   }
-  update(dt:number,horde:boolean,speed=0,crouch=false){
-    if(horde!==this.hordeMode){this.hordeMode=horde;this.beat=0;this.musicTimer=0;this.crossfade(horde);}
-    this.musicTimer-=dt;if(this.musicTimer<=0){this.musicTimer=horde?.24:.7;this.playMusic(horde);}
+  update(dt:number,horde:boolean,speed=0,crouch=false,boss=false){
+    if(horde!==this.hordeMode||boss!==this.bossMode){this.hordeMode=horde;this.bossMode=boss;this.beat=0;this.musicTimer=0;this.crossfade(horde);if(boss)this.cue('enemy');}
+    this.musicTimer-=dt;if(this.musicTimer<=0){this.musicTimer=boss?.18:horde?.24:.7;this.playMusic(horde,boss);}
     this.ambienceTimer-=dt;if(this.ambienceTimer<=0){this.ambienceTimer=horde?7:3.8+(this.ambienceBeat%3)*1.1;this.playAmbience(horde);}
     this.stepTimer-=dt;if(speed>.45&&!crouch&&this.stepTimer<=0){this.stepTimer=speed>6?.27:.42;this.footstep(speed>6);}
     if(speed<=.45)this.stepTimer=0;
   }
-  private playMusic(horde:boolean){
-    const calm=[146.83,174.61,220,196,164.81,196,246.94,220],action=[73.42,87.31,98,110,73.42,116.54,98,87.31],note=(horde?action:calm)[this.beat%(horde?action:calm).length];
+  private playMusic(horde:boolean,boss=false){
+    const calm=[146.83,174.61,220,196,164.81,196,246.94,220],action=[73.42,87.31,98,110,73.42,116.54,98,87.31],colossus=[55,55,65.41,58.27,55,73.42,65.41,49],phrase=boss?colossus:horde?action:calm,note=phrase[this.beat%phrase.length];
     const bus=horde?this.action:this.calm;
-    if(horde){this.tone(note,.22,'sawtooth',.075,0,.82,bus);this.tone(note*2,.12,'square',.035,0,.9,bus);if(this.beat%2===0){this.noise(.045,.08,180,0,bus);this.tone(46,.09,'triangle',.13,0,.55,bus);}}
+    if(horde){this.tone(note,boss?.3:.22,'sawtooth',boss?.1:.075,0,.82,bus);this.tone(note*2,.12,'square',boss?.05:.035,0,.9,bus);if(this.beat%2===0){this.noise(boss?.07:.045,boss?.12:.08,boss?130:180,0,bus);this.tone(boss?38:46,.09,'triangle',boss?.18:.13,0,.55,bus);}}
     else{this.tone(note,1.25,'sine',.055,0,.92,bus);this.tone(note*1.5,.85,'triangle',.022,.08,.96,bus);}
     this.beat++;
   }

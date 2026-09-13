@@ -33,6 +33,7 @@ describe('combate controlado pelo servidor',()=>{
     a.receive('a',packet(0,true));a.step();
     expect(a.snapshot().boss).toBeNull();expect(a.snapshot().players[0]).toMatchObject({kills:1,money:C.boss.reward});expect(a.snapshot().players[1].money).toBe(0);
   });
+  it('coloca o chefão em fúria abaixo de metade da vida',()=>{const a=new CombatAuthority();a.join('a');expect(a.enemies.spawnBoss(10,new Vector3(0,0,10))).toBe(true);const boss=a.enemies.active[0],speed=boss.speed,cooldown=boss.attackCooldown,damage=boss.damage;a.enemies.damage(boss,boss.maxHealth/2);expect(boss).toMatchObject({enraged:true});expect(boss.speed).toBeGreaterThan(speed);expect(boss.attackCooldown).toBeLessThan(cooldown);expect(boss.damage).toBeGreaterThan(damage);expect(a.snapshot().boss?.enraged).toBe(true);});
   it('cobertura bloqueia disparo e não concede recompensa',()=>{
     const a=new CombatAuthority();a.join('a');a.enemies.spawn(1,new Vector3(0,0,10));
     const enemy=a.enemies.active[0];enemy.avatar.root.position.set(.85,0,0);enemy.speed=0;
