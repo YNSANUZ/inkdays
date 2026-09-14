@@ -625,3 +625,9 @@ Validação integrada local: uma sala inédita permaneceu em `1/8 CONECTADOS · 
 O nome escolhido agora é enviado enquanto o participante ainda está no lobby, após uma breve pausa de digitação. O pedido confiável continua sendo repetido até o nome aparecer no snapshot autoritativo, e o valor normalizado fica salvo no navegador para as próximas salas. Assim, os amigos conseguem se identificar na grade antes de iniciar o gameplay.
 
 O servidor aceita a troca de nome sem alterar a prontidão. Um teste de transporte conecta um cliente protegido, envia `Mari`, confirma o nome compartilhado e comprova que `ready` permanece falso e o relógio do primeiro dia continua congelado.
+
+## Fase 2 — percurso integrado de uma dupla pelo lobby
+
+Dois clientes WebSocket reais agora percorrem a mesma sala em uma validação permanente. Bruno e Mari conectam, recebem identidades distintas, compartilham seus apelidos e permanecem aguardando com o relógio congelado. Bruno entra sem alterar a prontidão de Mari; depois Mari entra e os dois recebem um snapshot de mesmo tick, conteúdo idêntico, ambos ativos e o mesmo ciclo em andamento.
+
+Esse teste cobre a fronteira entre lobby e partida que antes estava dividida em verificações isoladas. Ele não substitui o playtest em dois aparelhos e duas redes físicas, mas impede que mudanças futuras promovam o companheiro errado, iniciem o dia antes da primeira entrada ou apresentem estados autoritativos diferentes após a reunião da dupla.
