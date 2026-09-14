@@ -550,3 +550,9 @@ O aviso orienta o jogador a se aproximar para reviver e desaparece sozinho, sem 
 Depois de iniciar um resgate, o cliente repete o pedido a cada 250 ms até receber um snapshot no qual o alvo já está vivo. O ciclo também termina se o companheiro desconectar, sair do alcance, for revivido por outra pessoa ou se a conexão do socorrista cair. Com isso, uma única mensagem perdida ou atrasada não deixa o botão aparentando sucesso sem mudar o estado real.
 
 O servidor continua decidindo cada tentativa e pedidos repetidos não criam vida adicional nem deslocam o alvo. O texto muda para `AJUDANDO…` enquanto aguarda a confirmação. Esta camada foi validada por lint, TypeScript, build PWA e pelos 123 testes existentes; perda e retomada em duas redes móveis físicas continuam pendentes.
+
+## Fase 2 — fundação do lobby com entrada protegida
+
+Abrir o multiplayer público não coloca mais um novo participante imediatamente sob ataque. A conexão nasce em estado de lobby: o ciclo fica congelado se ninguém entrou, inimigos ignoram quem ainda está escolhendo o nome e esse participante não conta para derrota, horda ou resumo do dia. O botão agora diz `ENTRAR NA PARTIDA` e envia a confirmação ao servidor antes de liberar os controles.
+
+Depois da entrada, pausar ou liberar o mouse mantém o jogador dentro da partida, como antes. Reconexões recuperam o estado pronto da mesma identidade. Clientes de protocolo anteriores continuam compatíveis porque o modo protegido é solicitado explicitamente na URL da conexão. A próxima evolução desta base será a tela de sala com código, lista e prontidão visível, sem reestruturar a simulação já validada.
