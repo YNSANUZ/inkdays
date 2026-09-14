@@ -29,6 +29,7 @@ import { TeamLifeEvents } from './TeamLifeEvents';
 import { MAX_PLAYERS } from './MovementAuthority';
 import { normalizeRoomCode, PUBLIC_ROOM_CODE, publicRoomInvite, shareRoomInvite } from './RoomCode';
 import { C, nextBoss } from '../config/gameplay';
+import { reconnectDelay, shouldReconnect } from './ReconnectPolicy';
 type Snapshot=ReturnType<CombatAuthority['snapshot']>;
 export function mountCoopPreview(app:HTMLElement){
   app.classList.add('coop-lobby');
@@ -69,6 +70,7 @@ export function mountCoopPreview(app:HTMLElement){
   chatForm.onsubmit=e=>{e.preventDefault();if(chatOutbox.submit(chatInput.value)){chatInput.value='';closeChat();}};
   window.addEventListener('keydown',e=>{if(e.code==='KeyF'&&input.active&&!chatOpen&&allyTarget){e.preventDefault();startAllyRevive();}else if(e.code==='Enter'&&input.active&&!touch.enabled){if(!chatOpen){e.preventDefault();openChat();}else if(document.activeElement===chatInput){e.preventDefault();chatForm.requestSubmit();}}else if(e.code==='Escape'&&chatOpen){e.preventDefault();closeChat();}});
   const connect=()=>{
+    if(!navigator.onLine){status.textContent='SEM INTERNET · AGUARDANDO A REDE VOLTAR…';return;}
     const waitingForServer=performance.now()-connectionStartedAt>=5000;status.textContent=waitingForServer?'SERVIDOR ACORDANDO · A CONEXÃO PODE LEVAR ATÉ 50 SEGUNDOS…':reconnectAttempts?'RECONECTANDO AO SERVIDOR…':'CONECTANDO AO SERVIDOR…';
     if(!wakeHintTimer)wakeHintTimer=window.setTimeout(()=>{if(!connected&&!roomFull)status.textContent='SERVIDOR ACORDANDO · A CONEXÃO PODE LEVAR ATÉ 50 SEGUNDOS…';},Math.max(0,5000-(performance.now()-connectionStartedAt)));
     const params=new URLSearchParams(location.search),requestedRoom=normalizeRoomCode(params.get('room')),token=sessionStorage.getItem(`inkdays-coop-token-${requestedRoom}`),override=params.get('server'),configured=import.meta.env.VITE_COOP_SERVER as string|undefined,url=new URL(override??configured??`${location.protocol==='https:'?'wss':'ws'}://${location.hostname}:8787`);url.searchParams.set('lobby','1');url.searchParams.set('room',requestedRoom);if(token)url.searchParams.set('resume',token);socket=new WebSocket(url);
@@ -105,12 +107,14 @@ export function mountCoopPreview(app:HTMLElement){
       if(me?.health===0&&input.active)pause();
     }
     };
-    socket.onclose=e=>{connected=false;clearInterval(joinTimer);joinTimer=0;button.disabled=false;if(joinPending)button.textContent='RECONECTANDO…';allyTarget='';clearInterval(allyReviveTimer);allyReviveTimer=0;allyRevive.hidden=true;input.clear();if(!pageLeaving&&!roomFull)report.disconnected();if(roomFull)return;if(e.code===4001){clearTimeout(wakeHintTimer);wakeHintTimer=0;sessionTransferred=true;joinPending=false;pause();app.classList.add('coop-lobby');nickname.parentElement!.hidden=false;help.hidden=false;button.disabled=false;button.textContent='USAR NESTE APARELHO';status.textContent='SESSÃO ABERTA EM OUTRA ABA OU APARELHO';return;}reconnectAttempts++;status.textContent=e.reason?`${e.reason.toUpperCase()} · RECONECTANDO…`:performance.now()-connectionStartedAt>=5000?'SERVIDOR ACORDANDO · NOVA TENTATIVA AUTOMÁTICA…':'CONEXÃO INTERROMPIDA · RECONECTANDO…';if(!pageLeaving)reconnectTimer=window.setTimeout(connect,1000);};
+    socket.onclose=e=>{connected=false;clearInterval(joinTimer);joinTimer=0;button.disabled=false;if(joinPending)button.textContent='RECONECTANDO…';allyTarget='';clearInterval(allyReviveTimer);allyReviveTimer=0;allyRevive.hidden=true;input.clear();if(!pageLeaving&&!roomFull)report.disconnected();if(roomFull)return;if(e.code===4001){clearTimeout(wakeHintTimer);wakeHintTimer=0;sessionTransferred=true;joinPending=false;pause();app.classList.add('coop-lobby');nickname.parentElement!.hidden=false;help.hidden=false;button.disabled=false;button.textContent='USAR NESTE APARELHO';status.textContent='SESSÃO ABERTA EM OUTRA ABA OU APARELHO';return;}reconnectAttempts++;if(!navigator.onLine){clearTimeout(wakeHintTimer);wakeHintTimer=0;status.textContent='SEM INTERNET · AGUARDANDO A REDE VOLTAR…';return;}status.textContent=e.reason?`${e.reason.toUpperCase()} · RECONECTANDO…`:performance.now()-connectionStartedAt>=5000?'SERVIDOR ACORDANDO · NOVA TENTATIVA AUTOMÁTICA…':'CONEXÃO INTERROMPIDA · RECONECTANDO…';if(shouldReconnect(navigator.onLine,pageLeaving,roomFull,sessionTransferred))reconnectTimer=window.setTimeout(connect,reconnectDelay(reconnectAttempts));};
     socket.onerror=()=>{status.textContent=performance.now()-connectionStartedAt>=5000?'SERVIDOR ACORDANDO · CONTINUE NESTA TELA…':'CONEXÃO INTERROMPIDA · TENTANDO RECUPERAR…';};
   };
   connect();
-  const pingTimer=window.setInterval(()=>{if(socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'ping',nonce:performance.now()}));},2000);
-  window.addEventListener('pagehide',()=>{pageLeaving=true;clearTimeout(reconnectTimer);clearTimeout(wakeHintTimer);clearTimeout(nameEditTimer);clearInterval(restartTimer);clearInterval(reviveTimer);clearInterval(allyReviveTimer);clearInterval(joinTimer);clearInterval(pingTimer);socket.close();});
+  const pingTimer=window.setInterval(()=>{if(socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'ping',nonce:performance.now()}));},2000);
+  window.addEventListener('offline',()=>{clearTimeout(reconnectTimer);clearTimeout(wakeHintTimer);wakeHintTimer=0;connected=false;input.clear();touch.setActive(false);status.textContent='SEM INTERNET · AGUARDANDO A REDE VOLTAR…';if(socket?.readyState===WebSocket.OPEN||socket?.readyState===WebSocket.CONNECTING)socket.close();});
+  window.addEventListener('online',()=>{if(!shouldReconnect(true,pageLeaving,roomFull,sessionTransferred))return;clearTimeout(reconnectTimer);connectionStartedAt=performance.now();status.textContent='INTERNET RESTABELECIDA · RECONECTANDO…';if(!socket||socket.readyState===WebSocket.CLOSED)connect();});
+  window.addEventListener('pagehide',()=>{pageLeaving=true;clearTimeout(reconnectTimer);clearTimeout(wakeHintTimer);clearTimeout(nameEditTimer);clearInterval(restartTimer);clearInterval(reviveTimer);clearInterval(allyReviveTimer);clearInterval(joinTimer);clearInterval(pingTimer);socket?.close();});
   window.addEventListener('pageshow',e=>{if(e.persisted)location.reload();});
   const resize=()=>{outline.setSize(innerWidth,innerHeight);camera.camera.aspect=innerWidth/innerHeight;camera.camera.updateProjectionMatrix();};window.addEventListener('resize',resize);resize();
   function frame(now:number){
