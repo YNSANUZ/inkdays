@@ -526,3 +526,9 @@ A renderização usa um único canvas de 180 px, evitando criar dezenas de eleme
 Cada amanhecer agora publica um resumo único com o dia concluído, inimigos eliminados, dinheiro conquistado, sobreviventes, participantes conectados e data do próximo chefão. Eliminações e recompensas são acumuladas somente quando o servidor confirma a morte; os contadores são zerados no começo da horda seguinte e o resultado anterior não é reapresentado para quem entra ou reconecta no meio da preparação.
 
 Todos os jogadores que acompanham a transição recebem a mesma tela central por 3,6 segundos. Ela mantém o gameplay em andamento para facilitar os testes atuais e se reduz no celular horizontal. Validação automatizada: 120 testes passaram em 25 arquivos. Os casos confirmam resumo com um aliado caído e também uma eliminação que gera exatamente $20 no placar do dia. Lint, TypeScript, build e geração da PWA passaram. A futura tela definitiva poderá aguardar confirmação dos jogadores quando o fluxo de lobby e prontidão estiver implementado.
+
+## Fase 2 — entrada sincronizada do chefão
+
+O início da horda de um dia múltiplo de dez agora substitui o anúncio comum por uma apresentação própria: `CHEFÃO · DIA 10`, `O COLOSSO` e `PREPAREM-SE`. A decisão usa o mesmo snapshot autoritativo que cria o chefão; assim, participantes que já acompanhavam a partida recebem a apresentação na mesma transição, enquanto entradas tardias e reconexões não reproduzem uma chegada antiga.
+
+A faixa central ganhou contraste escuro, nome vermelho e duração maior, aproximando a batalha do enquadramento do print mestre. A música exclusiva do Colosso já selecionada pelo estado autoritativo começa junto da presença do boss. A barra superior continua mostrando vida, fúria e preparação do impacto durante o combate.
