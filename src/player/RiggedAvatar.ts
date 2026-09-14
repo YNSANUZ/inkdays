@@ -2,7 +2,7 @@ import * as T from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 
-type Role = 'player' | 'enemy';
+type Role = 'player' | 'enemy' | 'boss';
 type Motion = 'idle' | 'move' | 'crouch' | 'jump' | 'attack';
 export type MoveDirection='forward'|'backward'|'left'|'right';
 type PlayerMotion='idle'|'moveForward'|'moveBackward'|'moveLeft'|'moveRight'|'crouch'|'jump';
@@ -87,10 +87,22 @@ export class RiggedAvatar {
         const eyeRed=new T.MeshBasicMaterial({color:0xb20d14});
         for(const x of [-.065,.065]){const eye=new T.Mesh(new T.SphereGeometry(.03,8,6),eyeRed);eye.position.set(x,.12,.321);head.add(eye);}
       }
+      if(this.role==='boss'){
+        model.scale.set(1.18,.96,1.14);
+        if(spine){
+          const armor=new T.Mesh(new T.SphereGeometry(.37,14,10),white);armor.name='colossus-armor';armor.scale.set(1.35,1.05,.78);armor.position.set(0,.04,-.01);armor.castShadow=true;spine.add(armor);
+          const shoulderMaterial=new T.MeshToonMaterial({color:0xa9aaa3});
+          for(const x of [-.43,.43]){const shoulder=new T.Mesh(new T.SphereGeometry(.16,10,8),shoulderMaterial);shoulder.position.set(x,.17,0);shoulder.scale.set(1.2,.9,1);shoulder.castShadow=true;spine.add(shoulder);}
+        }
+        if(head){
+          const crownMaterial=new T.MeshToonMaterial({color:0x171b19});
+          for(const [x,y] of [[-.2,.34],[0,.42],[.2,.34]] as const){const drop=new T.Mesh(new T.ConeGeometry(.075,.28,7),crownMaterial);drop.position.set(x,y,0);drop.rotation.z=x*.7;head.add(drop);}
+        }
+      }
     }
     this.root.add(model);
     this.mixer=new T.AnimationMixer(model);
-    const source=this.role==='enemy'?{...assets.player,...assets.enemy}:{...assets.enemy,...assets.player};
+    const source=this.role!=='player'?{...assets.player,...assets.enemy}:{...assets.enemy,...assets.player};
     this.actions={idle:this.mixer.clipAction(source.idle),moveForward:this.mixer.clipAction(source.moveForward),moveBackward:this.mixer.clipAction(assets.player.moveBackward),moveLeft:this.mixer.clipAction(assets.player.moveLeft),moveRight:this.mixer.clipAction(assets.player.moveRight),crouch:this.mixer.clipAction(assets.player.crouch),jump:this.mixer.clipAction(assets.player.jump),attack:this.mixer.clipAction(assets.enemy.attack)};
     this.setMotion('idle');this.ready();
   }

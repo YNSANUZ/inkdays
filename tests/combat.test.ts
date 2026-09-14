@@ -28,7 +28,7 @@ describe('combate controlado pelo servidor',()=>{
     const a=new CombatAuthority();a.join('a');a.join('b');a.cycle.day=10;a.cycle.remaining=0;a.step();
     const state=a.snapshot(),boss=a.enemies.active.find(enemy=>enemy.kind==='boss')!;
     expect(state.boss).toMatchObject({id:boss.id,name:'O COLOSSO',health:boss.health,maxHealth:boss.maxHealth});
-    expect(boss.maxHealth).toBeGreaterThan(1200);expect(boss.avatar.root.scale.x).toBeGreaterThan(2);
+    expect(boss.maxHealth).toBeGreaterThan(1200);expect(boss.avatar.root.scale.x).toBeGreaterThan(2);expect(boss.avatar.root.name).toBe('inkdays-boss');expect(boss.avatar.procedural.getObjectByName('colossus-mask')).toBeTruthy();
     boss.health=C.weapon.damage;boss.avatar.root.position.set(.85,0,0);boss.speed=0;
     a.receive('a',packet(0,true));a.step();
     expect(a.snapshot().boss).toBeNull();expect(a.snapshot().players[0]).toMatchObject({kills:1,money:C.boss.reward});expect(a.snapshot().players[1].money).toBe(0);

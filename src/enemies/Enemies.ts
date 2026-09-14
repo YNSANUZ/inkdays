@@ -25,7 +25,7 @@ export class Enemies {
     for(let attempt=0;attempt<40;attempt++){
       const a=Math.random()*Math.PI*2,r=C.enemy.spawnMax,x=player.x+Math.sin(a)*r,z=player.z+Math.cos(a)*r;
       if(Math.hypot(x,z)>C.world.radius-2||this.world.blocked(x,z,C.boss.radius+1))continue;
-      const avatar=new Avatar(true);avatar.root.position.set(x,0,z);avatar.root.scale.setScalar(C.boss.scale);this.scene.add(avatar.root);
+      const avatar=new Avatar(true,true);avatar.root.position.set(x,0,z);avatar.root.scale.setScalar(C.boss.scale);this.scene.add(avatar.root);
       this.active.push({id:++this.serial,kind:'boss',enraged:false,avatar,health,maxHealth:health,speed:C.boss.speed,damage:C.boss.damage,attackRange:C.boss.attackRange,attackCooldown:C.boss.attackCooldown,radius:C.boss.radius,reward:C.boss.reward,cooldown:C.boss.attackCooldown,specialCooldown:C.boss.slamCooldown,specialWindup:0,specialSerial:0,specialCenter:new T.Vector3(),state:'IDLE',age:0});return true;
     }
     return false;
