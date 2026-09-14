@@ -538,3 +538,9 @@ A faixa central ganhou contraste escuro, nome vermelho e duração maior, aproxi
 Um jogador vivo pode agora reviver um companheiro conectado que caiu a até 2,6 metros. A validação é feita pelo servidor: identidade do alvo, estado dos dois participantes e distância precisam continuar válidos quando o pedido chega. O aliado recupera a vida no ponto da queda com velocidade e comandos antigos zerados. Jogadores vivos, desconectados, distantes ou o próprio solicitante são rejeitados.
 
 Durante o gameplay aparece `F · REVIVER nome` no PC e um botão contextual no celular. O botão individual `REVIVER AGORA` continua disponível separadamente enquanto o modo de teste estiver ativo. Validação automatizada: 121 testes passaram, incluindo recusa à distância, resgate próximo, preservação da posição e rejeição de repetição; lint, TypeScript e build PWA passaram. Alcance percebido, clareza do botão sob combate e uso simultâneo em dois aparelhos ainda dependem de playtest humano.
+
+## Fase 2 — avisos compartilhados de queda e retorno
+
+Transições de vida confirmadas pelo snapshot agora avisam discretamente quando um companheiro cai e quando volta. O primeiro estado recebido, a reconexão, snapshots repetidos e a própria queda do jogador não geram alertas falsos. O nome flutuante do aliado caído passa para vermelho e acrescenta `CAÍDO`, mantendo a identificação sem caixa de fundo.
+
+O aviso orienta o jogador a se aproximar para reviver e desaparece sozinho, sem bloquear movimento, mira ou disparo. Validação automatizada: 123 testes cobrem queda remota, repetição, retorno, jogador local e reset de reconexão; lint, TypeScript e build PWA passaram. Legibilidade em meio à horda e prioridade entre vários aliados caindo quase juntos ainda dependem de playtest humano.
