@@ -544,3 +544,9 @@ Durante o gameplay aparece `F · REVIVER nome` no PC e um botão contextual no c
 Transições de vida confirmadas pelo snapshot agora avisam discretamente quando um companheiro cai e quando volta. O primeiro estado recebido, a reconexão, snapshots repetidos e a própria queda do jogador não geram alertas falsos. O nome flutuante do aliado caído passa para vermelho e acrescenta `CAÍDO`, mantendo a identificação sem caixa de fundo.
 
 O aviso orienta o jogador a se aproximar para reviver e desaparece sozinho, sem bloquear movimento, mira ou disparo. Validação automatizada: 123 testes cobrem queda remota, repetição, retorno, jogador local e reset de reconexão; lint, TypeScript e build PWA passaram. Legibilidade em meio à horda e prioridade entre vários aliados caindo quase juntos ainda dependem de playtest humano.
+
+## Fase 2 — entrega confiável do pedido de resgate
+
+Depois de iniciar um resgate, o cliente repete o pedido a cada 250 ms até receber um snapshot no qual o alvo já está vivo. O ciclo também termina se o companheiro desconectar, sair do alcance, for revivido por outra pessoa ou se a conexão do socorrista cair. Com isso, uma única mensagem perdida ou atrasada não deixa o botão aparentando sucesso sem mudar o estado real.
+
+O servidor continua decidindo cada tentativa e pedidos repetidos não criam vida adicional nem deslocam o alvo. O texto muda para `AJUDANDO…` enquanto aguarda a confirmação. Esta camada foi validada por lint, TypeScript, build PWA e pelos 123 testes existentes; perda e retomada em duas redes móveis físicas continuam pendentes.
