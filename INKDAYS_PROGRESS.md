@@ -568,3 +568,10 @@ O botão `COPIAR CONVITE` gera o endereço público do multiplayer e remove qual
 O título da sala passa a informar quantos dos oito participantes já entraram. Quem ainda está no lobby aparece como `AGUARDANDO` também na lista compacta da equipe, com indicador vazado e sem uma barra de vida enganosa. O estado ativo considera `ready` ausente como verdadeiro, mantendo o frontend compatível durante a janela em que o GitHub Pages já atualizou e o Render ainda executa a versão anterior do protocolo.
 
 O botão local também segue essa compatibilidade: somente um `ready: false` explícito mostra `ENTRAR NA PARTIDA`; servidores anteriores continuam permitindo `CONTINUAR`. Isso evita bloquear o jogo durante implantações separadas de frontend e servidor.
+
+
+## Fase 2 — confirmação autoritativa de entrada e código da sala
+
+O botão de entrada agora permanece em `ENTRANDO…` e repete o pedido a cada 250 ms até um snapshot confirmar que o participante está pronto. Movimento, mira, áudio de gameplay e controles touch só são liberados depois dessa confirmação. Se a conexão cair durante a entrada, o pedido é retomado após a reconexão da mesma identidade.
+
+A sala pública recebeu o código estável `PAPEL`, enviado pelo servidor no pacote de boas-vindas e incluído no convite copiado. O cliente conserva compatibilidade com servidores anteriores usando o mesmo código como fallback. Esta etapa prepara a interface e o protocolo para múltiplas salas futuras sem afirmar que já existe isolamento entre códigos.

@@ -4,6 +4,7 @@ import { MAX_PLAYERS, MovementAuthority } from './MovementAuthority';
 import type { CollisionWorld } from '../simulation/Movement';
 import { NetworkConditioner } from './NetworkConditioner';
 import type { NetworkConditions } from './NetworkConditioner';
+import { PUBLIC_ROOM_CODE } from './RoomCode';
 interface ServerRuntime {pulseMs?:number;stepsPerPulse?:number}
 type ServerAuthority=Pick<MovementAuthority,'join'|'suspend'|'resume'|'leave'|'receive'|'step'|'snapshot'|'tick'>&{restart?:(id:string)=>boolean;revive?:(id:string)=>boolean;reviveAlly?:(id:string,targetId:string)=>boolean;setReady?:(id:string,ready?:boolean)=>boolean;rename?:(id:string,name:unknown)=>boolean;chat?:(id:string,messageId:unknown,text:unknown)=>boolean};
 export function createMovementServer(world:CollisionWorld,port=8787,authority:ServerAuthority=new MovementAuthority(world),reconnectGraceMs=5000,conditions?:NetworkConditions,host='127.0.0.1',inactivityMs=7000,runtime?:ServerRuntime){
@@ -16,7 +17,7 @@ export function createMovementServer(world:CollisionWorld,port=8787,authority:Se
     let session=sessions.get(token);
     if(session){if(session.timer)clearTimeout(session.timer);session.connected=true;authority.resume(session.id);}
     else{const id=randomUUID();if(!authority.join(id)){socket.send(JSON.stringify({type:'room-full',capacity:MAX_PLAYERS}),()=>socket.close(1008,'Sala cheia'));return;}if(requestUrl.searchParams.get('lobby')==='1')authority.setReady?.(id,false);session={id,connected:true};sessions.set(token,session);}
-    const id=session.id;socket.send(JSON.stringify({type:'welcome',id,token,version:1,resumed:!!resume&&token===resume}));
+    const id=session.id;socket.send(JSON.stringify({type:'welcome',id,token,room:PUBLIC_ROOM_CODE,version:1,resumed:!!resume&&token===resume}));
     let count=0,lastPong=Date.now();const reset=setInterval(()=>{count=0;},1000),watchdog=setInterval(()=>{if(Date.now()-lastPong>inactivityMs){socket.terminate();return;}socket.ping();},Math.min(2000,Math.max(20,inactivityMs/2)));
     socket.on('pong',()=>{lastPong=Date.now();});
     socket.on('message',data=>{
