@@ -1,11 +1,15 @@
 interface InstallEvent extends Event { prompt():Promise<void>; userChoice:Promise<{outcome:string}> }
 let pending:InstallEvent|null=null;
 let installed=matchMedia('(display-mode: standalone)').matches||(navigator as Navigator & {standalone?:boolean}).standalone===true;
+export type OfflineAvailability='preparing'|'ready'|'unavailable';
+let offlineAvailability:OfflineAvailability=import.meta.env.PROD&&'serviceWorker' in navigator?'preparing':'unavailable';
+const setOfflineAvailability=(state:OfflineAvailability)=>{offlineAvailability=state;window.dispatchEvent(new Event('inkdays-offline-availability'));};
+export const getOfflineAvailability=()=>offlineAvailability;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();pending=event as InstallEvent;});
 window.addEventListener('appinstalled',()=>{installed=true;pending=null;});
 if(import.meta.env.PROD&&'serviceWorker' in navigator){
-  const controlled=!!navigator.serviceWorker.controller;if(controlled)navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload(),{once:true});
-  window.addEventListener('load',()=>{void navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(registration=>registration.update()).catch(error=>console.warn('Não foi possível preparar o modo offline.',error));});
+  const controlled=!!navigator.serviceWorker.controller;if(controlled){offlineAvailability='ready';navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload(),{once:true});}
+  window.addEventListener('load',()=>{void navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(async registration=>{await registration.update();await navigator.serviceWorker.ready;setOfflineAvailability('ready');}).catch(error=>{if(!navigator.serviceWorker.controller)setOfflineAvailability('unavailable');console.warn('Não foi possível preparar o modo offline.',error);});});
 }
 export async function installGame(){
   if(pending&&!installed){const prompt=pending;pending=null;try{await prompt.prompt();await prompt.userChoice;return;}catch{/* Show browser instructions below. */}}

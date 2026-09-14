@@ -1,4 +1,4 @@
-import { installGame } from './Install';
+import { getOfflineAvailability, installGame } from './Install';
 import type { DayCycle } from '../daycycle/DayCycle';
 import type { Pistol } from '../weapons/Pistol';
 import { C, nextBoss } from '../config/gameplay';
@@ -21,15 +21,18 @@ export class UI {
         <div id="toast" role="status"></div><div id="debug" class="hidden"></div><div id="lock-note" class="hidden">Câmera alternativa: segure o botão direito e mova o mouse.</div>
       </section><div class="damage-flash"></div><section class="overlay"></section><div class="portrait-note">INKDAYS<br><small>O jogo foi criado para tela horizontal.<br>Gire a tela ou amplie a janela para jogar.</small></div><footer><span>UM MUNDO EM BRANCO. MAIS UM DIA PARA CONTAR.</span><span>OFFLINE · ALPHA 0.1</span></footer>`;
     this.hud=this.el('.hud');this.overlay=this.el('.overlay');
+    window.addEventListener('inkdays-offline-availability',()=>this.updateOfflineAvailability());
     document.addEventListener('fullscreenchange',()=>{const note=this.root.querySelector('#settings-note');if(note)note.textContent=document.fullscreenElement?'Tela cheia ativada.':'Tela cheia desativada.';});
   }
   el<T extends HTMLElement=HTMLElement>(q:string) {return this.root.querySelector<T>(q)!;}
   on(id:string,callback:()=>void) {this.el<HTMLButtonElement>(id).addEventListener('click',callback);}
   menu(start:()=>void,settings:()=>void) {
     this.hud.classList.add('hidden');this.overlay.className='overlay home';
-    this.overlay.innerHTML=`<div class="home-content"><div class="edition"><span></span> UM JOGO DE SOBREVIVÊNCIA EM TINTA</div><h1>INKDAYS<span class="logo-dot">.</span></h1><h2>SOBREVIVA MAIS UM DIA.</h2><p>O mundo é uma folha em branco.<br>A noite tem outros planos.</p><div class="home-actions"><button class="primary" id="online">MULTIPLAYER <span>↗</span></button><button class="secondary" id="play">JOGAR SOZINHO</button><button class="secondary" id="settings">CONFIGURAÇÕES <span>⚙</span></button><button class="install-button" id="install">↓ INSTALE AQUI</button></div><div class="home-note"><i></i> Entre com um amigo. Sobrevivam juntos.</div><div class="home-controls">WASD para explorar &nbsp;·&nbsp; Mouse para mirar e atirar</div></div><div class="map-caption"><span>01 / VALE DO PAPEL</span><p>Antes da noite,<br>aprenda os caminhos.</p><i>↓</i></div>`;
+    this.overlay.innerHTML=`<div class="home-content"><div class="edition"><span></span> UM JOGO DE SOBREVIVÊNCIA EM TINTA</div><h1>INKDAYS<span class="logo-dot">.</span></h1><h2>SOBREVIVA MAIS UM DIA.</h2><p>O mundo é uma folha em branco.<br>A noite tem outros planos.</p><div class="home-actions"><button class="primary" id="online">MULTIPLAYER <span>↗</span></button><button class="secondary solo-button" id="play"><span>JOGAR SOLO</span><small id="offline-status">OFFLINE</small></button><button class="secondary" id="settings">CONFIGURAÇÕES <span>⚙</span></button><button class="install-button" id="install">↓ INSTALE AQUI</button></div><div class="home-note"><i></i> Entre com um amigo. Sobrevivam juntos.</div><div class="home-controls">WASD para explorar &nbsp;·&nbsp; Mouse para mirar e atirar</div></div><div class="map-caption"><span>01 / VALE DO PAPEL</span><p>Antes da noite,<br>aprenda os caminhos.</p><i>↓</i></div>`;
+    this.updateOfflineAvailability();
     this.on('#install',()=>{void installGame();});this.on('#online',()=>this.multiplayer(()=>this.menu(start,settings)));this.on('#play',start);this.on('#settings',settings);
   }
+  private updateOfflineAvailability(){const badge=this.root.querySelector<HTMLElement>('#offline-status');if(!badge)return;const state=getOfflineAvailability();badge.textContent=state==='ready'?'OFFLINE · PRONTO':state==='preparing'?'OFFLINE · PREPARANDO':'OFFLINE';badge.dataset.state=state;}
   multiplayer(back:()=>void) {
     this.overlay.className='overlay modal';this.overlay.innerHTML=`<div class="card room-card"><span class="eyebrow">SOBREVIVAM JUNTOS</span><h2>Multiplayer</h2><p>Entre na sala pública ou compartilhe um código para reunir seus amigos.</p><button class="primary" id="public-room">SALA PÚBLICA · ${PUBLIC_ROOM_CODE} <span>↗</span></button><button class="secondary" id="create-room">CRIAR SALA COM CÓDIGO</button><div class="room-divider"><span>OU ENTRE COM UM CÓDIGO</span></div><form id="join-room"><label for="room-code">CÓDIGO DA SALA</label><div><input id="room-code" inputmode="text" autocomplete="off" maxlength="8" placeholder="EX.: NOITE7"><button type="submit" aria-label="Entrar na sala">→</button></div><small id="room-error" role="alert"></small></form><button class="text-button" id="back">VOLTAR</button></div>`;
     const enter=(code:string)=>{location.href=publicRoomInvite(location.href,code);};
