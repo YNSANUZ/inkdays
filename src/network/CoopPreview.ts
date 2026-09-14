@@ -105,7 +105,7 @@ export function mountCoopPreview(app:HTMLElement){
       if(me?.health===0&&input.active)pause();
     }
     };
-    socket.onclose=e=>{connected=false;clearInterval(joinTimer);joinTimer=0;button.disabled=false;if(joinPending)button.textContent='RECONECTANDO…';allyTarget='';clearInterval(allyReviveTimer);allyReviveTimer=0;allyRevive.hidden=true;input.clear();if(!pageLeaving&&!roomFull)report.disconnected();if(roomFull)return;reconnectAttempts++;status.textContent=e.reason?`${e.reason.toUpperCase()} · RECONECTANDO…`:performance.now()-connectionStartedAt>=5000?'SERVIDOR ACORDANDO · NOVA TENTATIVA AUTOMÁTICA…':'CONEXÃO INTERROMPIDA · RECONECTANDO…';if(!pageLeaving)reconnectTimer=window.setTimeout(connect,1000);};
+    socket.onclose=e=>{connected=false;clearInterval(joinTimer);joinTimer=0;button.disabled=false;if(joinPending)button.textContent='RECONECTANDO…';allyTarget='';clearInterval(allyReviveTimer);allyReviveTimer=0;allyRevive.hidden=true;input.clear();if(!pageLeaving&&!roomFull)report.disconnected();if(roomFull)return;if(e.code===4001){clearTimeout(wakeHintTimer);wakeHintTimer=0;button.disabled=true;status.textContent='SESSÃO RETOMADA EM OUTRA ABA OU APARELHO';return;}reconnectAttempts++;status.textContent=e.reason?`${e.reason.toUpperCase()} · RECONECTANDO…`:performance.now()-connectionStartedAt>=5000?'SERVIDOR ACORDANDO · NOVA TENTATIVA AUTOMÁTICA…':'CONEXÃO INTERROMPIDA · RECONECTANDO…';if(!pageLeaving)reconnectTimer=window.setTimeout(connect,1000);};
     socket.onerror=()=>{status.textContent=performance.now()-connectionStartedAt>=5000?'SERVIDOR ACORDANDO · CONTINUE NESTA TELA…':'CONEXÃO INTERROMPIDA · TENTANDO RECUPERAR…';};
   };
   connect();
