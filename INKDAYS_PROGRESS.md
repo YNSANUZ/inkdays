@@ -661,3 +661,9 @@ A retomada agora também funciona quando a conexão nova chega antes de o servid
 O botão da sala agora usa a folha de compartilhamento do sistema quando o navegador oferece essa função. No celular, o jogador pode enviar diretamente o convite da sala por um aplicativo instalado; o conteúdo inclui o nome do INKDAYS e o endereço com o código correto. Se o compartilhamento nativo não existir ou falhar, o cliente copia o mesmo endereço para a área de transferência. Cancelar voluntariamente a folha não produz uma cópia inesperada.
 
 O link continua removendo qualquer endereço técnico de servidor e conserva somente a entrada pública e o código normalizado da sala. A entrega passou por 139 testes, incluindo compartilhamento, fallback e cancelamento, além de lint e build/PWA. A lista exata de aplicativos oferecidos depende do sistema operacional, e o fluxo visual ainda deve ser conferido em um celular físico após a atualização da PWA.
+
+## Fase 2 — retomada consciente entre abas e aparelhos
+
+Quando uma identidade é retomada por outra conexão, o cliente anterior agora sai imediatamente do gameplay, desativa movimento, mira, áudio e controles touch e volta à apresentação da sala. A mensagem informa que a sessão foi aberta em outra aba ou aparelho, e o botão `USAR NESTE APARELHO` permite recuperá-la deliberadamente com o mesmo token. Não existe tentativa automática nesse caso, evitando que dois dispositivos disputem a identidade em um ciclo de reconexões.
+
+Depois da recuperação, o jogador ainda aguarda o pacote de boas-vindas e o snapshot autoritativo antes de voltar à partida. A tela conserva o nome e o código da sala; o servidor continua mantendo uma única identidade, posição, vida, munição e recompensa. Os 139 testes existentes, incluindo substituição antecipada do transporte, passaram junto com lint e build/PWA. A alternância visual entre dois aparelhos físicos ainda precisa de playtest humano.
