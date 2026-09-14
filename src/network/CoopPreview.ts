@@ -113,7 +113,7 @@ export function mountCoopPreview(app:HTMLElement){
   function frame(now:number){
     requestAnimationFrame(frame);const dt=Math.min(.1,(now-(last||now))/1000);last=now;if(connected&&snapshotFreshness.stale(now)){connected=false;input.clear();status.textContent='Estado desatualizado. Reconectando…';socket.close(4000,'Estado autoritativo expirou');}
     const namePacket=connected&&socket.readyState===WebSocket.OPEN?reliableName.packet(now):null;if(namePacket)socket.send(JSON.stringify(namePacket));const chatPacket=connected&&socket.readyState===WebSocket.OPEN?chatOutbox.packet(now):null;if(chatPacket)socket.send(JSON.stringify(chatPacket));
-    const ready=controlsReady(connected&&socket.readyState===WebSocket.OPEN,prediction!==null,chatOpen);if(ready)camera.look(input.lookX,input.lookY,1);input.lookX=input.lookY=0;touch.setActive(input.active&&ready&&innerWidth>innerHeight);
+    const ready=controlsReady(input.active,connected&&socket.readyState===WebSocket.OPEN,prediction!==null,chatOpen);if(ready)camera.look(input.lookX,input.lookY,1);input.lookX=input.lookY=0;touch.setActive(ready&&innerWidth>innerHeight);
     const steps=inputClock.advance(dt,ready);
     for(let step=0;step<steps&&prediction;step++){
       const sent=sequence++,raw=input.consume(),command=prediction.prepare(sent,raw);if(raw.shot&&prediction.shotId!==undefined){audio.cue('shot');predictedShots.predict(prediction.shotId,now);}const yaw=Math.atan2(Math.sin(camera.yaw),Math.cos(camera.yaw)),viewTick=Math.max(0,Math.floor(interpolationTick(snapshot?.tick??6,snapshotReceivedAt||now,now)));prediction.submit({sequence:sent,yaw,command});socket.send(JSON.stringify({version:1,sequence:sent,yaw,pitch:camera.pitch,viewTick,shotId:prediction.shotId,command}));

@@ -611,3 +611,11 @@ Criar uma sala abre o lobby isolado já sustentado pelo servidor; o convite dess
 A espera multiplayer deixou de usar o pequeno quadro técnico no canto. O lobby agora ocupa o centro sobre o Vale do Papel, destaca o código da sala, apresenta as oito vagas em uma grade e diferencia visualmente quem aguarda de quem já está na partida. Nome, entrada, cópia do convite e retorno ao menu ficam no fluxo principal; métricas detalhadas permanecem disponíveis em uma seção recolhida para testes.
 
 Depois que o servidor confirma a entrada, o lobby inteiro desaparece e apenas o diagnóstico recolhido continua acessível, preservando a área de gameplay. O layout inclui uma redução específica para celular horizontal. A composição visual foi conferida no navegador local com um snapshot real. O HUD, chat e mira ficam ocultos durante a espera e retornam somente após a confirmação de entrada. O comportamento com vários aparelhos físicos ainda depende de playtest público.
+
+## Fase 2 — fechamento da entrada involuntária pelo lobby
+
+A verificação visual revelou que o primeiro snapshot criava a base de predição e, mesmo com o jogador ainda no lobby, o relógio de entrada começava a enviar comandos neutros. A compatibilidade do servidor com clientes antigos promovia esse participante automaticamente para a partida. Por isso uma sala recém-criada podia exibir `1 NA PARTIDA` antes de qualquer clique.
+
+A porta de controles agora exige quatro condições simultâneas: entrada local explicitamente ativa, WebSocket conectado, referência autoritativa disponível e chat fechado. Nenhum comando de movimento sai durante a espera; portanto, o servidor mantém `ready: false`, congela uma sala sem jogadores ativos e só concede a proteção quando o botão de entrada é confirmado. O teste unitário cobre explicitamente o lobby inativo.
+
+Validação integrada local: uma sala inédita permaneceu em `1/8 CONECTADOS · 0 NA PARTIDA` depois de vários snapshots e mostrou `ENTRAR NA PARTIDA`. Somente após o clique o lobby foi removido e o HUD voltou a ficar visível.

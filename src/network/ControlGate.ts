@@ -1,2 +1,2 @@
-/** Gameplay input is safe only after transport and authoritative baseline are ready. */
-export const controlsReady=(connected:boolean,hasSnapshot:boolean,chatOpen:boolean)=>connected&&hasSnapshot&&!chatOpen;
+/** Gameplay input is safe only after the player explicitly entered the match. */
+export const controlsReady=(active:boolean,connected:boolean,hasSnapshot:boolean,chatOpen:boolean)=>active&&connected&&hasSnapshot&&!chatOpen;
