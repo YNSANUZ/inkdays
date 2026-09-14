@@ -588,6 +588,12 @@ A proteção de entrada foi exercitada com dois clientes reais conectados ao mes
 
 O teste repete o pedido de entrada para cobrir perda de pacote e verifica a convergência pelo mesmo tick nos dois clientes. Esta validação automatizada aproxima o cenário de rede real, mas troca de Wi-Fi, suspensão da PWA e latência de rede móvel ainda exigem aparelhos físicos.
 
+## Fase 2 — isolamento real por código de sala
+
+O servidor agora mantém uma autoridade independente para cada código válido recebido na conexão. Jogadores em `PAPEL` e `NOITE7`, por exemplo, possuem listas, posições, inimigos, ciclo de dias, chat, recompensas e chefões separados. Snapshots são calculados uma vez por sala e entregues somente aos sockets associados a ela.
+
+A retomada por token conserva a sala original, mesmo que a URL seja alterada durante a reconexão. Salas adicionais vazias são removidas depois do prazo de retomada; `PAPEL` permanece como sala pública estável. O frontend já encaminha o parâmetro `room`, guarda tokens por sala e copia convites com o código confirmado pelo servidor. A interface para criar ou digitar códigos ainda será adicionada; nesta etapa, links contendo `?coop=1&room=CODIGO` já possuem isolamento técnico.
+
 ## Fase 2 — proteção autoritativa para entrada tardia
 
 Ao confirmar a entrada ou recuperar uma conexão durante a partida, o servidor concede três segundos de proteção. Ataques comuns e o impacto especial do Colosso continuam sendo processados, mas não reduzem a vida protegida. O prazo pertence ao estado autoritativo e é enviado nos snapshots, evitando diferenças entre relógios dos aparelhos.
