@@ -605,3 +605,9 @@ O HUD mostra `PROTEGIDO` com a contagem restante e oculta o aviso assim que o se
 O botão `MULTIPLAYER` agora abre a escolha de sala dentro da identidade visual da home. O jogador pode entrar em `PAPEL`, criar automaticamente um código legível de seis caracteres ou digitar o código recebido de um amigo. Códigos são convertidos para maiúsculas, aceitam somente letras e números e exigem ao menos quatro caracteres antes da navegação.
 
 Criar uma sala abre o lobby isolado já sustentado pelo servidor; o convite dessa tela conserva o mesmo código. O painel foi dimensionado também para celulares em modo horizontal, sem ocupar a área inteira. A geração determinística e a formação das URLs possuem cobertura automatizada; a reunião por convite ainda deve ser conferida em dois aparelhos depois que o servidor com isolamento de salas estiver implantado no Render.
+
+## Fase 2 — lobby apresentado como tela de jogo
+
+A espera multiplayer deixou de usar o pequeno quadro técnico no canto. O lobby agora ocupa o centro sobre o Vale do Papel, destaca o código da sala, apresenta as oito vagas em uma grade e diferencia visualmente quem aguarda de quem já está na partida. Nome, entrada, cópia do convite e retorno ao menu ficam no fluxo principal; métricas detalhadas permanecem disponíveis em uma seção recolhida para testes.
+
+Depois que o servidor confirma a entrada, o lobby inteiro desaparece e apenas o diagnóstico recolhido continua acessível, preservando a área de gameplay. O layout inclui uma redução específica para celular horizontal. A composição visual foi conferida no navegador local com um snapshot real. O HUD, chat e mira ficam ocultos durante a espera e retornam somente após a confirmação de entrada. O comportamento com vários aparelhos físicos ainda depende de playtest público.
