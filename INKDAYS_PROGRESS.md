@@ -575,3 +575,9 @@ O botão local também segue essa compatibilidade: somente um `ready: false` exp
 O botão de entrada agora permanece em `ENTRANDO…` e repete o pedido a cada 250 ms até um snapshot confirmar que o participante está pronto. Movimento, mira, áudio de gameplay e controles touch só são liberados depois dessa confirmação. Se a conexão cair durante a entrada, o pedido é retomado após a reconexão da mesma identidade.
 
 A sala pública recebeu o código estável `PAPEL`, enviado pelo servidor no pacote de boas-vindas e incluído no convite copiado. O cliente conserva compatibilidade com servidores anteriores usando o mesmo código como fallback. Esta etapa prepara a interface e o protocolo para múltiplas salas futuras sem afirmar que já existe isolamento entre códigos.
+
+## Fase 2 — proteção autoritativa para entrada tardia
+
+Ao confirmar a entrada ou recuperar uma conexão durante a partida, o servidor concede três segundos de proteção. Ataques comuns e o impacto especial do Colosso continuam sendo processados, mas não reduzem a vida protegida. O prazo pertence ao estado autoritativo e é enviado nos snapshots, evitando diferenças entre relógios dos aparelhos.
+
+O HUD mostra `PROTEGIDO` com a contagem restante e oculta o aviso assim que o servidor encerra o prazo. A proteção não substitui a invulnerabilidade curta de dano nem interfere no resgate de aliados. O teste novo coloca um inimigo junto ao jogador, confirma vida intacta durante o prazo e dano normal depois dele.

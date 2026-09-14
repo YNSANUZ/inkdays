@@ -28,3 +28,5 @@
 /* Noite em tinta: mantém o centro legível e escurece gradualmente as bordas. */
 .hud.is-horde::before,.coop-hud.horde::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 48%,transparent 22%,rgba(33,40,39,.08) 55%,rgba(17,23,22,.27) 100%);mix-blend-mode:multiply;z-index:-1;transition:opacity 1.2s ease}
 .coop-team-player.waiting{opacity:.5}.coop-team-player.waiting em{visibility:hidden}
+
+.coop-protection{position:fixed;left:50%;top:58%;z-index:18;transform:translateX(-50%);padding:6px 10px;border:1px solid #171918;background:#f3f1e9c9;color:#344d39;font-size:9px;font-weight:900;letter-spacing:1.4px;pointer-events:none}.touch-mode .coop-protection{top:auto;bottom:max(27%,calc(env(safe-area-inset-bottom) + 108px))}
