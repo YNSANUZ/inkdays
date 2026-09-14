@@ -100,4 +100,8 @@ describe('combate controlado pelo servidor',()=>{
     const a=new CombatAuthority();a.join('a');a.join('b');const player=a.snapshot().players[0];a.enemies.spawn(1,new Vector3(0,0,10));const enemy=a.enemies.active[0];enemy.avatar.root.position.copy(player.position).add(new Vector3(0,0,-1));enemy.speed=0;enemy.cooldown=0;
     for(let n=0;n<900&&a.snapshot().players[0].health>0;n++)a.step();const round=a.snapshot().round;expect(a.snapshot().players[0].health).toBe(0);expect(a.revive('a')).toBe(true);expect(a.revive('a')).toBe(false);expect(a.snapshot()).toMatchObject({round,gameOver:false});expect(a.snapshot().players.find(player=>player.id==='a')).toMatchObject({health:100,position:{x:0,y:0,z:10}});
   });
+  it('permite que um aliado vivo reviva o companheiro somente de perto',()=>{
+    const a=new CombatAuthority();a.join('a');a.join('b');const players=(a as unknown as {players:Map<string,{player:{position:Vector3;health:{damage:(amount:number)=>boolean}}}>}).players,target=players.get('b')!;target.player.health.damage(100);target.player.position.set(8,0,10);
+    expect(a.reviveAlly('a','b')).toBe(false);target.player.position.set(2.5,0,10);expect(a.reviveAlly('a','b')).toBe(true);expect(a.snapshot().players.find(player=>player.id==='b')).toMatchObject({health:100,position:{x:2.5,y:0,z:10}});expect(a.reviveAlly('a','b')).toBe(false);
+  });
 });

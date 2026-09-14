@@ -532,3 +532,9 @@ Todos os jogadores que acompanham a transição recebem a mesma tela central por
 O início da horda de um dia múltiplo de dez agora substitui o anúncio comum por uma apresentação própria: `CHEFÃO · DIA 10`, `O COLOSSO` e `PREPAREM-SE`. A decisão usa o mesmo snapshot autoritativo que cria o chefão; assim, participantes que já acompanhavam a partida recebem a apresentação na mesma transição, enquanto entradas tardias e reconexões não reproduzem uma chegada antiga.
 
 A faixa central ganhou contraste escuro, nome vermelho e duração maior, aproximando a batalha do enquadramento do print mestre. A música exclusiva do Colosso já selecionada pelo estado autoritativo começa junto da presença do boss. A barra superior continua mostrando vida, fúria e preparação do impacto durante o combate.
+
+## Fase 2 — resgate cooperativo por proximidade
+
+Um jogador vivo pode agora reviver um companheiro conectado que caiu a até 2,6 metros. A validação é feita pelo servidor: identidade do alvo, estado dos dois participantes e distância precisam continuar válidos quando o pedido chega. O aliado recupera a vida no ponto da queda com velocidade e comandos antigos zerados. Jogadores vivos, desconectados, distantes ou o próprio solicitante são rejeitados.
+
+Durante o gameplay aparece `F · REVIVER nome` no PC e um botão contextual no celular. O botão individual `REVIVER AGORA` continua disponível separadamente enquanto o modo de teste estiver ativo. Validação automatizada: 121 testes passaram, incluindo recusa à distância, resgate próximo, preservação da posição e rejeição de repetição; lint, TypeScript e build PWA passaram. Alcance percebido, clareza do botão sob combate e uso simultâneo em dois aparelhos ainda dependem de playtest humano.

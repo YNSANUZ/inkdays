@@ -47,6 +47,11 @@ export class CombatAuthority {
     const p=this.players.get(id);if(!p?.connected||!p.player.health.dead)return false;
     const point=spawn(p.slot);p.player.position.set(point.x,0,point.z);p.player.velocity.set(0,0,0);p.player.vertical=0;p.player.health.revive();p.input.command=neutral();p.age=Infinity;return true;
   }
+  reviveAlly(id:string,targetId:string){
+    const rescuer=this.players.get(id),target=this.players.get(targetId);if(!rescuer?.connected||rescuer.player.health.dead||!target?.connected||!target.player.health.dead||id===targetId)return false;
+    const dx=rescuer.player.position.x-target.player.position.x,dz=rescuer.player.position.z-target.player.position.z;if(Math.hypot(dx,dz)>C.player.reviveRange)return false;
+    target.player.velocity.set(0,0,0);target.player.vertical=0;target.player.health.revive();target.input.command=neutral();target.age=Infinity;return true;
+  }
   receive(id:string,value:unknown){const p=this.players.get(id),packet=parseInput(value);if(!p?.connected||!packet||packet.sequence<=p.received||packet.viewTick!==undefined&&packet.viewTick>this.tick)return false;
     if(packet.viewTick!==undefined){packet.viewTick=Math.max(packet.viewTick,p.viewed);p.viewed=packet.viewTick;}
     packet.command.jump||=p.input.command.jump;packet.command.reload||=p.input.command.reload;packet.command.fire||=p.input.command.fire&&p.age===0;
