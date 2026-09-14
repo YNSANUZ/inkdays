@@ -582,6 +582,12 @@ Participantes com prontidão explicitamente desativada continuam visíveis na sa
 
 A regra considera prontidão ausente como jogador ativo para continuar compatível com versões anteriores do servidor. Assim, durante uma implantação gradual, nenhum personagem legítimo desaparece apenas porque o snapshot antigo ainda não publica esse campo.
 
+## Fase 2 — validação de entrada tardia sob rede degradada
+
+A proteção de entrada foi exercitada com dois clientes reais conectados ao mesmo servidor local sob latência, jitter, perda periódica, duplicação e reordenação. Um participante permaneceu no lobby como observador enquanto o outro entrou diante de um inimigo. Ambos receberam snapshots idênticos durante a janela protegida, com vida 100, e depois observaram a mesma expiração e o mesmo dano autoritativo.
+
+O teste repete o pedido de entrada para cobrir perda de pacote e verifica a convergência pelo mesmo tick nos dois clientes. Esta validação automatizada aproxima o cenário de rede real, mas troca de Wi-Fi, suspensão da PWA e latência de rede móvel ainda exigem aparelhos físicos.
+
 ## Fase 2 — proteção autoritativa para entrada tardia
 
 Ao confirmar a entrada ou recuperar uma conexão durante a partida, o servidor concede três segundos de proteção. Ataques comuns e o impacto especial do Colosso continuam sendo processados, mas não reduzem a vida protegida. O prazo pertence ao estado autoritativo e é enviado nos snapshots, evitando diferenças entre relógios dos aparelhos.
