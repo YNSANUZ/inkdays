@@ -556,3 +556,9 @@ O servidor continua decidindo cada tentativa e pedidos repetidos não criam vida
 Abrir o multiplayer público não coloca mais um novo participante imediatamente sob ataque. A conexão nasce em estado de lobby: o ciclo fica congelado se ninguém entrou, inimigos ignoram quem ainda está escolhendo o nome e esse participante não conta para derrota, horda ou resumo do dia. O botão agora diz `ENTRAR NA PARTIDA` e envia a confirmação ao servidor antes de liberar os controles.
 
 Depois da entrada, pausar ou liberar o mouse mantém o jogador dentro da partida, como antes. Reconexões recuperam o estado pronto da mesma identidade. Clientes de protocolo anteriores continuam compatíveis porque o modo protegido é solicitado explicitamente na URL da conexão. A próxima evolução desta base será a tela de sala com código, lista e prontidão visível, sem reestruturar a simulação já validada.
+
+## Fase 2 — primeira apresentação da sala pública
+
+O painel de entrada passou a mostrar as oito vagas da sala. Cada participante aparece com nome e estado `AGUARDANDO` ou `NA PARTIDA`, sempre derivado do snapshot do servidor; vagas não ocupadas ficam marcadas como livres. A identidade local recebe `VOCÊ`, sem inserir nomes como HTML.
+
+O botão `COPIAR CONVITE` gera o endereço público do multiplayer e remove qualquer sobrescrita técnica de servidor antes de copiar. A lista e os controles de entrada somem ao iniciar o gameplay, devolvendo a tela ao HUD discreto. Esta é a apresentação inicial da sala pública; códigos independentes e liderança da sala continuam como próximas entregas arquitetônicas.
