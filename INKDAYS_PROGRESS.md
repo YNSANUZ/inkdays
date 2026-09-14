@@ -576,6 +576,12 @@ O botão de entrada agora permanece em `ENTRANDO…` e repete o pedido a cada 25
 
 A sala pública recebeu o código estável `PAPEL`, enviado pelo servidor no pacote de boas-vindas e incluído no convite copiado. O cliente conserva compatibilidade com servidores anteriores usando o mesmo código como fallback. Esta etapa prepara a interface e o protocolo para múltiplas salas futuras sem afirmar que já existe isolamento entre códigos.
 
+## Fase 2 — separação visual entre lobby e mapa
+
+Participantes com prontidão explicitamente desativada continuam visíveis na sala e na faixa da equipe, mas deixam de criar avatar, nome flutuante ou marcador no minimapa. Quando o servidor confirma a entrada, o mesmo snapshot cria o personagem no mundo e passa a alimentar sua interpolação. Se alguém voltar a um estado de espera em uma evolução futura, a limpeza remove também buffers e rótulos associados.
+
+A regra considera prontidão ausente como jogador ativo para continuar compatível com versões anteriores do servidor. Assim, durante uma implantação gradual, nenhum personagem legítimo desaparece apenas porque o snapshot antigo ainda não publica esse campo.
+
 ## Fase 2 — proteção autoritativa para entrada tardia
 
 Ao confirmar a entrada ou recuperar uma conexão durante a partida, o servidor concede três segundos de proteção. Ataques comuns e o impacto especial do Colosso continuam sendo processados, mas não reduzem a vida protegida. O prazo pertence ao estado autoritativo e é enviado nos snapshots, evitando diferenças entre relógios dos aparelhos.
