@@ -637,3 +637,9 @@ Esse teste cobre a fronteira entre lobby e partida que antes estava dividida em 
 Após a implantação manual da branch do servidor no Render, três clientes WebSocket reais foram conectados ao endereço público. `AZV211` recebeu Bruno e Mari, enquanto `BZV211` recebeu somente Rafa; os pacotes de boas-vindas preservaram os códigos solicitados e os snapshots não misturaram participantes entre as salas.
 
 Na sala da dupla, o relógio permaneceu congelado com ambos aguardando. Bruno entrou sem promover Mari, depois Mari entrou e os dois clientes observaram um snapshot idêntico do mesmo tick, dia e fase. Esta validação confirma isolamento e percurso do lobby na hospedagem pública. Permanecem pendentes sensação de latência, controles e estabilidade prolongada em dois aparelhos físicos.
+
+## Fase 2 — reconexão validada na hospedagem pública
+
+Dois clientes WebSocket foram conectados a uma sala temporária no servidor público, entraram na partida e compartilharam o mesmo estado. Depois da queda controlada de Bruno, Mari recebeu `connected: false`; Bruno retomou pelo token dentro do prazo e Mari recebeu novamente `connected: true`.
+
+A retomada conservou o mesmo ID, código de sala, nome, prontidão, vida, munição e dinheiro. O snapshot de mesmo tick foi byte a byte igual nos dois clientes, com exatamente duas identidades e nenhum personagem duplicado. O ensaio ficou disponível em `npm run validate:public:reconnect`, usando uma sala isolada criada a cada execução. A troca real entre Wi-Fi e rede móvel, a suspensão do PWA pelo sistema e a sensação visual durante a queda ainda dependem de teste humano em dois aparelhos.
