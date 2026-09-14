@@ -619,3 +619,9 @@ A verificação visual revelou que o primeiro snapshot criava a base de prediç�
 A porta de controles agora exige quatro condições simultâneas: entrada local explicitamente ativa, WebSocket conectado, referência autoritativa disponível e chat fechado. Nenhum comando de movimento sai durante a espera; portanto, o servidor mantém `ready: false`, congela uma sala sem jogadores ativos e só concede a proteção quando o botão de entrada é confirmado. O teste unitário cobre explicitamente o lobby inativo.
 
 Validação integrada local: uma sala inédita permaneceu em `1/8 CONECTADOS · 0 NA PARTIDA` depois de vários snapshots e mostrou `ENTRAR NA PARTIDA`. Somente após o clique o lobby foi removido e o HUD voltou a ficar visível.
+
+## Fase 2 — apelidos sincronizados antes da entrada
+
+O nome escolhido agora é enviado enquanto o participante ainda está no lobby, após uma breve pausa de digitação. O pedido confiável continua sendo repetido até o nome aparecer no snapshot autoritativo, e o valor normalizado fica salvo no navegador para as próximas salas. Assim, os amigos conseguem se identificar na grade antes de iniciar o gameplay.
+
+O servidor aceita a troca de nome sem alterar a prontidão. Um teste de transporte conecta um cliente protegido, envia `Mari`, confirma o nome compartilhado e comprova que `ready` permanece falso e o relógio do primeiro dia continua congelado.
