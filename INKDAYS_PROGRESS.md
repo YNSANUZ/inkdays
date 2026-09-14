@@ -643,3 +643,9 @@ Na sala da dupla, o relógio permaneceu congelado com ambos aguardando. Bruno en
 Dois clientes WebSocket foram conectados a uma sala temporária no servidor público, entraram na partida e compartilharam o mesmo estado. Depois da queda controlada de Bruno, Mari recebeu `connected: false`; Bruno retomou pelo token dentro do prazo e Mari recebeu novamente `connected: true`.
 
 A retomada conservou o mesmo ID, código de sala, nome, prontidão, vida, munição e dinheiro. O snapshot de mesmo tick foi byte a byte igual nos dois clientes, com exatamente duas identidades e nenhum personagem duplicado. O ensaio ficou disponível em `npm run validate:public:reconnect`, usando uma sala isolada criada a cada execução. A troca real entre Wi-Fi e rede móvel, a suspensão do PWA pelo sistema e a sensação visual durante a queda ainda dependem de teste humano em dois aparelhos.
+
+## Fase 2 — feedback durante o despertar do servidor
+
+O lobby agora explica o tempo de espera da hospedagem gratuita sem parecer travado. A conexão começa com um estado curto de conexão; depois de cinco segundos, a interface informa que o servidor está acordando e que a primeira resposta pode levar até 50 segundos. Se a tentativa cair, o cliente continua reconectando automaticamente e atualiza o texto conforme queda comum, aquecimento ou expiração do estado autoritativo.
+
+O jogador continua protegido no lobby durante todo esse percurso. Movimento, mira e entrada não são liberados antes do pacote de boas-vindas e do snapshot autoritativo, e uma entrada já solicitada volta a ser enviada após a recuperação. Os temporizadores são encerrados ao conectar, encontrar a sala cheia ou fechar a página. A implementação passou pelos 135 testes automatizados, lint e build/PWA; o tempo exato de despertar ainda varia conforme a carga do Render e a rede do aparelho.
