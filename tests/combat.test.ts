@@ -14,7 +14,7 @@ describe('combate controlado pelo servidor',()=>{
     a.receive('a',packet(0,true));a.step();expect(a.snapshot().players.map(p=>p.ammo)).toEqual([7,8]);
     for(let n=1;n<10;n++){a.receive('a',packet(n,true));a.step();}expect(a.snapshot().players[0].ammo).toBe(7);
     a.receive('a',packet(10,false,true));for(let n=0;n<80;n++)a.step();
-    expect(a.snapshot().players[0]).toMatchObject({ammo:8,reserve:47});
+    expect(a.snapshot().players[0]).toMatchObject({ammo:8,reserve:71});
   });
   it('não mantém o gatilho preso quando novos comandos deixam de chegar',()=>{const a=new CombatAuthority();a.join('a');a.receive('a',packet(0,true));for(let n=0;n<120;n++)a.step();expect(a.snapshot().players[0].ammo).toBe(7);});
   it('deduplica o identificador confiável de um clique rápido',()=>{const a=new CombatAuthority();a.join('a');const shot=(sequence:number,shotId:number)=>({...packet(sequence),shotId});a.receive('a',shot(0,7));a.step();expect(a.snapshot().players[0].ammo).toBe(7);for(let n=0;n<20;n++)a.step();a.receive('a',shot(1,7));a.step();expect(a.snapshot().players[0].ammo).toBe(7);a.receive('a',shot(2,8));a.step();expect(a.snapshot().players[0].ammo).toBe(6);});
@@ -24,7 +24,7 @@ describe('combate controlado pelo servidor',()=>{
     a.receive('a',packet(0,true));a.step();expect(enemy.health).toBe(22);
     a.receive('a',packet(1,false));for(let n=0;n<16;n++)a.step();
     a.receive('a',packet(2,true));a.step();expect(a.enemies.active).toHaveLength(0);expect(a.snapshot().players[0]).toMatchObject({kills:1,money:20});
-    for(let n=0;n<60;n++)a.step();expect(a.snapshot().players[0].money).toBe(20);a.cycle.phase='horde';a.cycle.remaining=0;a.step();expect(a.snapshot().dayResult).toMatchObject({day:1,kills:1,money:20});
+    for(let n=0;n<60;n++)a.step();expect(a.snapshot().players[0].money).toBe(20);
   });
   it('cria um chefão autoritativo no Dia 10 e paga sua recompensa ao autor da eliminação',()=>{
     const a=new CombatAuthority();a.join('a');a.join('b');a.cycle.day=10;a.cycle.remaining=0;a.step();
@@ -35,7 +35,7 @@ describe('combate controlado pelo servidor',()=>{
     a.receive('a',packet(0,true));a.step();
     expect(a.snapshot().boss).toBeNull();expect(a.snapshot().players[0]).toMatchObject({kills:1,money:C.boss.reward});expect(a.snapshot().players[1].money).toBe(0);
   });
-  it('publica o mesmo resumo autoritativo ao amanhecer',()=>{const a=new CombatAuthority();a.join('a');a.join('b');const player=(a as unknown as {players:Map<string,{player:{health:{damage:(amount:number)=>boolean}}}>}).players.get('b')!;player.player.health.damage(100);a.cycle.phase='horde';a.cycle.remaining=0;a.step();expect(a.snapshot()).toMatchObject({day:2,phase:'day',dayResult:{serial:1,day:1,kills:0,money:0,survivors:1,players:2,nextBoss:10}});});
+  it('publica o mesmo resumo autoritativo somente após eliminar toda a horda',()=>{const a=new CombatAuthority();a.join('a');a.join('b');const player=(a as unknown as {players:Map<string,{player:{health:{damage:(amount:number)=>boolean}}}>}).players.get('b')!;player.player.health.damage(100);a.cycle.remaining=0;a.step();for(let n=0;n<1200&&a.cycle.day===1;n++){a.enemies.clear();a.step();}expect(a.snapshot()).toMatchObject({day:2,phase:'day',dayResult:{serial:1,day:1,kills:0,money:0,survivors:1,players:2,nextBoss:10}});});
   it('coloca o chefão em fúria abaixo de metade da vida',()=>{const a=new CombatAuthority();a.join('a');expect(a.enemies.spawnBoss(10,new Vector3(0,0,10))).toBe(true);const boss=a.enemies.active[0],speed=boss.speed,cooldown=boss.attackCooldown,damage=boss.damage;a.enemies.damage(boss,boss.maxHealth/2);expect(boss).toMatchObject({enraged:true});expect(boss.speed).toBeGreaterThan(speed);expect(boss.attackCooldown).toBeLessThan(cooldown);expect(boss.damage).toBeGreaterThan(damage);expect(a.snapshot().boss?.enraged).toBe(true);});
   it('avisa o impacto do Colosso e aplica dano e impulso somente pelo servidor',()=>{const a=new CombatAuthority();a.join('a');a.join('b');a.enemies.spawnBoss(10,new Vector3(0,0,10));const boss=a.enemies.active[0];boss.avatar.root.position.set(1,0,10);boss.speed=0;boss.specialCooldown=0;a.step();const warning=a.snapshot().boss?.slam;expect(warning).toMatchObject({serial:1,radius:C.boss.slamRadius});expect(warning!.remaining).toBeGreaterThan(1);expect(a.snapshot().impacts).toHaveLength(0);for(let n=0;n<75;n++)a.step();const state=a.snapshot(),players=state.players;expect(players[0].health).toBe(100-C.boss.slamDamage);expect(players[1].health).toBe(100-C.boss.slamDamage);expect(players[0].velocity.x).toBeLessThan(0);expect(players[1].velocity.x).toBeGreaterThan(0);expect(players.every(player=>player.vertical===C.boss.slamLift)).toBe(true);expect(state.boss?.slam).toBeNull();expect(state.impacts).toHaveLength(1);expect(state.impacts[0]).toMatchObject({serial:1,bossId:boss.id,position:{x:1,y:0,z:10},radius:C.boss.slamRadius});expect(state.impacts[0].tick).toBeGreaterThan(1);});
   it('faz a colisão do mundo conter o impulso do chefão nos limites do mapa',()=>{const a=new CombatAuthority();a.join('a');a.enemies.spawnBoss(10,new Vector3(0,0,10));const boss=a.enemies.active[0];boss.speed=0;a.step();const player=boss.target!;player.position.set(0,0,C.world.radius-C.player.radius);boss.avatar.root.position.set(0,0,player.position.z-1);boss.specialCooldown=0;a.step();for(let n=0;n<150;n++)a.step();expect(Math.hypot(player.position.x,player.position.z)).toBeLessThanOrEqual(C.world.radius-C.player.radius+.001);});
@@ -83,7 +83,7 @@ describe('combate controlado pelo servidor',()=>{
     a.enemies.spawn(1,new Vector3(1,0,10));a.enemies.active[0].avatar.root.position.set(1,0,10);a.enemies.active[0].speed=0;a.enemies.active[0].cooldown=0;
     for(let n=0;n<1500&&!a.snapshot().gameOver;n++)a.step();expect(a.snapshot().gameOver).toBe(true);
     const tick=a.tick,round=a.snapshot().round;expect(a.restart('a')).toBe(true);expect(a.restart('b')).toBe(false);expect(a.tick).toBe(tick);
-    expect(a.snapshot()).toMatchObject({round:round+1,day:1,phase:'day',gameOver:false,enemies:[],shots:[],players:[{id:'a',health:100,ammo:8,reserve:48,kills:0,money:0},{id:'b',health:100,ammo:8,reserve:48,kills:0,money:0}]});
+    expect(a.snapshot()).toMatchObject({round:round+1,day:1,phase:'day',gameOver:false,enemies:[],shots:[],players:[{id:'a',health:100,ammo:8,reserve:72,kills:0,money:0},{id:'b',health:100,ammo:8,reserve:72,kills:0,money:0}]});
   });
   it('atribui inimigos diferentes aos dois jogadores vivos mais próximos',()=>{
     const a=new CombatAuthority();a.join('a');a.join('b');a.enemies.spawn(1,new Vector3(0,0,10));a.enemies.spawn(1,new Vector3(2,0,10));

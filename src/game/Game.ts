@@ -18,7 +18,7 @@ type Mode='menu'|'playing'|'paused'|'dead'|'settings';
 export class Game {
   touch:TouchControls;outline:OutlineEffect;
   renderer:T.WebGLRenderer;scene=new T.Scene();world:World;player=new Player();camera=new ThirdPerson();input:Input;pistol=new Pistol();enemies:Enemies;horde=new Horde();cycle=new DayCycle();audio=new GameAudio();effects:Effects;ui:UI;
-  mode:Mode='menu';kills=0;money=0;settings=loadSettings();private accumulator=0;private last=0;private ray=new T.Raycaster();private debug=false;private fps=60;private light:T.DirectionalLight;private lastCommand={crouch:false,run:false};private contextLost=false;
+  mode:Mode='menu';kills=0;money=0;settings=loadSettings();private accumulator=0;private last=0;private ray=new T.Raycaster();private debug=false;private fps=60;private light:T.DirectionalLight;private lastCommand={crouch:false,run:false};private contextLost=false;private hordeAssist=false;
   constructor(app:HTMLElement) {
     this.renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});this.renderer.setClearColor(0xf3f1e9);this.renderer.outputColorSpace=T.SRGBColorSpace;this.outline=new OutlineEffect(this.renderer,{defaultThickness:.006,defaultColor:[.06,.07,.06],defaultAlpha:1,defaultKeepAlive:true});app.append(this.renderer.domElement);this.renderer.domElement.setAttribute('aria-label','Mundo 3D do INKDAYS');
     this.scene.background=new T.Color(0xf3f1e9);this.scene.fog=new T.Fog(0xf3f1e9,43,130);
@@ -35,7 +35,7 @@ export class Game {
   private applySettings(){this.renderer.setPixelRatio(Math.min(devicePixelRatio,this.settings.quality==='high'?1.5:.85));this.audio.setVolume(this.settings.volume);this.resize();}
   private resize(){const w=window.innerWidth,h=window.innerHeight;this.outline.setSize(w,h);this.camera.camera.aspect=w/h;this.camera.camera.updateProjectionMatrix();if(this.ui){const scale=Math.min(1.5,Math.max(1,Math.min(w/1280,h/720)));Object.assign(this.ui.hud.style,{position:'absolute',width:`${w/scale}px`,height:`${h/scale}px`,transform:`scale(${scale})`,transformOrigin:'top left'});}}
   start() {
-    this.enemies.clear();this.effects.clear();this.scene.remove(this.player.avatar.root);this.player=new Player();this.scene.add(this.player.avatar.root);this.pistol=new Pistol();this.cycle=new DayCycle();this.horde=new Horde();this.camera=new ThirdPerson();this.resize();this.kills=this.money=0;this.ui.toastTimer=this.ui.hitTimer=this.ui.damageTimer=0;this.ui.el('.damage-flash').style.opacity='0';this.ui.el('#reward').textContent='';this.resume();this.ui.toast('DIA 1 · Explore. A noite chega em 40 segundos.');
+    this.enemies.clear();this.effects.clear();this.scene.remove(this.player.avatar.root);this.player=new Player();this.scene.add(this.player.avatar.root);this.pistol=new Pistol();this.cycle=new DayCycle();this.horde=new Horde();this.hordeAssist=false;this.camera=new ThirdPerson();this.resize();this.kills=this.money=0;this.ui.toastTimer=this.ui.hitTimer=this.ui.damageTimer=0;this.ui.el('.damage-flash').style.opacity='0';this.ui.el('#reward').textContent='';this.resume();this.ui.toast('DIA 1 · Explore. A noite chega em 40 segundos.');
   }
   private lock() {if(this.touch.enabled)return;try{const p=this.renderer.domElement.requestPointerLock?.();if(p)p.catch(()=>this.ui.el('#lock-note').classList.remove('hidden'));}catch{this.ui.el('#lock-note').classList.remove('hidden');}}
   resume() {if(this.contextLost)return;this.mode='playing';this.input.clear();this.input.active=true;this.accumulator=0;this.audio.start();this.ui.playing();this.ui.el('#lock-note').classList.add('hidden');this.lock();}
@@ -56,7 +56,7 @@ export class Game {
     const muzzleRay=new T.Raycaster(muzzle,point.clone().sub(muzzle).normalize(),0,muzzle.distanceTo(point));const cover=muzzleRay.intersectObjects(this.world.solids,false)[0];
     if(cover){point=cover.point;victim=null;}
     this.effects.shot(muzzle,point);
-    if(victim){this.ui.hit();this.audio.cue('impact');this.effects.impact(point);if(this.enemies.damage(victim,C.weapon.damage)){this.kills++;this.money+=C.enemy.reward;this.ui.reward();}}
+    if(victim){this.ui.hit();this.audio.cue('impact');this.effects.impact(point);if(this.enemies.damage(victim,C.weapon.damage)){this.kills++;this.money+=victim.reward;this.ui.reward();}}
     else if(distance<C.weapon.range||cover)this.effects.impact(point);
   }
   private step(dt:number) {
@@ -66,11 +66,10 @@ export class Game {
     if(command.fire||command.shot)this.fire();
     this.player.avatar.arm.rotation.x=T.MathUtils.damp(this.player.avatar.arm.rotation.x,0,12,dt);
     const event=this.cycle.update(dt);
-    if(event==='horde'){this.horde.begin(this.cycle.day);this.audio.cue('enemy');this.ui.toast('A HORDA CHEGOU · Aguente até o amanhecer.');}
-    if(event==='dawn'){this.enemies.clear();this.pistol.resupply();this.player.health.heal(C.day.dawnHeal);this.ui.toast(`DIA ${this.cycle.day} · Você resistiu. +${C.day.dawnHeal} vida · +${C.day.dawnAmmo} munição`);}
-    if(this.cycle.phase==='horde')this.horde.update(dt,()=>this.enemies.spawn(this.cycle.day,this.player.position));
+    if(event==='horde'){this.horde.begin(this.cycle.day);if(this.cycle.day%C.day.bossInterval===0)this.enemies.spawnBoss(this.cycle.day,this.player.position);this.audio.cue('enemy');this.ui.toast(this.cycle.day%C.day.bossInterval===0?'CHEFÃO · O COLOSSO CHEGOU':'A HORDA CHEGOU · Elimine todos os Borrões.');}
+    if(this.cycle.phase==='horde'){const commons=this.enemies.active.filter(enemy=>enemy.kind==='horde').length,boss=this.enemies.active.find(enemy=>enemy.kind==='boss');this.horde.update(dt,commons,()=>this.enemies.spawn(this.cycle.day,this.player.position),boss?boss.health/boss.maxHealth:null);this.hordeAssist=this.horde.state(commons).assist;if(this.horde.canComplete(dt,commons,!!boss)&&this.cycle.completeHorde()){this.hordeAssist=false;this.pistol.resupply();this.player.health.heal(C.day.dawnHeal);this.ui.toast(`HORDA ELIMINADA · Você sobreviveu ao Dia ${this.cycle.day-1}.`);}}
     this.enemies.update(dt,this.player,()=>{this.ui.hurt();this.audio.cue('damage');this.camera.shake=.25;});
-    this.effects.update(dt);this.audio.update(dt,this.cycle.phase==='horde',Math.hypot(this.player.velocity.x,this.player.velocity.z),command.crouch);
+    this.effects.update(dt);this.audio.update(dt,this.cycle.phase==='horde',Math.hypot(this.player.velocity.x,this.player.velocity.z),command.crouch,this.enemies.active.some(enemy=>enemy.kind==='boss'));
     if(this.player.health.dead)this.die();
   }
   private frame=(ms:number)=>{
@@ -83,12 +82,12 @@ export class Game {
       if(steps===C.maxSteps)this.accumulator=0;
       this.camera.update(dt,this.player.position,this.world);this.world.sails.rotation.z+=dt*.18;
       const night=this.cycle.phase==='horde';const color=new T.Color(night?0xa9b1ad:0xf3f1e9);(this.scene.background as T.Color).lerp(color,dt*1.8);(this.scene.fog as T.Fog).color.copy(this.scene.background as T.Color);this.light.intensity=T.MathUtils.damp(this.light.intensity,night?1.2:2.3,2,dt);
-      this.ui.update(dt,this.cycle,this.pistol,this.player.health.value,this.kills,this.money,this.lastCommand.crouch,this.lastCommand.run);
+      this.ui.update(dt,this.cycle,this.pistol,this.player.health.value,this.kills,this.money,this.lastCommand.crouch,this.lastCommand.run,this.horde.state(this.enemies.active.filter(enemy=>enemy.kind==='horde').length));
     } else if(this.mode==='menu'||this.mode==='settings'&&this.ui.hud.classList.contains('hidden')) {
       this.camera.camera.position.set(9,4.6,19);this.camera.camera.lookAt(-4,3,-14);this.world.sails.rotation.z+=dt*.12;
       (this.scene.background as T.Color).set(0xf3f1e9);(this.scene.fog as T.Fog).color.set(0xf3f1e9);this.light.intensity=2.3;
     }
-    this.outline.render(this.scene,this.camera.camera);
+    if(this.cycle.phase==='horde')for(const enemy of this.enemies.active)enemy.avatar.root.scale.setScalar(enemy.kind==='boss'?C.boss.scale:this.hordeAssist?1.04+Math.sin(ms*.012)*.04:1);this.outline.render(this.scene,this.camera.camera);
     if(this.debug)this.ui.el('#debug').textContent=`${Math.round(this.fps)} FPS · ${this.enemies.active.length} inimigos · ${this.renderer.info.render.calls} draw calls · ${this.renderer.info.render.triangles.toLocaleString('pt-BR')} triângulos`;
   };
 }

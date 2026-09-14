@@ -76,6 +76,10 @@ export class CombatAuthority {
     if(victim&&this.enemies.damage(victim,C.weapon.damage)){p.kills++;p.money+=victim.reward;this.dayKills++;this.dayMoney+=victim.reward;}
     this.shots.push({serial:++this.serial,player:id,shotId,from,to,hit:!!victim,rewindTicks:this.tick-rewindTick});this.shots=this.shots.slice(-16);
   }
+  private finishHorde(live:Participant[]){
+    const connected=[...this.players.values()].filter(p=>p.connected&&p.ready);this.lastDayResult={serial:++this.dayResultSerial,day:this.cycle.day-1,kills:this.dayKills,money:this.dayMoney,survivors:connected.filter(p=>!p.player.health.dead).length,players:connected.length,nextBoss:Math.ceil(this.cycle.day/C.day.bossInterval)*C.day.bossInterval,tick:this.tick};
+    for(const p of live){p.weapon.resupply();p.player.health.heal(C.day.dawnHeal);}
+  }
   step(){
     this.tick++;if(!this.players.size)return;
     const live=[...this.players.values()].filter(p=>p.connected&&p.ready&&!p.player.health.dead);if(!live.length)return;
@@ -91,13 +95,13 @@ export class CombatAuthority {
     }
     const event=this.cycle.update(C.fixedStep);
     if(event==='horde'){this.dayKills=this.dayMoney=0;this.lastDayResult=null;this.horde.begin(this.cycle.day,live.length);if(this.cycle.day%C.day.bossInterval===0)this.enemies.spawnBoss(this.cycle.day,live[0].player.position,live.length);}
-    if(event==='dawn'){const connected=[...this.players.values()].filter(p=>p.connected&&p.ready);this.lastDayResult={serial:++this.dayResultSerial,day:this.cycle.day-1,kills:this.dayKills,money:this.dayMoney,survivors:connected.filter(p=>!p.player.health.dead).length,players:connected.length,nextBoss:Math.ceil(this.cycle.day/C.day.bossInterval)*C.day.bossInterval,tick:this.tick};this.enemies.clear();for(const p of live){p.weapon.resupply();p.player.health.heal(C.day.dawnHeal);}}
-    if(this.cycle.phase==='horde')this.horde.update(C.fixedStep,()=>this.enemies.spawn(this.cycle.day,live[this.horde.spawned%live.length].player.position));
+    if(this.cycle.phase==='horde'){const commons=this.enemies.active.filter(enemy=>enemy.kind==='horde').length,boss=this.enemies.active.find(enemy=>enemy.kind==='boss');this.horde.update(C.fixedStep,commons,()=>this.enemies.spawn(this.cycle.day,live[this.horde.spawned%live.length].player.position),boss?boss.health/boss.maxHealth:null);}
     this.enemies.update(C.fixedStep,live.map(p=>p.player),()=>{},(boss,center)=>{this.impacts.push({serial:++this.impactSerial,bossId:boss.id,position:center.clone(),radius:C.boss.slamRadius,tick:this.tick});this.impacts=this.impacts.slice(-8);for(const p of live){const offset=p.player.position.clone().sub(center);offset.y=0;const distance=offset.length();if(distance>C.boss.slamRadius)continue;if(distance<.001)offset.set(p.slot%2?-1:1,0,0);else offset.multiplyScalar(1/distance);p.player.health.damage(C.boss.slamDamage);p.player.velocity.addScaledVector(offset,C.boss.slamKnockback);p.player.vertical=Math.max(p.player.vertical,C.boss.slamLift);}});
+    if(this.cycle.phase==='horde'){const commons=this.enemies.active.filter(enemy=>enemy.kind==='horde').length,bossAlive=this.enemies.active.some(enemy=>enemy.kind==='boss');if(this.horde.canComplete(C.fixedStep,commons,bossAlive)&&this.cycle.completeHorde())this.finishHorde(live);}
     this.enemyHistory.set(this.tick,new Map(this.enemies.active.map(e=>[e.id,e.avatar.root.position.clone()])));while(this.enemyHistory.size>this.historyTicks)this.enemyHistory.delete(this.enemyHistory.keys().next().value!);
   }
   private get gameOver(){const active=[...this.players.values()].filter(p=>p.ready);return active.length>0&&active.every(p=>p.player.health.dead);}
-  snapshot(){const ids=new Map([...this.players].map(([id,p])=>[p.player,id]));return {version:1,tick:this.tick,round:this.round,day:this.cycle.day,phase:this.cycle.phase,remaining:this.cycle.remaining,gameOver:this.gameOver,
+  snapshot(){const ids=new Map([...this.players].map(([id,p])=>[p.player,id])),commons=this.enemies.active.filter(enemy=>enemy.kind==='horde').length;return {version:1,tick:this.tick,round:this.round,day:this.cycle.day,phase:this.cycle.phase,remaining:this.cycle.remaining,gameOver:this.gameOver,horde:this.cycle.phase==='horde'?this.horde.state(commons):null,
     players:[...this.players].map(([id,p])=>({id,name:p.name,connected:p.connected,ready:p.ready,protection:p.protection,acknowledged:p.applied,chatAcknowledged:p.lastChat,yaw:p.input.yaw,position:{...p.player.position},velocity:{...p.player.velocity},vertical:p.player.vertical,health:p.player.health.value,ammo:p.weapon.ammo,reserve:p.weapon.reserve,reloading:p.weapon.reloadTime>0,crouch:p.input.command.crouch,kills:p.kills,money:p.money})),
     enemies:this.enemies.active.map(e=>({id:e.id,kind:e.kind,enraged:e.enraged,maxHealth:e.maxHealth,targetId:e.target?ids.get(e.target)??null:null,position:{...e.avatar.root.position},yaw:e.avatar.root.rotation.y,health:e.health,state:e.state,speed:e.speed})),
     boss:(()=>{const boss=this.enemies.active.find(e=>e.kind==='boss');return boss?{id:boss.id,name:C.boss.name,health:boss.health,maxHealth:boss.maxHealth,enraged:boss.enraged,slam:boss.specialWindup>0?{serial:boss.specialSerial,position:{...boss.specialCenter},radius:C.boss.slamRadius,remaining:boss.specialWindup}:null}:null;})(),
