@@ -599,3 +599,9 @@ A retomada por token conserva a sala original, mesmo que a URL seja alterada dur
 Ao confirmar a entrada ou recuperar uma conexão durante a partida, o servidor concede três segundos de proteção. Ataques comuns e o impacto especial do Colosso continuam sendo processados, mas não reduzem a vida protegida. O prazo pertence ao estado autoritativo e é enviado nos snapshots, evitando diferenças entre relógios dos aparelhos.
 
 O HUD mostra `PROTEGIDO` com a contagem restante e oculta o aviso assim que o servidor encerra o prazo. A proteção não substitui a invulnerabilidade curta de dano nem interfere no resgate de aliados. O teste novo coloca um inimigo junto ao jogador, confirma vida intacta durante o prazo e dano normal depois dele.
+
+## Fase 2 — criação e entrada em salas pela home
+
+O botão `MULTIPLAYER` agora abre a escolha de sala dentro da identidade visual da home. O jogador pode entrar em `PAPEL`, criar automaticamente um código legível de seis caracteres ou digitar o código recebido de um amigo. Códigos são convertidos para maiúsculas, aceitam somente letras e números e exigem ao menos quatro caracteres antes da navegação.
+
+Criar uma sala abre o lobby isolado já sustentado pelo servidor; o convite dessa tela conserva o mesmo código. O painel foi dimensionado também para celulares em modo horizontal, sem ocupar a área inteira. A geração determinística e a formação das URLs possuem cobertura automatizada; a reunião por convite ainda deve ser conferida em dois aparelhos depois que o servidor com isolamento de salas estiver implantado no Render.
