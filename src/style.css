@@ -27,3 +27,4 @@
 
 /* Noite em tinta: mantém o centro legível e escurece gradualmente as bordas. */
 .hud.is-horde::before,.coop-hud.horde::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 48%,transparent 22%,rgba(33,40,39,.08) 55%,rgba(17,23,22,.27) 100%);mix-blend-mode:multiply;z-index:-1;transition:opacity 1.2s ease}
+.coop-team-player.waiting{opacity:.5}.coop-team-player.waiting em{visibility:hidden}

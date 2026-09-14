@@ -562,3 +562,9 @@ Depois da entrada, pausar ou liberar o mouse mantém o jogador dentro da partida
 O painel de entrada passou a mostrar as oito vagas da sala. Cada participante aparece com nome e estado `AGUARDANDO` ou `NA PARTIDA`, sempre derivado do snapshot do servidor; vagas não ocupadas ficam marcadas como livres. A identidade local recebe `VOCÊ`, sem inserir nomes como HTML.
 
 O botão `COPIAR CONVITE` gera o endereço público do multiplayer e remove qualquer sobrescrita técnica de servidor antes de copiar. A lista e os controles de entrada somem ao iniciar o gameplay, devolvendo a tela ao HUD discreto. Esta é a apresentação inicial da sala pública; códigos independentes e liderança da sala continuam como próximas entregas arquitetônicas.
+
+## Fase 2 — prontidão visível e compatibilidade de implantação
+
+O título da sala passa a informar quantos dos oito participantes já entraram. Quem ainda está no lobby aparece como `AGUARDANDO` também na lista compacta da equipe, com indicador vazado e sem uma barra de vida enganosa. O estado ativo considera `ready` ausente como verdadeiro, mantendo o frontend compatível durante a janela em que o GitHub Pages já atualizou e o Render ainda executa a versão anterior do protocolo.
+
+O botão local também segue essa compatibilidade: somente um `ready: false` explícito mostra `ENTRAR NA PARTIDA`; servidores anteriores continuam permitindo `CONTINUAR`. Isso evita bloquear o jogo durante implantações separadas de frontend e servidor.
