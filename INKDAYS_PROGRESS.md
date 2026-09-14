@@ -631,3 +631,9 @@ O servidor aceita a troca de nome sem alterar a prontidão. Um teste de transpor
 Dois clientes WebSocket reais agora percorrem a mesma sala em uma validação permanente. Bruno e Mari conectam, recebem identidades distintas, compartilham seus apelidos e permanecem aguardando com o relógio congelado. Bruno entra sem alterar a prontidão de Mari; depois Mari entra e os dois recebem um snapshot de mesmo tick, conteúdo idêntico, ambos ativos e o mesmo ciclo em andamento.
 
 Esse teste cobre a fronteira entre lobby e partida que antes estava dividida em verificações isoladas. Ele não substitui o playtest em dois aparelhos e duas redes físicas, mas impede que mudanças futuras promovam o companheiro errado, iniciem o dia antes da primeira entrada ou apresentem estados autoritativos diferentes após a reunião da dupla.
+
+## Fase 2 — isolamento e entrada validados no servidor público
+
+Após a implantação manual da branch do servidor no Render, três clientes WebSocket reais foram conectados ao endereço público. `AZV211` recebeu Bruno e Mari, enquanto `BZV211` recebeu somente Rafa; os pacotes de boas-vindas preservaram os códigos solicitados e os snapshots não misturaram participantes entre as salas.
+
+Na sala da dupla, o relógio permaneceu congelado com ambos aguardando. Bruno entrou sem promover Mari, depois Mari entrou e os dois clientes observaram um snapshot idêntico do mesmo tick, dia e fase. Esta validação confirma isolamento e percurso do lobby na hospedagem pública. Permanecem pendentes sensação de latência, controles e estabilidade prolongada em dois aparelhos físicos.
