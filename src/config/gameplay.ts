@@ -5,7 +5,7 @@ export const C = {
   day: { duration: 40, hordeDuration: 20, warning: 10, baseEnemies: 5, enemyGrowth: 2, maxEnemies: 55, bossInterval: 10, dawnHeal: 15, dawnAmmo: 120, spawnInterval: .65 },
   horde: { clearWaveDelay: 4.5, completionDelay: 1.5, lastEnemyAssist: 35, partyGrowth: .45 },
   bossWaves: { thresholds: [1,.75,.5,.25], sizes: [6,6,8,10], maxActive: 18, maxInterval: 28 },
-  enemy: { health: 48, healthGrowth: 2, maxHealth: 90, speed: 2.7, speedGrowth: .055, maxSpeed: 4.3, damage: 14, attackRange: 1.35, attackCooldown: 1.1, detection: 70, radius: .48, reward: 20, spawnMin: 13, spawnMax: 20 },
+  enemy: { health: 48, healthGrowth: 2, maxHealth: 90, speed: 2.7, speedGrowth: .055, maxSpeed: 4.3, damage: 14, attackRange: 1.35, attackCooldown: 1.1, detection: 12, disengage: 18, perceptionInterval: .25, wanderSpeed: .34, wanderMin: 1.6, wanderMax: 4.2, pauseMin: .45, pauseMax: 1.4, radius: .48, reward: 20, spawnMin: 13, spawnMax: 20 },
   boss: { name: 'O COLOSSO', health: 1200, healthGrowth: 300, partyGrowth: .45, speed: 2.15, damage: 30, attackRange: 2.25, attackCooldown: 1.45, radius: .9, reward: 500, scale: 2.15, slamRadius: 4.2, slamDamage: 42, slamWindup: 1.25, slamCooldown: 6.5, slamTriggerRange: 7, slamKnockback: 11, slamLift: 5.2 },
   weapon: { damage: 26, interval: .24, magazine: 8, reserve: 72, maxReserve: 192, reload: 1.25, range: 80 },
   world: { radius: 43 },

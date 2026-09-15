@@ -3,20 +3,21 @@ import { C, difficulty } from '../config/gameplay';
 import { Avatar } from '../player/Avatar';
 import type { Player } from '../player/Player';
 import type { World } from '../world/World';
-export type EnemyState='IDLE'|'CHASE'|'ATTACK'|'DEAD';
+export type EnemyState='WANDER'|'CHASE'|'ATTACK'|'DEAD';
 export type EnemyKind='horde'|'boss';
-export interface Enemy { id:number; kind:EnemyKind; enraged:boolean; avatar:Avatar; health:number; maxHealth:number; speed:number; damage:number; attackRange:number; attackCooldown:number; radius:number; reward:number; cooldown:number; specialCooldown:number; specialWindup:number; specialSerial:number; specialCenter:T.Vector3; state:EnemyState; age:number; target?:Player }
+export interface Enemy { id:number; kind:EnemyKind; enraged:boolean; avatar:Avatar; health:number; maxHealth:number; speed:number; damage:number; attackRange:number; attackCooldown:number; radius:number; reward:number; cooldown:number; specialCooldown:number; specialWindup:number; specialSerial:number; specialCenter:T.Vector3; state:EnemyState; age:number; target?:Player; perceptionTimer:number; wanderTimer:number; pauseTimer:number; wanderDirection:T.Vector3 }
 export class Enemies {
   active:Enemy[]=[]; private serial=0;
   constructor(private scene:T.Scene, private world:World) {}
   spawn(day:number,player:T.Vector3) {
     const stats=difficulty(day);
     for(let attempt=0;attempt<40;attempt++) {
-      const a=Math.random()*Math.PI*2, r=C.enemy.spawnMin+Math.random()*(C.enemy.spawnMax-C.enemy.spawnMin);
+      const a=((this.serial+attempt+1)*2.399963229728653+Math.random()*.45)%(Math.PI*2), r=C.enemy.spawnMin+Math.random()*(C.enemy.spawnMax-C.enemy.spawnMin);
       const x=player.x+Math.sin(a)*r,z=player.z+Math.cos(a)*r;
       if(Math.hypot(x,z)>C.world.radius-1||this.world.blocked(x,z,C.enemy.radius+1))continue;
       const avatar=new Avatar(true);avatar.root.position.set(x,0,z);this.scene.add(avatar.root);
-      this.active.push({id:++this.serial,kind:'horde',enraged:false,avatar,health:stats.health,maxHealth:stats.health,speed:stats.speed,damage:C.enemy.damage,attackRange:C.enemy.attackRange,attackCooldown:C.enemy.attackCooldown,radius:C.enemy.radius,reward:C.enemy.reward,cooldown:C.enemy.attackCooldown,specialCooldown:Infinity,specialWindup:0,specialSerial:0,specialCenter:new T.Vector3(),state:'IDLE',age:0});return true;
+      const id=++this.serial,heading=(id*2.399963229728653+Math.random()*.7)%(Math.PI*2);
+      this.active.push({id,kind:'horde',enraged:false,avatar,health:stats.health,maxHealth:stats.health,speed:stats.speed,damage:C.enemy.damage,attackRange:C.enemy.attackRange,attackCooldown:C.enemy.attackCooldown,radius:C.enemy.radius,reward:C.enemy.reward,cooldown:C.enemy.attackCooldown,specialCooldown:Infinity,specialWindup:0,specialSerial:0,specialCenter:new T.Vector3(),state:'WANDER',age:0,perceptionTimer:0,wanderTimer:C.enemy.wanderMin+Math.random()*(C.enemy.wanderMax-C.enemy.wanderMin),pauseTimer:0,wanderDirection:new T.Vector3(Math.sin(heading),0,Math.cos(heading))});return true;
     } return false;
   }
   spawnBoss(day:number,player:T.Vector3,players=1) {
@@ -26,7 +27,7 @@ export class Enemies {
       const a=Math.random()*Math.PI*2,r=C.enemy.spawnMax,x=player.x+Math.sin(a)*r,z=player.z+Math.cos(a)*r;
       if(Math.hypot(x,z)>C.world.radius-2||this.world.blocked(x,z,C.boss.radius+1))continue;
       const avatar=new Avatar(true,true);avatar.root.position.set(x,0,z);avatar.root.scale.setScalar(C.boss.scale);this.scene.add(avatar.root);
-      this.active.push({id:++this.serial,kind:'boss',enraged:false,avatar,health,maxHealth:health,speed:C.boss.speed,damage:C.boss.damage,attackRange:C.boss.attackRange,attackCooldown:C.boss.attackCooldown,radius:C.boss.radius,reward:C.boss.reward,cooldown:C.boss.attackCooldown,specialCooldown:C.boss.slamCooldown,specialWindup:0,specialSerial:0,specialCenter:new T.Vector3(),state:'IDLE',age:0});return true;
+      this.active.push({id:++this.serial,kind:'boss',enraged:false,avatar,health,maxHealth:health,speed:C.boss.speed,damage:C.boss.damage,attackRange:C.boss.attackRange,attackCooldown:C.boss.attackCooldown,radius:C.boss.radius,reward:C.boss.reward,cooldown:C.boss.attackCooldown,specialCooldown:C.boss.slamCooldown,specialWindup:0,specialSerial:0,specialCenter:new T.Vector3(),state:'WANDER',age:0,perceptionTimer:0,wanderTimer:0,pauseTimer:0,wanderDirection:new T.Vector3(0,0,1)});return true;
     }
     return false;
   }
@@ -34,14 +35,26 @@ export class Enemies {
     const targets=(Array.isArray(players)?players:[players]).filter(p=>!p.health.dead);
     for(const e of this.active) {
       if(e.state==='DEAD')continue;
-      const player=targets.reduce<Player|null>((best,p)=>!best||p.position.distanceToSquared(e.avatar.root.position)<best.position.distanceToSquared(e.avatar.root.position)?p:best,null);e.target=player??undefined;
-      if(!player){e.state='IDLE';continue;}
       e.age+=dt;e.cooldown=Math.max(0,e.cooldown-dt);e.specialCooldown=Math.max(0,e.specialCooldown-dt);
-      const p=e.avatar.root.position, direction=player.position.clone().sub(p);direction.y=0;const distance=direction.length();
+      const p=e.avatar.root.position;e.perceptionTimer-=dt;if(e.target&&!targets.includes(e.target)){e.target=undefined;e.perceptionTimer=0;}
+      if(e.kind==='boss'||e.perceptionTimer<=0){
+        e.perceptionTimer=C.enemy.perceptionInterval+(e.id%5)*.012;
+        if(e.kind==='horde'&&e.target&&e.target.position.distanceToSquared(p)>C.enemy.disengage*C.enemy.disengage)e.target=undefined;
+        const radius=e.kind==='boss'?Infinity:C.enemy.detection*C.enemy.detection;
+        const nearest=targets.reduce<Player|undefined>((best,candidate)=>{const distance=candidate.position.distanceToSquared(p);return distance<=radius&&(!best||distance<best.position.distanceToSquared(p))?candidate:best;},undefined);if(nearest)e.target=nearest;
+      }
+      const player=e.target;
+      if(!player){
+        e.state='WANDER';e.pauseTimer=Math.max(0,e.pauseTimer-dt);e.wanderTimer-=dt;
+        if(e.wanderTimer<=0){const heading=(e.id*1.61803398875+e.age*.73+Math.random()*.9)%(Math.PI*2);e.wanderDirection.set(Math.sin(heading),0,Math.cos(heading));e.wanderTimer=C.enemy.wanderMin+Math.random()*(C.enemy.wanderMax-C.enemy.wanderMin);e.pauseTimer=C.enemy.pauseMin+Math.random()*(C.enemy.pauseMax-C.enemy.pauseMin);}
+        if(e.pauseTimer<=0){const before=p.clone();this.world.move(p,e.wanderDirection.x*e.speed*C.enemy.wanderSpeed*dt,e.wanderDirection.z*e.speed*C.enemy.wanderSpeed*dt,e.radius);if(before.distanceToSquared(p)<1e-8){e.wanderTimer=0;e.pauseTimer=0;}}
+        e.avatar.root.rotation.y=Math.atan2(e.wanderDirection.x,e.wanderDirection.z);e.avatar.animate(e.age,e.pauseTimer>0?0:e.speed*C.enemy.wanderSpeed,false,false);continue;
+      }
+      const direction=player.position.clone().sub(p);direction.y=0;const distance=direction.length();
       if(e.kind==='boss'&&e.specialWindup>0){e.specialWindup=Math.max(0,e.specialWindup-dt);e.state='ATTACK';if(e.specialWindup===0){onBossSlam?.(e,e.specialCenter.clone());e.specialCooldown=C.boss.slamCooldown*(e.enraged ? .72 : 1);}e.avatar.animate(e.age,0,false,true);e.avatar.arm.rotation.x=-1.1;continue;}
       if(e.kind==='boss'&&e.specialCooldown===0&&distance<=C.boss.slamTriggerRange){e.specialCenter.copy(p);e.specialWindup=C.boss.slamWindup;e.specialSerial++;e.state='ATTACK';continue;}
       const separation=new T.Vector3();for(const other of this.active){if(other===e)continue;const d=p.clone().sub(other.avatar.root.position);d.y=0;const len=d.length();if(len<1e-4)d.set(e.id<other.id?-1:1,0,0);else d.multiplyScalar(1/len);if(len<1.05)separation.addScaledVector(d,1.05-len);}
-      e.state=distance>C.enemy.detection?'IDLE':distance<e.attackRange?'ATTACK':'CHASE';
+      e.state=distance<e.attackRange?'ATTACK':'CHASE';
       if(e.state==='CHASE') {
         direction.normalize();
         // Choose a short obstacle-free direction. Local steering stays independent of rendering.
