@@ -2,6 +2,8 @@ import * as T from 'three';
 import { box, dark, gray, ink, paper, red, shadow, sphere, stroke } from '../world/ink';
 import type { RiggedAvatar } from './RiggedAvatar';
 import { movementDirection } from './LocomotionDirection';
+import { createDrawnWeapon } from '../weapons/DrawnWeapon';
+import { draftPistol } from '../weapons/CustomWeapon';
 export class Avatar {
   root=new T.Group(); body=new T.Group(); procedural=new T.Group(); leftLeg=new T.Group(); rightLeg=new T.Group(); arm=new T.Group(); muzzle=new T.Object3D(); private rig?:RiggedAvatar; private enemy:boolean;
   constructor(enemy=false,boss=false) {
@@ -30,7 +32,7 @@ export class Avatar {
       box(host,[0,1.07,-.34],[.55,.65,.3],gray);box(host,[0,.98,-.52],[.4,.27,.12]);
       for(const x of [-.24,.24]) {stroke(host,[x,.83,-.46],[x,1.43,-.31],.035,ink);stroke(host,[x,1.4,-.16],[x,1.15,.22],.036,gray);}
       sphere(this.arm,[0,-.05,.19],[.14,.17,.29]);sphere(host,[.28,1.12,.17],[.14,.23,.15]);
-      box(this.arm,[0,.04,.52],[.13,.15,.4],ink);box(this.arm,[0,-.1,.4],[.12,.23,.13],gray);this.muzzle.position.set(0,.04,.76);this.arm.add(this.muzzle);
+      const pistol=createDrawnWeapon(draftPistol);pistol.root.position.set(0,.04,.34);this.arm.add(pistol.root);this.muzzle=pistol.muzzle;
       // One small scarf fold; no colored cosmetic noise.
       box(host,[0,1.42,.03],[.48,.11,.35],gray);
     }

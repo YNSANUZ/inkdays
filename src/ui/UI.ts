@@ -5,6 +5,7 @@ import { C, nextBoss } from '../config/gameplay';
 import type { Settings } from './Settings';
 import {createRoomCode,normalizeRoomCode,PUBLIC_ROOM_CODE,publicRoomInvite} from '../network/RoomCode';
 import type {HordeState} from '../horde/Horde';
+import { weaponCategories } from '../weapons/Categories';
 export const formatTime=(n:number)=>`${Math.floor(n/60).toString().padStart(2,'0')}:${Math.floor(n%60).toString().padStart(2,'0')}`;
 export class UI {
   root:HTMLElement; hud:HTMLElement; overlay:HTMLElement; toastTimer=0; hitTimer=0; damageTimer=0;
@@ -17,7 +18,7 @@ export class UI {
         <div class="top-right"><div class="counters"><span class="money"><em>$</em> <b id="money">0</b></span><span class="kills">✕ <b id="kills">0</b></span></div><div id="reward"></div><div class="location">⌖ &nbsp; VALE DO PAPEL</div><div class="boss-calendar">NO HORIZONTE <b id="boss">CHEFÃO · DIA 10</b><small>Combate de chefão em uma próxima fase</small></div></div>
         <div class="crosshair"><i></i><i></i><i></i><i></i><b>×</b></div>
         <div class="bottom-left"><div class="health-label">VOCÊ <span>ERRANTE 01</span></div><div class="hearts"><span>♥</span><span>♥</span><span>♥</span></div><div class="health-track"><div id="health-fill"></div></div><div class="health-caption"><span id="health">100 / 100</span><span id="movement">EM PÉ</span></div></div>
-        <div class="bottom-right"><div class="weapon-title"><span>01</span> PISTOLA <svg viewBox="0 0 90 45" aria-hidden="true"><path d="M7 8h72v14H43l-9 20H20l6-20H7z" fill="currentColor"/><path d="M47 22v9H35" fill="none" stroke="currentColor" stroke-width="4"/></svg></div><div class="ammo"><strong id="ammo">8</strong><span>/ <b id="reserve">48</b></span></div><div class="reload-track"><div id="reload-fill"></div></div><div id="reload-caption"><kbd>R</kbd> RECARREGAR</div></div>
+        <div class="bottom-right"><div class="weapon-title"><span>01</span> ${weaponCategories.pistol.label.toUpperCase()} <svg viewBox="0 0 90 45" aria-hidden="true" style="color:${weaponCategories.pistol.color}"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7 14 Q28 7 54 12 Q70 10 82 15 L77 22 Q59 21 44 23 L34 39 Q28 42 22 38 L28 22 Q18 21 9 24" stroke-width="5"/><path d="M10 11 Q34 15 55 9 M31 24 Q38 30 35 38 M61 13 L72 19" stroke-width="2.5"/></g></svg></div><div class="ammo"><strong id="ammo">8</strong><span>/ <b id="reserve">48</b></span></div><div class="reload-track"><div id="reload-fill"></div></div><div id="reload-caption"><kbd>R</kbd> RECARREGAR</div></div>
         <div class="controls"><span><kbd>W A S D</kbd> mover</span><span><kbd>SHIFT</kbd> correr</span><span><kbd>ESPAÇO</kbd> pular</span><span><kbd>C</kbd> agachar</span><span><kbd>ESC</kbd> pausa</span></div>
         <div id="toast" role="status"></div><div id="debug" class="hidden"></div><div id="lock-note" class="hidden">Câmera alternativa: segure o botão direito e mova o mouse.</div>
       </section><div class="damage-flash"></div><section class="overlay"></section><div class="portrait-note">INKDAYS<br><small>O jogo foi criado para tela horizontal.<br>Gire a tela ou amplie a janela para jogar.</small></div><footer><span>UM MUNDO EM BRANCO. MAIS UM DIA PARA CONTAR.</span><span>OFFLINE · ALPHA 0.1</span></footer>`;
