@@ -5,13 +5,15 @@ import type { CollisionWorld } from '../simulation/Movement';
 import { NetworkConditioner } from './NetworkConditioner';
 import type { NetworkConditions } from './NetworkConditioner';
 import { normalizeRoomCode, PUBLIC_ROOM_CODE } from './RoomCode';
-interface ServerRuntime {pulseMs?:number;stepsPerPulse?:number;roomFactory?:()=>ServerAuthority}
+import { SnapshotStream } from './SnapshotStream';
+import type { CombatSnapshot } from './CombatAuthority';
+interface ServerRuntime {pulseMs?:number;stepsPerPulse?:number;roomFactory?:()=>ServerAuthority;protocolVersion?:1|2}
 type ServerAuthority=Pick<MovementAuthority,'join'|'suspend'|'resume'|'leave'|'receive'|'step'|'snapshot'|'tick'>&{restart?:(id:string)=>boolean;revive?:(id:string)=>boolean;reviveAlly?:(id:string,targetId:string)=>boolean;setReady?:(id:string,ready?:boolean)=>boolean;rename?:(id:string,name:unknown)=>boolean;chat?:(id:string,messageId:unknown,text:unknown)=>boolean};
 export const DEFAULT_RECONNECT_GRACE_MS=15000;
 export function createMovementServer(world:CollisionWorld,port=8787,authority:ServerAuthority=new MovementAuthority(world),reconnectGraceMs=DEFAULT_RECONNECT_GRACE_MS,conditions?:NetworkConditions,host='127.0.0.1',inactivityMs=7000,runtime?:ServerRuntime){
   const server=new WebSocketServer({host,port,maxPayload:2048});
   const link=new NetworkConditioner(conditions),send=(socket:WebSocket,packet:string)=>link.schedule('outbound',()=>{if(socket.readyState===WebSocket.OPEN)socket.send(packet);});
-  const rooms=new Map<string,ServerAuthority>([[PUBLIC_ROOM_CODE,authority]]),socketAuthorities=new Map<WebSocket,ServerAuthority>();
+  const rooms=new Map<string,ServerAuthority>([[PUBLIC_ROOM_CODE,authority]]),socketAuthorities=new Map<WebSocket,ServerAuthority>(),streams=new Map<WebSocket,SnapshotStream>();
   const sessions=new Map<string,{id:string;room:string;authority:ServerAuthority;connected:boolean;socket:WebSocket;timer?:ReturnType<typeof setTimeout>}>();
   server.on('connection',(socket,request)=>{
     const requestUrl=new URL(request.url??'/',`ws://${request.headers.host??'localhost'}`),resume=requestUrl.searchParams.get('resume'),requestedRoom=normalizeRoomCode(requestUrl.searchParams.get('room'));
@@ -19,7 +21,7 @@ export function createMovementServer(world:CollisionWorld,port=8787,authority:Se
     let session=sessions.get(token);
     if(session){if(session.timer)clearTimeout(session.timer);const previous=session.socket;session.socket=socket;session.connected=true;session.authority.resume(session.id);if(previous.readyState===WebSocket.OPEN)previous.close(4001,'Sessão retomada em outra conexão');}
     else{const room=requestedRoom,roomAuthority=rooms.get(room)??runtime?.roomFactory?.();if(!roomAuthority){socket.send(JSON.stringify({type:'room-unavailable',room}),()=>socket.close(1008,'Sala indisponível'));return;}rooms.set(room,roomAuthority);const id=randomUUID();if(!roomAuthority.join(id)){socket.send(JSON.stringify({type:'room-full',capacity:MAX_PLAYERS}),()=>socket.close(1008,'Sala cheia'));return;}if(requestUrl.searchParams.get('lobby')==='1')roomAuthority.setReady?.(id,false);session={id,room,authority:roomAuthority,connected:true,socket};sessions.set(token,session);}
-    const id=session.id,roomAuthority=session.authority;socketAuthorities.set(socket,roomAuthority);socket.send(JSON.stringify({type:'welcome',id,token,room:session.room,version:1,resumed:!!resume&&token===resume}));
+    const id=session.id,roomAuthority=session.authority;socketAuthorities.set(socket,roomAuthority);if(runtime?.protocolVersion===2)streams.set(socket,new SnapshotStream());socket.send(JSON.stringify({type:'welcome',id,token,room:session.room,version:runtime?.protocolVersion??1,resumed:!!resume&&token===resume}));
     let count=0,lastPong=Date.now();const reset=setInterval(()=>{count=0;},1000),watchdog=setInterval(()=>{if(Date.now()-lastPong>inactivityMs){socket.terminate();return;}socket.ping();},Math.min(2000,Math.max(20,inactivityMs/2)));
     socket.on('pong',()=>{lastPong=Date.now();});
     socket.on('message',data=>{
@@ -28,12 +30,14 @@ export function createMovementServer(world:CollisionWorld,port=8787,authority:Se
       catch{socket.close(1008,'Comando inválido');}});
     });
     socket.on('error',()=>{});
-    socket.on('close',()=>{clearInterval(reset);clearInterval(watchdog);socketAuthorities.delete(socket);if(session!.socket!==socket)return;roomAuthority.suspend(id);session!.connected=false;session!.timer=setTimeout(()=>{roomAuthority.leave(id);sessions.delete(token);if(session!.room!==PUBLIC_ROOM_CODE&&![...sessions.values()].some(item=>item.room===session!.room))rooms.delete(session!.room);},reconnectGraceMs);});
+    socket.on('close',()=>{clearInterval(reset);clearInterval(watchdog);socketAuthorities.delete(socket);streams.delete(socket);if(session!.socket!==socket)return;roomAuthority.suspend(id);session!.connected=false;session!.timer=setTimeout(()=>{roomAuthority.leave(id);sessions.delete(token);if(session!.room!==PUBLIC_ROOM_CODE&&![...sessions.values()].some(item=>item.room===session!.room))rooms.delete(session!.room);},reconnectGraceMs);});
   });
   const stepsPerPulse=Math.max(1,Math.floor(runtime?.stepsPerPulse??1)),pulseMs=Math.max(1,runtime?.pulseMs??1000/60),timer=setInterval(()=>{
     for(const roomAuthority of rooms.values())for(let step=0;step<stepsPerPulse;step++)roomAuthority.step();const packets=new Map<ServerAuthority,string>();
     for(const socket of server.clients)if(socket.readyState===WebSocket.OPEN){
-      const roomAuthority=socketAuthorities.get(socket);if(!roomAuthority||roomAuthority.tick%3)continue;if(socket.bufferedAmount>65536){socket.close(1013,'Conexão lenta');continue;}let packet=packets.get(roomAuthority);if(!packet){packet=JSON.stringify({type:'snapshot',...roomAuthority.snapshot()});packets.set(roomAuthority,packet);}send(socket,packet);
+      const roomAuthority=socketAuthorities.get(socket);if(!roomAuthority)continue;if(socket.bufferedAmount>65536){socket.close(1013,'Conexão lenta');continue;}
+      const stream=streams.get(socket);if(stream){const compact=stream.next(roomAuthority.snapshot() as CombatSnapshot);if(compact)send(socket,JSON.stringify(compact));continue;}
+      if(roomAuthority.tick%3)continue;let packet=packets.get(roomAuthority);if(!packet){packet=JSON.stringify({type:'snapshot',...roomAuthority.snapshot()});packets.set(roomAuthority,packet);}send(socket,packet);
     }
   },pulseMs);
   return {server,authority,close:async()=>{clearInterval(timer);link.close();for(const session of sessions.values())if(session.timer)clearTimeout(session.timer);for(const socket of server.clients)socket.terminate();await new Promise<void>(resolve=>server.close(()=>resolve()));}};
