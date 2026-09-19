@@ -107,3 +107,4 @@ export class CombatAuthority {
     boss:(()=>{const boss=this.enemies.active.find(e=>e.kind==='boss');return boss?{id:boss.id,name:C.boss.name,health:boss.health,maxHealth:boss.maxHealth,enraged:boss.enraged,slam:boss.specialWindup>0?{serial:boss.specialSerial,position:{...boss.specialCenter},radius:C.boss.slamRadius,remaining:boss.specialWindup}:null}:null;})(),
     shots:this.shots.map(s=>({...s,from:{...s.from},to:{...s.to}})),impacts:this.impacts.map(impact=>({...impact,position:{...impact.position}})),messages:this.messages.filter(message=>this.tick-message.tick<=this.chatLifetimeTicks).map(message=>({...message})),dayResult:this.lastDayResult?{...this.lastDayResult}:null};}
 }
+export type CombatSnapshot=ReturnType<CombatAuthority['snapshot']>;
