@@ -1,0 +1,11 @@
+.git
+.github
+.netlify
+.openai
+dist
+docs
+node_modules
+qa
+releases
+tests
+*.log

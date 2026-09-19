@@ -1,0 +1,15 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY scripts ./scripts
+COPY src ./src
+COPY tsconfig.json ./
+
+ENV NODE_ENV=production
+EXPOSE 8080
+
+CMD ["npm", "start"]
