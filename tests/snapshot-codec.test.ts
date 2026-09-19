@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {CombatAuthority} from '../src/network/CombatAuthority';
-import {packKeyframe,unpackKeyframe} from '../src/network/SnapshotCodec';
+import {packKeyframe,SnapshotDecoder,SnapshotEncoder,unpackKeyframe} from '../src/network/SnapshotCodec';
 
 describe('compact snapshot keyframe',()=>{
   it('reconstructs an authoritative snapshot within transport precision',()=>{
@@ -20,5 +20,27 @@ describe('compact snapshot keyframe',()=>{
     const decoded=unpackKeyframe(packKeyframe(source,1));
     expect(decoded.players[0].position).toMatchObject({x:-42.13,z:42.13});
     expect(decoded.players[0].yaw).toBeCloseTo(-Math.PI,3);
+  });
+});
+
+describe('ordered snapshot deltas',()=>{
+  const state=()=>{const a=new CombatAuthority();a.join('p');a.enemies.spawn(1,a.snapshot().players[0].position as never);return a.snapshot();};
+  it('applies changed entities, removal and safe identifier reuse',()=>{
+    const encoder=new SnapshotEncoder(),decoder=new SnapshotDecoder(),first=state();
+    expect(decoder.accept(encoder.keyframe(first,0))).not.toBeNull();
+    const second=structuredClone(first);second.tick=3;second.players[0].health=67;second.enemies=[];
+    expect(decoder.accept(encoder.delta(second,3))).toMatchObject({tick:3,players:[{health:67}],enemies:[]});
+    const third=structuredClone(second);third.tick=6;third.enemies=[{...first.enemies[0],health:12}];
+    expect(decoder.accept(encoder.delta(third,6))?.enemies[0]).toMatchObject({health:12});
+  });
+
+  it('rejects deltas before a keyframe, with stale base, or after a sequence gap',()=>{
+    const encoder=new SnapshotEncoder(),decoder=new SnapshotDecoder(),first=state(),keyframe=encoder.keyframe(first,0),delta1=encoder.delta({...first,tick:3},3),delta2=encoder.delta({...first,tick:6},6);
+    expect(new SnapshotDecoder().accept(delta1)).toBeNull();
+    expect(decoder.accept(keyframe)).not.toBeNull();
+    expect(decoder.accept({...delta1,k:999})).toBeNull();
+    expect(decoder.accept(keyframe)).not.toBeNull();
+    expect(decoder.accept(delta2)).toBeNull();
+    expect(decoder.needsKeyframe).toBe(true);
   });
 });
