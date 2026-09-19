@@ -36,9 +36,9 @@ const maxSerial=(items:unknown[],last:number)=>items.reduce<number>((max,item)=>
 export class SnapshotEncoder{
   private base:PackedSnapshot|null=null;private keyframeId=0;private sequence=0;private serials={sh:0,im:0,m:0};
   keyframe(snapshot:CombatSnapshot,keyframeId=snapshot.tick){const packet=packKeyframe(snapshot,keyframeId);this.base=clone(packet.s);this.keyframeId=keyframeId;this.sequence=0;this.serials={sh:maxSerial(packet.s.sh,0),im:maxSerial(packet.s.im,0),m:maxSerial(packet.s.m,0)};return packet;}
-  delta(snapshot:CombatSnapshot,_tick=snapshot.tick):PackedDelta{
+  delta(snapshot:CombatSnapshot,tick=snapshot.tick):PackedDelta{
     if(!this.base)throw new Error('SnapshotEncoder requires a keyframe');
-    const next=packSnapshot(snapshot),packet:PackedDelta={t:'d',v:2,k:this.keyframeId,q:++this.sequence,tick:snapshot.tick};
+    const next=packSnapshot(snapshot),packet:PackedDelta={t:'d',v:2,k:this.keyframeId,q:++this.sequence,tick};
     if(!same(this.base.g,next.g))packet.g=next.g;if(!same(this.base.h,next.h))packet.h=next.h;
     const players=changed(this.base.p,next.p,item=>item[0]),playerRemovals=removed(this.base.p,next.p,item=>item[0]);if(players.length)packet.p=players;if(playerRemovals.length)packet.pr=playerRemovals as string[];
     const enemies=changed(this.base.e,next.e,item=>item[0]),enemyRemovals=removed(this.base.e,next.e,item=>item[0]);if(enemies.length)packet.e=enemies;if(enemyRemovals.length)packet.er=enemyRemovals as number[];

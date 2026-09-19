@@ -14,7 +14,7 @@
     "coop:server": "tsx scripts/coop-server.ts",
     "coop:server:badnet": "tsx scripts/coop-server.ts --bad-net",
     "coop:server:lan": "tsx scripts/coop-server.ts --lan",
-    "validate:public:reconnect": "node scripts/validate-public-reconnect.mjs"
+    "validate:public:reconnect": "tsx scripts/validate-public-reconnect.ts"
   },
   "dependencies": {
     "three": "^0.180.0",
