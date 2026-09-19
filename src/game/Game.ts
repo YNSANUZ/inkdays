@@ -45,7 +45,7 @@ export class Game {
   private die() {this.mode='dead';this.input.active=false;this.input.clear();this.audio.pause();if(document.pointerLockElement)document.exitPointerLock();this.player.avatar.body.rotation.z=1.5;this.ui.gameOver(this.cycle.day,this.kills,this.money,this.cycle.elapsed,()=>this.start(),()=>this.menu());}
   private fire() {
     if(!this.pistol.fire())return;
-    this.audio.cue('shot');this.player.avatar.arm.rotation.x=-.12;this.scene.updateMatrixWorld(true);
+    this.audio.cue('shot');if(this.pistol.reloadTime>0)this.audio.cue('reload');this.player.avatar.arm.rotation.x=-.12;this.scene.updateMatrixWorld(true);
     this.ray.setFromCamera(new T.Vector2(0,0),this.camera.camera);this.ray.far=C.weapon.range;
     let distance:number=C.weapon.range,point=this.ray.ray.at(distance,new T.Vector3());
     const wall=this.ray.intersectObjects(this.world.solids,false)[0];if(wall){distance=wall.distance;point=wall.point;}

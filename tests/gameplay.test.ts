@@ -23,6 +23,7 @@ describe('ciclo de sobrevivência',()=>{
 describe('pistola',()=>{
   it('aplica cadência e bloqueia pente vazio',()=>{const p=new Pistol();expect(p.fire()).toBe(true);expect(p.fire()).toBe(false);for(let i=0;i<7;i++){p.update(C.weapon.interval);expect(p.fire()).toBe(true);}p.update(1);expect(p.fire()).toBe(false);expect(p.ammo).toBe(0);});
   it('recarga transfere só munição disponível e impede tiros durante recarga',()=>{const p=new Pistol();p.ammo=1;p.reserve=3;expect(p.reload()).toBe(true);expect(p.fire()).toBe(false);p.update(C.weapon.reload);expect(p.ammo).toBe(4);expect(p.reserve).toBe(0);expect(p.reload()).toBe(false);});
+  it('inicia recarga automática ao disparar a última bala',()=>{const p=new Pistol();p.ammo=1;p.reserve=8;expect(p.fire()).toBe(true);expect(p.ammo).toBe(0);expect(p.reloadTime).toBe(C.weapon.reload);p.update(C.weapon.reload);expect(p.ammo).toBe(8);expect(p.reserve).toBe(0);});
   it('respeita limite da reserva no amanhecer',()=>{const p=new Pistol();for(let i=0;i<10;i++)p.resupply();expect(p.reserve).toBe(C.weapon.maxReserve);});
 });
 describe('vida',()=>{
