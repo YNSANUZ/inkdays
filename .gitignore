@@ -5,3 +5,4 @@ releases/
 qa/
 .sites-runtime/
 .netlify/
+.worktrees/
