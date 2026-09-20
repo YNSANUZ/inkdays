@@ -7,5 +7,11 @@ export class Pistol {
   }
   fire() { if (this.cooldown > 0 || this.reloadTime > 0 || this.ammo <= 0) return false; this.ammo--; this.cooldown = C.weapon.interval; if(this.ammo===0&&this.reserve>0)this.reload(); return true; }
   reload() { if (this.reloadTime > 0 || this.ammo === C.weapon.magazine || this.reserve === 0) return false; this.reloadTime = C.weapon.reload; return true; }
+  addReserve(rounds:number){
+    if(!Number.isFinite(rounds)||rounds<=0)return 0;
+    const before=this.reserve;
+    this.reserve=Math.min(C.weapon.maxReserve,this.reserve+Math.floor(rounds));
+    return this.reserve-before;
+  }
   resupply() { this.reserve = Math.min(C.weapon.maxReserve, this.reserve + C.day.dawnAmmo); }
 }
