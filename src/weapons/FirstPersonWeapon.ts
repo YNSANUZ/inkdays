@@ -1,7 +1,7 @@
 import * as T from 'three';
 import { createDrawnWeapon } from './DrawnWeapon';
 import { draftPistol } from './CustomWeapon';
-import { paper, sphere, stroke } from '../world/ink';
+import { paper, sphere } from '../world/ink';
 import type { WeaponCategoryId } from './Categories';
 
 export const firstPersonWeaponProfile=(category:WeaponCategoryId)=>category==='pistol'
@@ -15,8 +15,8 @@ export class FirstPersonWeapon{
     this.root.name='first-person-drawn-weapon';const profile=firstPersonWeaponProfile(category),weapon=createDrawnWeapon(draftPistol);
     weapon.root.scale.setScalar(profile.scale);weapon.root.rotation.set(0,Math.PI/2,-.08);this.root.add(weapon.root);
     // A pistola pequena recebe as duas mãos próximas, como na referência.
-    sphere(this.root,[-.1,-.035,.06],[.085,.1,.09],paper);sphere(this.root,[.015,-.065,.13],[.085,.1,.09],paper);
-    stroke(this.root,[-.1,-.07,.1],[-.21,-.2,.3],.048,paper);stroke(this.root,[.015,-.1,.16],[.14,-.22,.34],.048,paper);
+    const hand=(position:number[])=>{const mesh=sphere(this.root,position,[.06,.072,.065],paper);mesh.children[0]?.scale.setScalar(1.12);};
+    hand([-.085,-.045,.075]);hand([.025,-.068,.145]);
     this.root.position.set(profile.position[0],profile.position[1],profile.position[2]);this.root.rotation.set(-.04,-.08,0);camera.add(this.root);
   }
   fire(){this.recoil=Math.min(1,this.recoil+.72);}
