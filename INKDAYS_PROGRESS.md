@@ -727,3 +727,11 @@ A trilha procedural foi substituída por duas faixas licenciadas: `Post Apocalyp
 Tiro de pistola, recarga e passos passaram a usar gravações reais, com variação leve de afinação nos disparos e cadência distinta ao correr. Há amostras separadas para grama e chão firme e a API já aceita madeira e água; a seleção espacial dessas duas superfícies adicionais fica aguardando zonas físicas correspondentes no mapa. Se um arquivo falhar, o sintetizador anterior continua como fallback sem interromper o gameplay.
 
 Ao disparar a última bala, a pistola inicia a recarga automaticamente quando ainda existe reserva. A regra vive na arma compartilhada pelo solo e pelo servidor autoritativo, portanto munição e estado de recarga permanecem sincronizados. A suíte passou com 168 testes, incluindo a nova regra; lint, TypeScript, build e geração do precache PWA também passaram. A mixagem final de volume ainda depende de escuta em celular e computador reais.
+
+## Arsenal desenhado — câmera em primeira pessoa (entrega atual)
+
+A câmera em primeira pessoa agora pode ser escolhida em Configurações sem remover a terceira pessoa. O modo usa uma apresentação local própria da Pistola de Rascunho, com duas mãos próximas, balanço de movimento e recuo, enquanto outros jogadores continuam enxergando o avatar completo. Armas longas já possuem um perfil visual maior separado para a etapa em que forem habilitadas.
+
+O modo de câmera passou a acompanhar cada comando de entrada. O servidor valida `first`/`third` e calcula o raycast autoritativo com a mesma origem visual usada pelo jogador; clientes antigos sem esse campo continuam em terceira pessoa. Assim, a opção não mascara divergência entre mira local e dano. Nomes de jogadores e nomes no chat agora recebem uma cor estável por identidade, mantendo o cenário e personagens em preto e branco e o vermelho reservado a vida, dano e inimigos.
+
+O vídeo e os prints enviados foram usados como referência de enquadramento, escala por categoria, empunhadura e leitura de arma desenhada. O baú de preparação, editor pago e drops de munição com janela de dez segundos permanecem como a próxima etapa. No multiplayer, compra, saldo, desenho equipado, nascimento e coleta do drop serão autoritativos para impedir duplicação ou estados diferentes entre aparelhos.

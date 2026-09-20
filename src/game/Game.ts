@@ -14,16 +14,17 @@ import { GameAudio } from '../audio/Audio';
 import { Effects } from './Effects';
 import { UI } from '../ui/UI';
 import { loadSettings, saveSettings } from '../ui/Settings';
+import { FirstPersonWeapon } from '../weapons/FirstPersonWeapon';
 type Mode='menu'|'playing'|'paused'|'dead'|'settings';
 export class Game {
   touch:TouchControls;outline:OutlineEffect;
   renderer:T.WebGLRenderer;scene=new T.Scene();world:World;player=new Player();camera=new ThirdPerson();input:Input;pistol=new Pistol();enemies:Enemies;horde=new Horde();cycle=new DayCycle();audio=new GameAudio();effects:Effects;ui:UI;
-  mode:Mode='menu';kills=0;money=0;settings=loadSettings();private accumulator=0;private last=0;private ray=new T.Raycaster();private debug=false;private fps=60;private light:T.DirectionalLight;private lastCommand={crouch:false,run:false};private contextLost=false;private hordeAssist=false;
+  mode:Mode='menu';kills=0;money=0;settings=loadSettings();private accumulator=0;private last=0;private ray=new T.Raycaster();private debug=false;private fps=60;private light:T.DirectionalLight;private lastCommand={crouch:false,run:false};private contextLost=false;private hordeAssist=false;private viewWeapon:FirstPersonWeapon;
   constructor(app:HTMLElement) {
     this.renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});this.renderer.setClearColor(0xf3f1e9);this.renderer.outputColorSpace=T.SRGBColorSpace;this.outline=new OutlineEffect(this.renderer,{defaultThickness:.006,defaultColor:[.06,.07,.06],defaultAlpha:1,defaultKeepAlive:true});app.append(this.renderer.domElement);this.renderer.domElement.setAttribute('aria-label','Mundo 3D do INKDAYS');
     this.scene.background=new T.Color(0xf3f1e9);this.scene.fog=new T.Fog(0xf3f1e9,43,130);
     this.scene.add(new T.HemisphereLight(0xffffff,0xb4b7af,2.1));this.light=new T.DirectionalLight(0xffffff,2.3);this.light.position.set(-20,35,10);this.scene.add(this.light);
-    this.world=new World(this.scene);this.scene.add(this.player.avatar.root);this.enemies=new Enemies(this.scene,this.world);this.effects=new Effects(this.scene);this.ui=new UI(app);
+    this.world=new World(this.scene);this.scene.add(this.player.avatar.root,this.camera.camera);this.viewWeapon=new FirstPersonWeapon(this.camera.camera);this.enemies=new Enemies(this.scene,this.world);this.effects=new Effects(this.scene);this.ui=new UI(app);
     this.input=new Input(this.renderer.domElement,()=>this.pause(),()=>{this.debug=!this.debug;this.ui.el('#debug').classList.toggle('hidden',!this.debug);});
     this.touch=new TouchControls(this.input,()=>this.pause(),()=>{if(this.mode==='playing')this.lock();});
     this.renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&this.mode==='playing'&&!document.pointerLockElement)this.lock();});
@@ -32,10 +33,10 @@ export class Game {
     this.renderer.domElement.addEventListener('webglcontextrestored',()=>{this.contextLost=false;this.ui.toast('Renderização recuperada. Continue pelo menu.');});
     this.menu();requestAnimationFrame(this.frame);
   }
-  private applySettings(){this.renderer.setPixelRatio(Math.min(devicePixelRatio,this.settings.quality==='high'?1.5:.85));this.audio.setVolume(this.settings.volume);this.resize();}
+  private applySettings(){this.renderer.setPixelRatio(Math.min(devicePixelRatio,this.settings.quality==='high'?1.5:.85));this.audio.setVolume(this.settings.volume);this.camera.mode=this.settings.cameraMode;if(this.viewWeapon)this.viewWeapon.visible=this.camera.mode==='first';this.player.avatar.root.visible=this.camera.mode!=='first'||this.mode!=='playing';this.resize();}
   private resize(){const w=window.innerWidth,h=window.innerHeight;this.outline.setSize(w,h);this.camera.camera.aspect=w/h;this.camera.camera.updateProjectionMatrix();if(this.ui){const scale=Math.min(1.5,Math.max(1,Math.min(w/1280,h/720)));Object.assign(this.ui.hud.style,{position:'absolute',width:`${w/scale}px`,height:`${h/scale}px`,transform:`scale(${scale})`,transformOrigin:'top left'});}}
   start() {
-    this.enemies.clear();this.effects.clear();this.scene.remove(this.player.avatar.root);this.player=new Player();this.scene.add(this.player.avatar.root);this.pistol=new Pistol();this.cycle=new DayCycle();this.horde=new Horde();this.hordeAssist=false;this.camera=new ThirdPerson();this.resize();this.kills=this.money=0;this.ui.toastTimer=this.ui.hitTimer=this.ui.damageTimer=0;this.ui.el('.damage-flash').style.opacity='0';this.ui.el('#reward').textContent='';this.resume();this.ui.toast('DIA 1 · Explore. A noite chega em 40 segundos.');
+    this.enemies.clear();this.effects.clear();this.scene.remove(this.player.avatar.root,this.camera.camera);this.player=new Player();this.camera=new ThirdPerson();this.camera.mode=this.settings.cameraMode;this.scene.add(this.player.avatar.root,this.camera.camera);this.viewWeapon=new FirstPersonWeapon(this.camera.camera);this.viewWeapon.visible=this.camera.mode==='first';this.player.avatar.root.visible=this.camera.mode!=='first';this.pistol=new Pistol();this.cycle=new DayCycle();this.horde=new Horde();this.hordeAssist=false;this.resize();this.kills=this.money=0;this.ui.toastTimer=this.ui.hitTimer=this.ui.damageTimer=0;this.ui.el('.damage-flash').style.opacity='0';this.ui.el('#reward').textContent='';this.resume();this.ui.toast('DIA 1 · Explore. A noite chega em 40 segundos.');
   }
   private lock() {if(this.touch.enabled)return;try{const p=this.renderer.domElement.requestPointerLock?.();if(p)p.catch(()=>this.ui.el('#lock-note').classList.remove('hidden'));}catch{this.ui.el('#lock-note').classList.remove('hidden');}}
   resume() {if(this.contextLost)return;this.mode='playing';this.input.clear();this.input.active=true;this.accumulator=0;this.audio.start();this.ui.playing();this.ui.el('#lock-note').classList.add('hidden');this.lock();}
@@ -45,7 +46,7 @@ export class Game {
   private die() {this.mode='dead';this.input.active=false;this.input.clear();this.audio.pause();if(document.pointerLockElement)document.exitPointerLock();this.player.avatar.body.rotation.z=1.5;this.ui.gameOver(this.cycle.day,this.kills,this.money,this.cycle.elapsed,()=>this.start(),()=>this.menu());}
   private fire() {
     if(!this.pistol.fire())return;
-    this.audio.cue('shot');if(this.pistol.reloadTime>0)this.audio.cue('reload');this.player.avatar.arm.rotation.x=-.12;this.scene.updateMatrixWorld(true);
+    this.audio.cue('shot');this.viewWeapon.fire();if(this.pistol.reloadTime>0)this.audio.cue('reload');this.player.avatar.arm.rotation.x=-.12;this.scene.updateMatrixWorld(true);
     this.ray.setFromCamera(new T.Vector2(0,0),this.camera.camera);this.ray.far=C.weapon.range;
     let distance:number=C.weapon.range,point=this.ray.ray.at(distance,new T.Vector3());
     const wall=this.ray.intersectObjects(this.world.solids,false)[0];if(wall){distance=wall.distance;point=wall.point;}
@@ -80,11 +81,11 @@ export class Game {
       this.camera.look(this.input.lookX,this.input.lookY,this.settings.sensitivity);this.input.lookX=this.input.lookY=0;
       this.accumulator+=dt;let steps=0;while(this.accumulator>=C.fixedStep&&steps<C.maxSteps&&this.mode==='playing'){this.camera.update(C.fixedStep,this.player.position,this.world);this.step(C.fixedStep);this.accumulator-=C.fixedStep;steps++;}
       if(steps===C.maxSteps)this.accumulator=0;
-      this.camera.update(dt,this.player.position,this.world);this.world.sails.rotation.z+=dt*.18;
+      this.camera.update(dt,this.player.position,this.world);this.viewWeapon.update(dt,Math.hypot(this.player.velocity.x,this.player.velocity.z));this.world.sails.rotation.z+=dt*.18;
       const night=this.cycle.phase==='horde';const color=new T.Color(night?0xa9b1ad:0xf3f1e9);(this.scene.background as T.Color).lerp(color,dt*1.8);(this.scene.fog as T.Fog).color.copy(this.scene.background as T.Color);this.light.intensity=T.MathUtils.damp(this.light.intensity,night?1.2:2.3,2,dt);
       this.ui.update(dt,this.cycle,this.pistol,this.player.health.value,this.kills,this.money,this.lastCommand.crouch,this.lastCommand.run,this.horde.state(this.enemies.active.filter(enemy=>enemy.kind==='horde').length));
     } else if(this.mode==='menu'||this.mode==='settings'&&this.ui.hud.classList.contains('hidden')) {
-      this.camera.camera.position.set(9,4.6,19);this.camera.camera.lookAt(-4,3,-14);this.world.sails.rotation.z+=dt*.12;
+      this.viewWeapon.visible=false;this.player.avatar.root.visible=true;this.camera.camera.position.set(9,4.6,19);this.camera.camera.lookAt(-4,3,-14);this.world.sails.rotation.z+=dt*.12;
       (this.scene.background as T.Color).set(0xf3f1e9);(this.scene.fog as T.Fog).color.set(0xf3f1e9);this.light.intensity=2.3;
     }
     if(this.cycle.phase==='horde')for(const enemy of this.enemies.active)enemy.avatar.root.scale.setScalar(enemy.kind==='boss'?C.boss.scale:this.hordeAssist?1.04+Math.sin(ms*.012)*.04:1);this.outline.render(this.scene,this.camera.camera);

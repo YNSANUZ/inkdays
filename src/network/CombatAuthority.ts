@@ -89,7 +89,7 @@ export class CombatAuthority {
       if(++p.age>15)p.input.command=neutral();
       if(p.player.health.dead)continue;
       p.player.update(C.fixedStep,p.input.command,p.input.yaw,this.world);p.weapon.update(C.fixedStep);
-      p.camera.yaw=p.input.yaw;p.camera.pitch=p.input.pitch??.19;p.camera.update(C.fixedStep,p.player.position,this.world,true);
+      p.camera.yaw=p.input.yaw;p.camera.pitch=p.input.pitch??.19;p.camera.mode=p.input.cameraMode??'third';p.camera.update(C.fixedStep,p.player.position,this.world,true);
       if(p.input.command.reload)p.weapon.reload();if(p.input.command.fire||p.shotPending!==null)this.fire(id,p,p.shotPending??undefined);p.shotPending=null;
       p.applied=p.received;p.input.command.jump=p.input.command.reload=p.input.command.fire=false;
     }

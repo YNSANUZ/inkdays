@@ -61,3 +61,10 @@ O playtest humano registrou que o áudio será parte central da identidade do IN
 - Pool de inimigos / efeitos se o perfil demonstrar necessidade.
 - Instancing e LOD por regiões para mapas maiores.
 - Testes em GPUs integradas e aparelhos Android antes de ampliar o limite de entidades.
+
+## Arsenal desenhado — próximas entregas confirmadas
+- Baú/quiosque físico no mapa, utilizável durante a preparação para gastar dinheiro.
+- Editor de giz para desenhar a arma e escolher sua cor; o desenho equipado será visível em primeira pessoa e para os demais jogadores.
+- Compras adicionais no mesmo baú somente após definir catálogo e balanceamento.
+- Drops de munição em pontos válidos do mapa: tentativa a cada 10 segundos, duração de 10 segundos, flutuação visual e coleta decidida pelo servidor.
+- Sincronizar saldo, compra, arma equipada, desenho e cor no multiplayer antes de habilitar o recurso público.

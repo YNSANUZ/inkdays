@@ -2,6 +2,8 @@ import {describe,it,expect} from 'vitest';
 import {parseInput} from '../src/network/Protocol';
 import {MovementAuthority} from '../src/network/MovementAuthority';
 import type {Point} from '../src/simulation/Movement';
+import {playerColor} from '../src/network/PlayerColor';
+import {firstPersonWeaponProfile} from '../src/weapons/FirstPersonWeapon';
 const input=(sequence:number)=>({version:1,sequence,yaw:0,command:{x:0,z:1,run:false,crouch:false,jump:false,fire:false,reload:false}});
 const world={move(p:Point,dx:number,dz:number){p.x+=dx;p.z+=dz;}};
 describe('base autoritativa de movimentação',()=>{
@@ -16,6 +18,16 @@ describe('base autoritativa de movimentação',()=>{
     expect(parseInput({...input(0),viewTick:-1})).toBeNull();
     expect(parseInput({...input(0),viewTick:1.5})).toBeNull();
     expect(parseInput({...input(0),command:{...input(0).command,x:2}})).toBeNull();
+  });
+  it('aceita câmera autoritativa compatível e rejeita modo forjado',()=>{
+    expect(parseInput({...input(1),cameraMode:'first'})?.cameraMode).toBe('first');
+    expect(parseInput({...input(2),cameraMode:'sideways'})).toBeNull();
+    expect(parseInput(input(3))?.cameraMode).toBeUndefined();
+  });
+  it('mantém cor de jogador estável e arma longa maior que pistola',()=>{
+    expect(playerColor('bruno')).toBe(playerColor('bruno'));
+    expect(firstPersonWeaponProfile('smg').scale).toBeGreaterThan(firstPersonWeaponProfile('pistol').scale);
+    expect(firstPersonWeaponProfile('pistol').twoHanded).toBe(true);
   });
   it('limita a oito jogadores, reaproveita vaga e rejeita comandos desconhecidos ou repetidos',()=>{
     const a=new MovementAuthority(world);for(let n=0;n<8;n++)expect(a.join(`p${n}`)).toBe(true);expect(a.join('extra')).toBe(false);
