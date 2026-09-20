@@ -737,3 +737,9 @@ O modo de câmera passou a acompanhar cada comando de entrada. O servidor valida
 O vídeo e os prints enviados foram usados como referência de enquadramento, escala por categoria, empunhadura e leitura de arma desenhada. O baú de preparação, editor pago e drops de munição com janela de dez segundos permanecem como a próxima etapa. No multiplayer, compra, saldo, desenho equipado, nascimento e coleta do drop serão autoritativos para impedir duplicação ou estados diferentes entre aparelhos.
 
 Frontend e servidor foram publicados no commit `b71af0a`. O servidor temporário validado nesta implantação é `inkdaysmultiplayer-fmt120yy.b4a.run`; o cliente público o usa automaticamente, embora o limite gratuito de 60 minutos continue exigindo uma hospedagem permanente para disponibilidade contínua.
+
+## Primeira pessoa — braços e arma desenhada em perspectiva
+
+As mãos esféricas provisórias foram removidas. A apresentação local agora possui dois braços completos e articulados, com braço, antebraço e mão convergindo para uma empunhadura de pistola com duas mãos. A arma foi reposicionada e rotacionada para apontar em direção à mira enquanto mostra sua lateral, em vez de aparecer como um símbolo plano atravessado na tela.
+
+Os traços da arma continuam sendo geometria fina, recebem transparência e preservam espaços vazios entre as linhas. Assim, o jogador segura visualmente um desenho recortado em vez de uma arma sólida. O recuo e o balanço continuam movendo o conjunto completo. A validação visual foi feita em primeira pessoa no cenário real, além do teste estrutural que impede o retorno das mãos soltas e da arma opaca.

@@ -4,6 +4,8 @@ import {MovementAuthority} from '../src/network/MovementAuthority';
 import type {Point} from '../src/simulation/Movement';
 import {playerColor} from '../src/network/PlayerColor';
 import {firstPersonWeaponProfile} from '../src/weapons/FirstPersonWeapon';
+import {FirstPersonWeapon} from '../src/weapons/FirstPersonWeapon';
+import * as T from 'three';
 const input=(sequence:number)=>({version:1,sequence,yaw:0,command:{x:0,z:1,run:false,crouch:false,jump:false,fire:false,reload:false}});
 const world={move(p:Point,dx:number,dz:number){p.x+=dx;p.z+=dz;}};
 describe('base autoritativa de movimentação',()=>{
@@ -28,6 +30,23 @@ describe('base autoritativa de movimentação',()=>{
     expect(playerColor('bruno')).toBe(playerColor('bruno'));
     expect(firstPersonWeaponProfile('smg').scale).toBeGreaterThan(firstPersonWeaponProfile('pistol').scale);
     expect(firstPersonWeaponProfile('pistol').twoHanded).toBe(true);
+  });
+  it('monta dois braços articulados em vez de mãos esféricas soltas na primeira pessoa',()=>{
+    const view=new FirstPersonWeapon(new T.PerspectiveCamera());
+    for(const side of ['left','right']){
+      expect(view.root.getObjectByName(`${side}-upper-arm`)).toBeInstanceOf(T.Mesh);
+      expect(view.root.getObjectByName(`${side}-forearm`)).toBeInstanceOf(T.Mesh);
+      expect(view.root.getObjectByName(`${side}-hand`)).toBeInstanceOf(T.Mesh);
+    }
+    expect(view.root.getObjectByName('first-person-weapon')).toBeInstanceOf(T.Group);
+  });
+  it('mantém a arma como desenho fino semitransparente visto em perspectiva',()=>{
+    const view=new FirstPersonWeapon(new T.PerspectiveCamera()),weapon=view.root.getObjectByName('first-person-weapon')!;
+    const materials:T.Material[]=[];weapon.traverse(object=>{if(object instanceof T.Mesh)materials.push(object.material as T.Material);});
+    expect(materials.length).toBeGreaterThan(4);
+    expect(materials.every(material=>material.transparent&&material.opacity<1)).toBe(true);
+    expect(Math.abs(weapon.rotation.y)).toBeGreaterThan(1.7);
+    expect(Math.abs(weapon.rotation.y)).toBeLessThan(2.6);
   });
   it('limita a oito jogadores, reaproveita vaga e rejeita comandos desconhecidos ou repetidos',()=>{
     const a=new MovementAuthority(world);for(let n=0;n<8;n++)expect(a.join(`p${n}`)).toBe(true);expect(a.join('extra')).toBe(false);
