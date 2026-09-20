@@ -4,6 +4,13 @@ import { DayCycle } from '../src/daycycle/DayCycle';
 import { Health } from '../src/health/Health';
 import { Pistol } from '../src/weapons/Pistol';
 import { Horde } from '../src/horde/Horde';
+import {Mesh,MeshToonMaterial,Scene} from 'three';
+import {World} from '../src/world/World';
+import {AmmoDropView} from '../src/world/AmmoDropView';
+describe('oficina e drops no mundo',()=>{
+  it('posiciona um baú marrom contornado no centro autoritativo',()=>{const world=new World(new Scene());expect(world.workshop.root.name).toBe('workshop-chest');expect(world.workshop.position.toArray()).toEqual([0,0,4]);let brown=0;world.workshop.root.traverse(object=>{if(object instanceof Mesh&&object.material instanceof MeshToonMaterial&&object.material.color.getHexString()==='6b4c2f')brown++;});expect(brown).toBeGreaterThan(0);world.workshop.setAvailable(false);expect(world.workshop.isAvailable).toBe(false);});
+  it('sincroniza uma malha flutuante por drop e remove as antigas',()=>{const view=new AmmoDropView();view.sync([{id:1,x:2,z:3,remaining:10},{id:2,x:4,z:5,remaining:8}]);expect(view.root.children.map(child=>child.name)).toEqual(['ammo-drop-1','ammo-drop-2']);view.update(.5);expect(view.root.children[0].position.y).not.toBe(.72);view.sync([{id:2,x:6,z:7,remaining:4}]);expect(view.root.children.map(child=>child.name)).toEqual(['ammo-drop-2']);expect(view.root.children[0].position.x).toBe(6);});
+});
 describe('ciclo de sobrevivência',()=>{
   it('entra na horda pelo tempo, mas só amanhece por conclusão explícita',()=>{const d=new DayCycle();for(let i=0;i<1800;i++)d.update(1/60);expect(d.remaining).toBeCloseTo(10);for(let i=0;i<600;i++)d.update(1/60);expect(d.phase).toBe('horde');for(let i=0;i<6000;i++)d.update(1/60);expect(d).toMatchObject({phase:'horde',day:1,remaining:0});expect(d.completeHorde()).toBe('dawn');expect(d).toMatchObject({phase:'day',day:2,remaining:C.day.duration});});
   it('escala 5, 7, 9 sem crescimento ilimitado de vida ou velocidade',()=>{expect([1,2,3].map(d=>difficulty(d).count)).toEqual([5,7,9]);expect(difficulty(2).speed).toBeGreaterThan(difficulty(1).speed);expect(difficulty(1000).health).toBe(C.enemy.maxHealth);expect(difficulty(1000).count).toBe(C.day.maxEnemies);});

@@ -2,9 +2,10 @@ import * as T from 'three';
 import { C } from '../config/gameplay';
 import type { Point } from '../simulation/Movement';
 import { bake, box, cylinder, gray, ink, paper, shape, sphere, stroke } from './ink';
+import {WorkshopChest} from './WorkshopChest';
 export interface Obstacle { x: number; z: number; w: number; d: number; height: number }
 export class World {
-  obstacles: Obstacle[] = []; solids: T.Mesh[] = []; sails = new T.Group(); group = new T.Group();
+  obstacles: Obstacle[] = []; solids: T.Mesh[] = []; sails = new T.Group(); group = new T.Group();readonly workshop=new WorkshopChest();
   constructor(scene: T.Scene) {
     const raw = new T.Group();
     const floor = new T.Mesh(new T.PlaneGeometry(260, 260), paper); floor.rotation.x = -Math.PI / 2; raw.add(floor);
@@ -37,7 +38,7 @@ export class World {
     for (let i=0;i<12;i++) { const a=i*Math.PI/6; sphere(raw,[Math.sin(a)*80,-8,Math.cos(a)*80],[25,13+(i%3)*2,19]); }
     // Boundary is drawn as a broken ink ring; no invisible unmarked wall.
     for (let i=0;i<180;i++) { const a=i/180*Math.PI*2,b=(i+.65)/180*Math.PI*2; stroke(raw,[Math.sin(a)*C.world.radius,.025,Math.cos(a)*C.world.radius],[Math.sin(b)*C.world.radius,.025,Math.cos(b)*C.world.radius],.035,gray); }
-    this.group.add(bake(raw)); this.group.add(this.sails); scene.add(this.group);
+    this.group.add(bake(raw)); this.group.add(this.sails);this.group.add(this.workshop.root); scene.add(this.group);
     for (const o of this.obstacles) { const m=new T.Mesh(new T.BoxGeometry(o.w*2,o.height,o.d*2),new T.MeshBasicMaterial({visible:false})); m.position.set(o.x,o.height/2,o.z); this.group.add(m); this.solids.push(m); }
     this.group.updateMatrixWorld(true);
   }
