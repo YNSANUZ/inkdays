@@ -6,6 +6,7 @@ import {playerColor} from '../src/network/PlayerColor';
 import {firstPersonWeaponProfile} from '../src/weapons/FirstPersonWeapon';
 import {FirstPersonWeapon} from '../src/weapons/FirstPersonWeapon';
 import * as T from 'three';
+import {draftPistol} from '../src/weapons/CustomWeapon';
 const input=(sequence:number)=>({version:1,sequence,yaw:0,command:{x:0,z:1,run:false,crouch:false,jump:false,fire:false,reload:false}});
 const world={move(p:Point,dx:number,dz:number){p.x+=dx;p.z+=dz;}};
 describe('base autoritativa de movimentação',()=>{
@@ -40,14 +41,18 @@ describe('base autoritativa de movimentação',()=>{
     }
     expect(view.root.getObjectByName('first-person-weapon')).toBeInstanceOf(T.Group);
   });
-  it('mantém a arma como desenho fino semitransparente visto em perspectiva',()=>{
+  it('mantém a arma como traços puros e opacos na cor escolhida, sem corpo cinza',()=>{
     const view=new FirstPersonWeapon(new T.PerspectiveCamera()),weapon=view.root.getObjectByName('first-person-weapon')!;
     const materials:T.Material[]=[];weapon.traverse(object=>{if(object instanceof T.Mesh)materials.push(object.material as T.Material);});
     expect(materials.length).toBeGreaterThan(4);
-    expect(materials.every(material=>material.transparent&&material.opacity<1)).toBe(true);
-    expect(Math.abs(weapon.rotation.y)).toBeGreaterThan(1.7);
-    expect(Math.abs(weapon.rotation.y)).toBeLessThan(2.6);
+    expect(materials.every(material=>material instanceof T.MeshBasicMaterial&&!material.transparent&&material.opacity===1)).toBe(true);
+    expect(materials.every(material=>material.userData.outlineParameters?.visible===false)).toBe(true);
+    expect(new Set(materials.map(material=>(material as T.MeshBasicMaterial).color.getHexString()))).toEqual(new Set(['43b95f']));
+    expect(Math.abs(weapon.rotation.y)).toBeGreaterThan(1.2);
+    expect(Math.abs(weapon.rotation.y)).toBeLessThan(1.8);
   });
+  it('usa mãos alongadas e braços contínuos do manequim em vez de bolinhas',()=>{const view=new FirstPersonWeapon(new T.PerspectiveCamera());for(const side of ['left','right']){const hand=view.root.getObjectByName(`${side}-hand`) as T.Mesh;expect(hand.geometry).toBeInstanceOf(T.CapsuleGeometry);expect(hand.scale.y).toBeGreaterThan(hand.scale.x);}});
+  it('renderiza diretamente os traços e a cor escolhidos pelo jogador',()=>{const custom={...draftPistol,id:'player-drawing',color:'#3182ce',drawing:[{width:.02,points:[{x:.3,y:.7},{x:.5,y:.45},{x:.9,y:.4}]}]},view=new FirstPersonWeapon(new T.PerspectiveCamera(),custom),weapon=view.root.getObjectByName('first-person-weapon')!;expect(weapon.name).toBe('first-person-weapon');const colors:T.Color[]=[];weapon.traverse(object=>{if(object instanceof T.Mesh&&object.material instanceof T.MeshBasicMaterial)colors.push(object.material.color);});expect(colors.length).toBe(2);expect(colors.every(color=>color.getHexString()==='3182ce')).toBe(true);});
   it('limita a oito jogadores, reaproveita vaga e rejeita comandos desconhecidos ou repetidos',()=>{
     const a=new MovementAuthority(world);for(let n=0;n<8;n++)expect(a.join(`p${n}`)).toBe(true);expect(a.join('extra')).toBe(false);
     const positions=a.snapshot().players.map(player=>`${player.position.x}:${player.position.z}`);expect(new Set(positions).size).toBe(8);
