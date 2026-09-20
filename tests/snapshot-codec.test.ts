@@ -3,6 +3,7 @@ import {CombatAuthority} from '../src/network/CombatAuthority';
 import {packKeyframe,SnapshotDecoder,SnapshotEncoder,unpackKeyframe} from '../src/network/SnapshotCodec';
 
 describe('compact snapshot keyframe',()=>{
+  it('accepts an older server keyframe without ammo drops',()=>{const authority=new CombatAuthority();authority.join('a');const packet=packKeyframe(authority.snapshot(),1);delete (packet.s as unknown as {a?:unknown}).a;expect(unpackKeyframe(packet).ammoDrops).toEqual([]);});
   it('reconstructs an authoritative snapshot within transport precision',()=>{
     const authority=new CombatAuthority();authority.join('player-a');
     for(let tick=0;tick<30;tick++)authority.step();
