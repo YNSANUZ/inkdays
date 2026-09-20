@@ -67,7 +67,7 @@ export class Game {
     if(command.fire||command.shot)this.fire();
     this.player.avatar.arm.rotation.x=T.MathUtils.damp(this.player.avatar.arm.rotation.x,0,12,dt);
     const event=this.cycle.update(dt);
-    if(event==='horde'){this.horde.begin(this.cycle.day);if(this.cycle.day%C.day.bossInterval===0)this.enemies.spawnBoss(this.cycle.day,this.player.position);this.audio.cue('enemy');this.ui.toast(this.cycle.day%C.day.bossInterval===0?'CHEFÃO · O COLOSSO CHEGOU':'A HORDA CHEGOU · Elimine todos os Borrões.');}
+    if(event==='horde'){this.horde.begin(this.cycle.day);if(this.cycle.day%C.day.bossInterval===0)this.enemies.spawnBoss(this.cycle.day,this.player.position);this.audio.cue('enemy');this.ui.toast(this.cycle.day%C.day.bossInterval===0?`CHEFÃO · ${this.cycle.day%(C.day.bossInterval*2)===0?C.humanDeer.name:C.boss.name} CHEGOU`:'A HORDA CHEGOU · Elimine todos os Borrões.');}
     if(this.cycle.phase==='horde'){const commonEnemies=this.enemies.active.filter(enemy=>enemy.kind==='horde'),commons=commonEnemies.length,boss=this.enemies.active.find(enemy=>enemy.kind==='boss');this.horde.update(dt,commons,()=>this.enemies.spawn(this.cycle.day,this.player.position),boss?boss.health/boss.maxHealth:null,commonEnemies.every(enemy=>enemy.state==='WANDER'));this.hordeAssist=this.horde.state(commons).assist;if(this.horde.canComplete(dt,commons,!!boss)&&this.cycle.completeHorde()){this.hordeAssist=false;this.pistol.resupply();this.player.health.heal(C.day.dawnHeal);this.ui.toast(`HORDA ELIMINADA · Você sobreviveu ao Dia ${this.cycle.day-1}.`);}}
     this.enemies.update(dt,this.player,()=>{this.ui.hurt();this.audio.cue('damage');this.camera.shake=.25;});
     this.effects.update(dt);this.audio.update(dt,this.cycle.phase==='horde',Math.hypot(this.player.velocity.x,this.player.velocity.z),command.crouch,this.enemies.active.some(enemy=>enemy.kind==='boss'));
@@ -88,7 +88,7 @@ export class Game {
       this.viewWeapon.visible=false;this.player.avatar.root.visible=true;this.camera.camera.position.set(9,4.6,19);this.camera.camera.lookAt(-4,3,-14);this.world.sails.rotation.z+=dt*.12;
       (this.scene.background as T.Color).set(0xf3f1e9);(this.scene.fog as T.Fog).color.set(0xf3f1e9);this.light.intensity=2.3;
     }
-    if(this.cycle.phase==='horde')for(const enemy of this.enemies.active)enemy.avatar.root.scale.setScalar(enemy.kind==='boss'?C.boss.scale:this.hordeAssist?1.04+Math.sin(ms*.012)*.04:1);this.outline.render(this.scene,this.camera.camera);
+    if(this.cycle.phase==='horde')for(const enemy of this.enemies.active)enemy.avatar.root.scale.setScalar(enemy.kind==='boss'?(enemy.bossVariant==='human-deer'?C.humanDeer.scale:C.boss.scale):this.hordeAssist?1.04+Math.sin(ms*.012)*.04:1);this.outline.render(this.scene,this.camera.camera);
     if(this.debug)this.ui.el('#debug').textContent=`${Math.round(this.fps)} FPS · ${this.enemies.active.length} inimigos · ${this.renderer.info.render.calls} draw calls · ${this.renderer.info.render.triangles.toLocaleString('pt-BR')} triângulos`;
   };
 }
