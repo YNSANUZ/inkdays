@@ -36,6 +36,7 @@ import { loadSettings } from '../ui/Settings';
 import { FirstPersonWeapon } from '../weapons/FirstPersonWeapon';
 import { playerColor } from './PlayerColor';
 type Snapshot=ReturnType<CombatAuthority['snapshot']>;
+const PUBLIC_COOP_SERVER='wss://inkdaysmultiplayer-fmt120yy.b4a.run';
 export function mountCoopPreview(app:HTMLElement){
   app.classList.add('coop-lobby');
   const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));const outline=new OutlineEffect(renderer,{defaultThickness:.006,defaultColor:[.06,.07,.06],defaultAlpha:1,defaultKeepAlive:true});app.append(renderer.domElement);
@@ -78,7 +79,7 @@ export function mountCoopPreview(app:HTMLElement){
     if(!navigator.onLine){status.textContent='SEM INTERNET · AGUARDANDO A REDE VOLTAR…';return;}
     const waitingForServer=performance.now()-connectionStartedAt>=5000;status.textContent=waitingForServer?'SERVIDOR ACORDANDO · A CONEXÃO PODE LEVAR ATÉ 50 SEGUNDOS…':reconnectAttempts?'RECONECTANDO AO SERVIDOR…':'CONECTANDO AO SERVIDOR…';
     if(!wakeHintTimer)wakeHintTimer=window.setTimeout(()=>{if(!connected&&!roomFull)status.textContent='SERVIDOR ACORDANDO · A CONEXÃO PODE LEVAR ATÉ 50 SEGUNDOS…';},Math.max(0,5000-(performance.now()-connectionStartedAt)));
-    const params=new URLSearchParams(location.search),requestedRoom=normalizeRoomCode(params.get('room')),token=sessionStorage.getItem(`inkdays-coop-token-${requestedRoom}`),override=params.get('server'),configured=import.meta.env.VITE_COOP_SERVER as string|undefined,url=new URL(override??configured??`${location.protocol==='https:'?'wss':'ws'}://${location.hostname}:8787`);url.searchParams.set('lobby','1');url.searchParams.set('room',requestedRoom);if(token)url.searchParams.set('resume',token);socket=new WebSocket(url);
+    const params=new URLSearchParams(location.search),requestedRoom=normalizeRoomCode(params.get('room')),token=sessionStorage.getItem(`inkdays-coop-token-${requestedRoom}`),override=params.get('server'),configured=import.meta.env.VITE_COOP_SERVER as string|undefined,url=new URL(override??configured??(location.hostname==='localhost'||location.hostname==='127.0.0.1'?`${location.protocol==='https:'?'wss':'ws'}://${location.hostname}:8787`:PUBLIC_COOP_SERVER));url.searchParams.set('lobby','1');url.searchParams.set('room',requestedRoom);if(token)url.searchParams.set('resume',token);socket=new WebSocket(url);
     socket.onmessage=e=>{
     const packet=JSON.parse(e.data);
     if(packet.type==='room-full'){roomFull=true;connected=false;clearTimeout(wakeHintTimer);wakeHintTimer=0;input.clear();status.textContent=`SALA CHEIA · ${packet.capacity??MAX_PLAYERS}/${packet.capacity??MAX_PLAYERS} JOGADORES`;button.disabled=true;button.textContent='SALA CHEIA';return;}
