@@ -4,7 +4,7 @@ export interface AmmoDropPlayer {
   id:string;x:number;z:number;alive:boolean;ready:boolean;ammo:number;reserve:number;
 }
 export interface AmmoDropSnapshot {id:number;x:number;z:number;remaining:number}
-interface AmmoDrop extends AmmoDropSnapshot {}
+type AmmoDrop=AmmoDropSnapshot;
 interface Point {x:number;z:number}
 interface AmmoDropOptions {points?:readonly Point[];rng?:()=>number}
 

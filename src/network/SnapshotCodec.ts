@@ -6,9 +6,10 @@ type PackedPlayer=[string,string,number,number,number,number,number,number,numbe
 // Enemy: id,kind/flags,maxHealth,targetId,pos xyz,yaw,health,state,speed
 type PackedEnemy=[number,string,number,number,string|null,number,number,number,number,number,string,number];
 type PackedGlobal=[number,number,number,string,number,number];
-type PackedSnapshot={g:PackedGlobal;h:unknown;p:PackedPlayer[];e:PackedEnemy[];b:unknown;sh:unknown[];im:unknown[];m:unknown[];dr:unknown};
+type PackedDrop=[number,number,number,number];
+type PackedSnapshot={g:PackedGlobal;h:unknown;p:PackedPlayer[];e:PackedEnemy[];a:PackedDrop[];b:unknown;sh:unknown[];im:unknown[];m:unknown[];dr:unknown};
 export interface PackedKeyframe{t:'k';v:2;k:number;s:PackedSnapshot}
-export interface PackedDelta{t:'d';v:2;k:number;q:number;tick:number;g?:PackedGlobal;h?:unknown;p?:PackedPlayer[];pr?:string[];e?:PackedEnemy[];er?:number[];b?:unknown;sh?:unknown[];im?:unknown[];m?:unknown[];dr?:unknown}
+export interface PackedDelta{t:'d';v:2;k:number;q:number;tick:number;g?:PackedGlobal;h?:unknown;p?:PackedPlayer[];pr?:string[];e?:PackedEnemy[];er?:number[];a?:PackedDrop[];b?:unknown;sh?:unknown[];im?:unknown[];m?:unknown[];dr?:unknown}
 
 const q=(value:number,scale=100)=>Math.round(value*scale),u=(value:number,scale=100)=>value/scale;
 const qa=(value:number)=>q(value,1800/Math.PI),ua=(value:number)=>u(value,1800/Math.PI);
@@ -21,8 +22,8 @@ const unpackPlayer=(p:PackedPlayer)=>({id:p[0],name:p[1],connected:!!(p[2]&1),re
 const packEnemy=(e:CombatSnapshot['enemies'][number]):PackedEnemy=>[e.id,e.kind,(e.enraged?1:0),q(e.maxHealth),e.targetId,...pv(e.position),qa(e.yaw),q(e.health),e.state,q(e.speed)];
 const unpackEnemy=(e:PackedEnemy)=>({id:e[0],kind:e[1] as CombatSnapshot['enemies'][number]['kind'],enraged:!!e[2],maxHealth:u(e[3]),targetId:e[4],position:uv([e[5],e[6],e[7]]),yaw:ua(e[8]),health:u(e[9]),state:e[10] as CombatSnapshot['enemies'][number]['state'],speed:u(e[11])}) as CombatSnapshot['enemies'][number];
 
-const packSnapshot=(s:CombatSnapshot):PackedSnapshot=>({g:[s.tick,s.round,s.day,s.phase,q(s.remaining),s.gameOver?1:0],h:clone(s.horde),p:s.players.map(packPlayer),e:s.enemies.map(packEnemy),b:clone(s.boss),sh:clone(s.shots),im:clone(s.impacts),m:clone(s.messages),dr:clone(s.dayResult)});
-const unpackSnapshot=(s:PackedSnapshot):CombatSnapshot=>({version:1,tick:s.g[0],round:s.g[1],day:s.g[2],phase:s.g[3] as CombatSnapshot['phase'],remaining:u(s.g[4]),gameOver:!!s.g[5],horde:clone(s.h) as CombatSnapshot['horde'],players:s.p.map(unpackPlayer),enemies:s.e.map(unpackEnemy),boss:clone(s.b) as CombatSnapshot['boss'],shots:clone(s.sh) as CombatSnapshot['shots'],impacts:clone(s.im) as CombatSnapshot['impacts'],messages:clone(s.m) as CombatSnapshot['messages'],dayResult:clone(s.dr) as CombatSnapshot['dayResult']});
+const packSnapshot=(s:CombatSnapshot):PackedSnapshot=>({g:[s.tick,s.round,s.day,s.phase,q(s.remaining),s.gameOver?1:0],h:clone(s.horde),p:s.players.map(packPlayer),e:s.enemies.map(packEnemy),a:s.ammoDrops.map(drop=>[drop.id,q(drop.x),q(drop.z),q(drop.remaining)]),b:clone(s.boss),sh:clone(s.shots),im:clone(s.impacts),m:clone(s.messages),dr:clone(s.dayResult)});
+const unpackSnapshot=(s:PackedSnapshot):CombatSnapshot=>({version:1,tick:s.g[0],round:s.g[1],day:s.g[2],phase:s.g[3] as CombatSnapshot['phase'],remaining:u(s.g[4]),gameOver:!!s.g[5],horde:clone(s.h) as CombatSnapshot['horde'],players:s.p.map(unpackPlayer),enemies:s.e.map(unpackEnemy),ammoDrops:s.a.map(drop=>({id:drop[0],x:u(drop[1]),z:u(drop[2]),remaining:u(drop[3])})),boss:clone(s.b) as CombatSnapshot['boss'],shots:clone(s.sh) as CombatSnapshot['shots'],impacts:clone(s.im) as CombatSnapshot['impacts'],messages:clone(s.m) as CombatSnapshot['messages'],dayResult:clone(s.dr) as CombatSnapshot['dayResult']});
 
 export const packKeyframe=(snapshot:CombatSnapshot,keyframeId:number):PackedKeyframe=>({t:'k',v:2,k:keyframeId,s:packSnapshot(snapshot)});
 export const unpackKeyframe=(packet:PackedKeyframe):CombatSnapshot=>unpackSnapshot(packet.s);
@@ -42,7 +43,7 @@ export class SnapshotEncoder{
     if(!same(this.base.g,next.g))packet.g=next.g;if(!same(this.base.h,next.h))packet.h=next.h;
     const players=changed(this.base.p,next.p,item=>item[0]),playerRemovals=removed(this.base.p,next.p,item=>item[0]);if(players.length)packet.p=players;if(playerRemovals.length)packet.pr=playerRemovals as string[];
     const enemies=changed(this.base.e,next.e,item=>item[0]),enemyRemovals=removed(this.base.e,next.e,item=>item[0]);if(enemies.length)packet.e=enemies;if(enemyRemovals.length)packet.er=enemyRemovals as number[];
-    if(!same(this.base.b,next.b))packet.b=next.b;if(!same(this.base.dr,next.dr))packet.dr=next.dr;
+    if(!same(this.base.a,next.a))packet.a=next.a;if(!same(this.base.b,next.b))packet.b=next.b;if(!same(this.base.dr,next.dr))packet.dr=next.dr;
     for(const key of ['sh','im','m'] as const){const events=afterSerial(next[key],this.serials[key]);if(events.length)packet[key]=events;this.serials[key]=maxSerial(next[key],this.serials[key]);}
     this.base=clone(next);return packet;
   }
@@ -59,7 +60,7 @@ export class SnapshotDecoder{
     if(packet.g)base.g=clone(packet.g);else base.g[0]=packet.tick;if('h'in packet)base.h=clone(packet.h);
     if(packet.pr?.length){const ids=new Set(packet.pr);base.p=base.p.filter(item=>!ids.has(item[0]));}if(packet.p)for(const item of packet.p){const index=base.p.findIndex(old=>old[0]===item[0]);if(index<0)base.p.push(clone(item));else base.p[index]=clone(item);}
     if(packet.er?.length){const ids=new Set(packet.er);base.e=base.e.filter(item=>!ids.has(item[0]));}if(packet.e)for(const item of packet.e){const index=base.e.findIndex(old=>old[0]===item[0]);if(index<0)base.e.push(clone(item));else base.e[index]=clone(item);}
-    if('b'in packet)base.b=clone(packet.b);if('dr'in packet)base.dr=clone(packet.dr);
+    if(packet.a)base.a=clone(packet.a);if('b'in packet)base.b=clone(packet.b);if('dr'in packet)base.dr=clone(packet.dr);
     base.sh=packet.sh?clone(packet.sh):[];base.im=packet.im?clone(packet.im):[];base.m=packet.m?clone(packet.m):[];
     return unpackSnapshot(base);
   }

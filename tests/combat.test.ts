@@ -5,6 +5,23 @@ import {parseInput} from '../src/network/Protocol';
 import {C} from '../src/config/gameplay';
 const packet=(sequence:number,fire=false,reload=false)=>({version:1,sequence,yaw:0,pitch:0,command:{x:0,z:0,run:false,crouch:false,jump:false,fire,reload}});
 describe('combate controlado pelo servidor',()=>{
+  it('compra munição proporcional perto do baú e deduplica a solicitação',()=>{
+    const a=new CombatAuthority();a.join('a');
+    const participant=(a as unknown as {players:Map<string,{money:number;weapon:{reserve:number};player:{position:Vector3}}>}).players.get('a')!;
+    participant.money=100;participant.weapon.reserve=C.weapon.maxReserve-3;participant.player.position.set(0,0,4);
+    expect(a.purchaseAmmo('a','buy-1')).toEqual({ok:true,reason:'ok',rounds:3,cost:8});
+    expect(a.purchaseAmmo('a','buy-1')).toEqual({ok:true,reason:'ok',rounds:3,cost:8});
+    expect(a.snapshot().players[0]).toMatchObject({money:92,reserve:C.weapon.maxReserve});
+  });
+  it('rejeita compra distante sem alterar dinheiro ou munição',()=>{
+    const a=new CombatAuthority();a.join('a');const participant=(a as unknown as {players:Map<string,{money:number;weapon:{reserve:number}}>}).players.get('a')!;participant.money=100;participant.weapon.reserve=0;
+    expect(a.purchaseAmmo('a','far')).toMatchObject({ok:false,reason:'distant'});expect(a.snapshot().players[0]).toMatchObject({money:100,reserve:0});
+  });
+  it('permite somente uma coleta autoritativa do mesmo drop',()=>{
+    const a=new CombatAuthority();a.join('a');a.join('b');for(let n=0;n<600;n++)a.step();const drop=a.snapshot().ammoDrops[0];expect(drop).toBeTruthy();
+    const participants=(a as unknown as {players:Map<string,{weapon:{reserve:number};player:{position:Vector3}}>}).players;for(const p of participants.values()){p.weapon.reserve=0;p.player.position.set(drop.x,0,drop.z);}
+    const first=a.pickupAmmo('a',drop.id),second=a.pickupAmmo('b',drop.id);expect([first.ok,second.ok]).toEqual([true,false]);expect(a.snapshot().players.reduce((sum,p)=>sum+p.reserve,0)).toBe(C.ammoDrops.rounds);
+  });
   it('mantém participante do lobby fora da simulação até ficar pronto',()=>{const a=new CombatAuthority();a.join('a');expect(a.setReady('a',false)).toBe(true);const remaining=a.cycle.remaining;for(let n=0;n<120;n++)a.step();expect(a.cycle.remaining).toBe(remaining);expect(a.snapshot().players[0].ready).toBe(false);expect(a.setReady('a')).toBe(true);a.step();expect(a.cycle.remaining).toBeLessThan(remaining);expect(a.snapshot().players[0].ready).toBe(true);});
   it('protege entrada tardia contra ataques até o prazo autoritativo terminar',()=>{const a=new CombatAuthority();a.join('a');a.setReady('a',false);a.setReady('a',true);a.enemies.spawn(1,new Vector3(0,0,10));const enemy=a.enemies.active[0];enemy.avatar.root.position.set(0,0,9);enemy.speed=0;for(let n=0;n<120;n++)a.step();expect(a.snapshot().players[0].health).toBe(100);expect(a.snapshot().players[0].protection).toBeGreaterThan(0);for(let n=0;n<180;n++)a.step();expect(a.snapshot().players[0].protection).toBe(0);expect(a.snapshot().players[0].health).toBeLessThan(100);});
   it('aceita oito participantes com spawns e nomes distintos e recusa o nono',()=>{const a=new CombatAuthority();for(let n=0;n<8;n++)expect(a.join(`p${n}`)).toBe(true);expect(a.join('p8')).toBe(false);const players=a.snapshot().players;expect(new Set(players.map(player=>`${player.position.x}:${player.position.z}`)).size).toBe(8);expect(new Set(players.map(player=>player.name)).size).toBe(8);});
