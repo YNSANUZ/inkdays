@@ -2,13 +2,13 @@
 
 ## Objetivo
 
-Transformar o desenho da arma em uma atividade jogável do INKDAYS. Durante a preparação, o jogador encontra um baú/oficina, escolhe uma categoria liberada e desenha com giz sobre um molde. A prévia é gratuita e o dinheiro só é descontado quando o jogador confirma a fabricação ou o redesenho.
+Transformar o desenho da arma e o reabastecimento em atividades jogáveis do INKDAYS. Durante a preparação, o jogador encontra um baú/oficina marrom no centro do mapa, compra munição, escolhe uma categoria liberada e desenha com giz sobre um molde. A prévia é gratuita e o dinheiro só é descontado quando o jogador confirma a fabricação ou o redesenho. Drops periódicos de munição sustentam a exploração durante toda a partida.
 
 Esta entrega preserva o combate atual: somente a Pistola de Rascunho está implementada e pode ser redesenhada. Categorias futuras aparecem como indisponíveis, com preço e dia de desbloqueio, até receberem mecânica, animação, áudio e balanceamento próprios.
 
 ## Experiência do jogador
 
-- Um baú/oficina fica em posição fixa e reconhecível no Vale do Papel.
+- Um baú marrom com ferragens escuras, contorno preto e aparência reconhecível fica no centro do Vale do Papel.
 - A interação só é aceita durante `PREPARAÇÃO`. Na horda, o baú permanece visível, mas fechado.
 - Ao se aproximar, aparece uma indicação discreta para abrir a oficina.
 - A oficina pausa os controles locais de câmera, movimento e tiro enquanto está aberta.
@@ -16,16 +16,32 @@ Esta entrega preserva o combate atual: somente a Pistola de Rascunho está imple
 - Mouse, caneta e toque desenham sobre o mesmo canvas responsivo.
 - O jogador pode testar visualmente o desenho sem pagar. Cancelar preserva dinheiro e arma anterior.
 - Confirmar troca a aparência da arma imediatamente. No multiplayer, os outros jogadores recebem a nova arma e cor.
+- A mesma interface oferece compra rápida de munição e troca entre armas que o jogador já possui.
+- A troca de arma só lista categorias com combate realmente implementado.
 
 ## Economia
 
 - A arma inicial continua gratuita.
+- Um pacote de 24 balas custa `$60` e respeita a capacidade máxima da reserva. Se houver espaço para menos de 24, o jogador paga somente pelas balas recebidas, a `$2,50` cada, com o total arredondado para cima ao dólar inteiro.
 - O primeiro redesenho da pistola custa `$120`; redesenhos posteriores também custam `$120` nesta etapa.
 - O custo é por confirmação, nunca por pincelada, tempo ou uso da borracha.
 - Os preços já catalogados para armas futuras continuam sendo o preço do molde da categoria: Taco `$250`, Espada `$450`, SMG `$700`, Escopeta `$900`, Arco `$1100`, Sniper `$1600` e Lança-chamas `$2400`.
 - Comprar um molde e redesenhar são operações diferentes. Categorias não implementadas não podem ser compradas.
 - Saldo insuficiente mantém o editor aberto e mostra uma mensagem curta, sem alterar arma ou dinheiro.
 - Repetir ou duplicar a mesma solicitação de compra não pode descontar duas vezes.
+
+## Drops de munição
+
+- O servidor tenta criar um drop de munição a cada 10 segundos enquanto existe ao menos um jogador vivo e pronto.
+- Cada drop permanece no mapa por 10 segundos e fornece 16 balas ao jogador que o coleta.
+- Podem existir no máximo três drops simultâneos. Um intervalo que encontra o limite cheio não cria um quarto item.
+- Os pontos são escolhidos entre locais navegáveis predefinidos, longe de paredes e sem nascer diretamente sobre um jogador.
+- Pontos recentes entram em espera para evitar repetição visível no mesmo lugar.
+- O drop flutua suavemente e usa branco, preto e um pequeno detalhe de latão; não introduz cor forte nova no mundo.
+- Coleta exige jogador vivo dentro do raio configurado. Jogadores mortos e espectadores não coletam.
+- O primeiro pedido válido vence. O servidor remove o drop e incrementa a reserva em uma única operação, impedindo coleta duplicada.
+- Se todos os jogadores vivos estiverem com pente e reserva zerados, o próximo drop é antecipado e nasce em um ponto explorável relativamente próximo, sem surgir diretamente diante da câmera.
+- Drops funcionam durante preparação e horda. O baú continua restrito à preparação.
 
 ## Regras do desenho
 
@@ -48,6 +64,9 @@ Esta entrega preserva o combate atual: somente a Pistola de Rascunho está imple
 - O servidor envia `weapon-definition` apenas ao entrar/reconectar, quando uma revisão muda ou quando um cliente ainda não conhece aquela revisão.
 - O cliente mantém um cache por `weaponId + revision`. Isso preserva tráfego e permite que armas dos companheiros sejam reconstruídas.
 - Tiro, munição, dano, saldo e compra continuam autoritativos. O desenho nunca modifica o raycast.
+- O servidor também controla relógio, posição, validade, coleta e desaparecimento de cada drop. Snapshots carregam somente identificador, posição e tempo restante.
+- O cliente envia `ammo-pickup` com `dropId`; posição e elegibilidade são recalculadas no servidor.
+- A compra de munição usa `ammo-purchase` com `requestId`, recebe o mesmo tratamento idempotente das demais compras e só é aceita perto do baú durante a preparação.
 
 ## Solo e persistência
 
@@ -69,13 +88,15 @@ Esta entrega preserva o combate atual: somente a Pistola de Rascunho está imple
 - `WeaponWorkshopRules`: preços, limites, validação de desenho, simplificação e cálculo de zonas.
 - `WeaponWorkshopState`: arma equipada, revisões conhecidas, idempotência e aplicação atômica da compra.
 - `WeaponWorkshopUI`: canvas, molde, ferramentas, saldo, prévia e mensagens.
-- `WorkshopChest`: posição, distância de interação e indicação no mundo.
+- `WorkshopChest`: malha marrom, posição central, distância de interação e indicação no mundo.
+- `AmmoDropDirector`: intervalo, limite simultâneo, pontos válidos, assistência emergencial e expiração.
 - Extensões de protocolo e servidor: compra, definição sob demanda e referência leve no snapshot.
 - Adaptadores solo e multiplayer usam as mesmas regras, com autoridades de armazenamento diferentes.
 
 ## Falhas e recuperação
 
-- Durante a horda, longe do baú, morto, saldo insuficiente ou desenho inválido: rejeitar sem desconto.
+- Durante a horda, longe do baú, morto, saldo insuficiente ou desenho inválido: rejeitar compras sem desconto.
+- Drop expirado, inexistente, distante ou já coletado: rejeitar sem alterar munição.
 - Desconexão após confirmar: ao reconectar, `requestId` e revisão revelam se a compra já ocorreu.
 - Definição desconhecida: mostrar temporariamente a Pistola de Rascunho e solicitar a revisão ao servidor.
 - Canvas perdido por rotação ou redimensionamento: manter os traços normalizados e redesenhar sem perda.
@@ -84,6 +105,7 @@ Esta entrega preserva o combate atual: somente a Pistola de Rascunho está imple
 
 - Testes unitários para limites, simplificação, zonas, preço, saldo e idempotência.
 - Testes do servidor para fase, distância, morte, categoria indisponível, compra válida e repetição de pacote.
+- Testes de drops para intervalo de 10 segundos, expiração de 10 segundos, limite de três, ponto válido, coleta única, jogador morto, reserva máxima e emergência sem munição.
 - Teste de transporte com dois clientes comprovando o mesmo saldo, revisão e desenho após reconexão.
 - Teste de codec comprovando que traços não entram nos snapshots frequentes.
 - Testes de interface com mouse e eventos de ponteiro, além de inspeção visual em computador e celular horizontal.
@@ -95,4 +117,4 @@ Esta entrega preserva o combate atual: somente a Pistola de Rascunho está imple
 - Venda, troca ou drop de armas entre jogadores.
 - Mercado com dinheiro real.
 - Cobrança por pincelada.
-- Drops de munição no mapa; eles formam uma entrega posterior e autoritativa própria.
+- Outras categorias de munição; enquanto somente a pistola estiver implementada, todo drop abastece a reserva da pistola.
