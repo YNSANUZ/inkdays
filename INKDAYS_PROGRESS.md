@@ -743,3 +743,9 @@ Frontend e servidor foram publicados no commit `b71af0a`. O servidor temporário
 As mãos esféricas provisórias foram removidas. A apresentação local agora possui dois braços completos e articulados, com braço, antebraço e mão convergindo para uma empunhadura de pistola com duas mãos. A arma foi reposicionada e rotacionada para apontar em direção à mira enquanto mostra sua lateral, em vez de aparecer como um símbolo plano atravessado na tela.
 
 Os traços da arma continuam sendo geometria fina, recebem transparência e preservam espaços vazios entre as linhas. Assim, o jogador segura visualmente um desenho recortado em vez de uma arma sólida. O recuo e o balanço continuam movendo o conjunto completo. A validação visual foi feita em primeira pessoa no cenário real, além do teste estrutural que impede o retorno das mãos soltas e da arma opaca.
+
+## Home — herói, baú e prévia do chefão
+
+A home agora posiciona o herói na área vazia ao lado do baú, voltado para a câmera com uma leve rotação do corpo. A pose de apresentação interrompe a animação que abria os braços durante o carregamento e mantém os membros baixos. No horizonte, uma silhueta escura e sem detalhes antecipa o Human Deer, com respiração quase imperceptível, sem revelar o modelo completo.
+
+A primeira pessoa também recebeu nova passagem visual: a Pistola de Rascunho usa traços verdes mais finos e as duas mãos passaram a ter palma, polegar e dedos agrupados ao redor da empunhadura. A mecânica, dano e autoridade do tiro não mudaram. A composição foi inspecionada no cenário local em home e primeira pessoa; proporção em celulares físicos ainda requer conferência humana.

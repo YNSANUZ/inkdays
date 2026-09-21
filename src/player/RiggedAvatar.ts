@@ -44,15 +44,19 @@ export class RiggedAvatar {
   private actions?:Record<ActionMotion,T.AnimationAction>;
   private active?:ActionMotion;
   private lastTime?:number;
+  private showcase=false;
+  private showcaseBones?:{leftArm?:T.Object3D;rightArm?:T.Object3D;leftForeArm?:T.Object3D;rightForeArm?:T.Object3D};
   constructor(private role:Role,private ready:()=>void) {void this.install().catch(()=>{/* o avatar procedural permanece visível */});}
   private async install(){
     const assets=await getLibrary();
     const model=clone(assets.model);
+    model.visible=false;
     const white=new T.MeshToonMaterial({color:0xe5e2d8});
     const black=new T.MeshToonMaterial({color:0x171b19});
     const skins:T.SkinnedMesh[]=[];
     model.traverse(node=>{if(node instanceof T.SkinnedMesh){node.material=white;node.castShadow=true;node.receiveShadow=true;skins.push(node);}});
     const bone=(pattern:RegExp)=>{let found:T.Object3D|undefined;model.traverse(node=>{if(!found&&pattern.test(node.name))found=node;});return found;};
+    this.showcaseBones={leftArm:bone(/LeftArm$/i),rightArm:bone(/RightArm$/i),leftForeArm:bone(/LeftForeArm$/i),rightForeArm:bone(/RightForeArm$/i)};
     // Silhueta baixa e compacta: encurta as duas partes das pernas no próprio rig,
     // mantendo as animações Mixamo, o collider e a lógica de rede inalterados.
     for(const side of ['Left','Right']){
@@ -95,8 +99,10 @@ export class RiggedAvatar {
     this.mixer=new T.AnimationMixer(model);
     const source=this.role!=='player'?{...assets.player,...assets.enemy}:{...assets.enemy,...assets.player};
     this.actions={idle:this.mixer.clipAction(source.idle),moveForward:this.mixer.clipAction(source.moveForward),moveBackward:this.mixer.clipAction(assets.player.moveBackward),moveLeft:this.mixer.clipAction(assets.player.moveLeft),moveRight:this.mixer.clipAction(assets.player.moveRight),crouch:this.mixer.clipAction(assets.player.crouch),jump:this.mixer.clipAction(assets.player.jump),attack:this.mixer.clipAction(assets.enemy.attack)};
-    this.setMotion('idle');this.ready();
+    this.setMotion('idle');this.mixer.update(0);this.applyShowcasePose();model.visible=true;this.ready();
   }
+  setShowcasePose(enabled:boolean){this.showcase=enabled;this.applyShowcasePose();}
+  private applyShowcasePose(){if(!this.showcase||!this.showcaseBones)return;this.mixer?.stopAllAction();const {leftArm,rightArm,leftForeArm,rightForeArm}=this.showcaseBones;if(leftArm)leftArm.rotation.z=1.18;if(rightArm)rightArm.rotation.z=-1.18;if(leftForeArm){leftForeArm.rotation.x=-.28;leftForeArm.rotation.z=.12;}if(rightForeArm){rightForeArm.rotation.x=-.28;rightForeArm.rotation.z=-.12;}}
   update(time:number,motion:Motion,speed:number,direction:MoveDirection='forward'){
     const dt=this.lastTime===undefined?0:Math.min(.1,Math.max(0,time-this.lastTime));this.lastTime=time;
     const selected:ActionMotion=motion==='move'?`move${direction[0].toUpperCase()}${direction.slice(1)}` as ActionMotion:motion;

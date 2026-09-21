@@ -37,7 +37,7 @@ describe('base autoritativa de movimentação',()=>{
     for(const side of ['left','right']){
       expect(view.root.getObjectByName(`${side}-upper-arm`)).toBeInstanceOf(T.Mesh);
       expect(view.root.getObjectByName(`${side}-forearm`)).toBeInstanceOf(T.Mesh);
-      expect(view.root.getObjectByName(`${side}-hand`)).toBeInstanceOf(T.Mesh);
+      expect(view.root.getObjectByName(`${side}-hand`)).toBeInstanceOf(T.Group);
     }
     expect(view.root.getObjectByName('first-person-weapon')).toBeInstanceOf(T.Group);
   });
@@ -51,7 +51,7 @@ describe('base autoritativa de movimentação',()=>{
     expect(Math.abs(weapon.rotation.y)).toBeGreaterThan(1.2);
     expect(Math.abs(weapon.rotation.y)).toBeLessThan(1.8);
   });
-  it('usa mãos alongadas e braços contínuos do manequim em vez de bolinhas',()=>{const view=new FirstPersonWeapon(new T.PerspectiveCamera());for(const side of ['left','right']){const hand=view.root.getObjectByName(`${side}-hand`) as T.Mesh;expect(hand.geometry).toBeInstanceOf(T.CapsuleGeometry);expect(hand.scale.y).toBeGreaterThan(hand.scale.x);}});
+  it('usa mãos com palma, polegar e quatro dedos em vez de bolinhas',()=>{const view=new FirstPersonWeapon(new T.PerspectiveCamera());for(const side of ['left','right']){const hand=view.root.getObjectByName(`${side}-hand`)!;expect(hand).toBeInstanceOf(T.Group);expect(hand.getObjectByName(`${side}-hand-palm`)).toBeInstanceOf(T.Mesh);expect(hand.getObjectByName(`${side}-hand-thumb`)).toBeInstanceOf(T.Mesh);for(let index=1;index<=4;index++)expect(hand.getObjectByName(`${side}-hand-finger-${index}`)).toBeInstanceOf(T.Mesh);}});
   it('renderiza diretamente os traços e a cor escolhidos pelo jogador',()=>{const custom={...draftPistol,id:'player-drawing',color:'#3182ce',drawing:[{width:.02,points:[{x:.3,y:.7},{x:.5,y:.45},{x:.9,y:.4}]}]},view=new FirstPersonWeapon(new T.PerspectiveCamera(),custom),weapon=view.root.getObjectByName('first-person-weapon')!;expect(weapon.name).toBe('first-person-weapon');const colors:T.Color[]=[];weapon.traverse(object=>{if(object instanceof T.Mesh&&object.material instanceof T.MeshBasicMaterial)colors.push(object.material.color);});expect(colors.length).toBe(2);expect(colors.every(color=>color.getHexString()==='3182ce')).toBe(true);});
   it('limita a oito jogadores, reaproveita vaga e rejeita comandos desconhecidos ou repetidos',()=>{
     const a=new MovementAuthority(world);for(let n=0;n<8;n++)expect(a.join(`p${n}`)).toBe(true);expect(a.join('extra')).toBe(false);
