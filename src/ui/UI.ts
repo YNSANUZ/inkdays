@@ -6,6 +6,7 @@ import type { Settings } from './Settings';
 import {createRoomCode,normalizeRoomCode,PUBLIC_ROOM_CODE,publicRoomInvite} from '../network/RoomCode';
 import type {HordeState} from '../horde/Horde';
 import { weaponCategories } from '../weapons/Categories';
+export interface SoloBossState{name:string;health:number;maxHealth:number;enraged:boolean}
 export const formatTime=(n:number)=>`${Math.floor(n/60).toString().padStart(2,'0')}:${Math.floor(n%60).toString().padStart(2,'0')}`;
 export class UI {
   root:HTMLElement; hud:HTMLElement; overlay:HTMLElement; toastTimer=0; hitTimer=0; damageTimer=0;
@@ -15,6 +16,7 @@ export class UI {
       <section class="hud hidden" aria-label="Informações da partida">
         <div class="brand-small">INKDAYS<span>SOBREVIVA MAIS UM DIA</span></div>
         <div class="day-panel"><div class="phase-label">PREPARAÇÃO</div><div class="day-line"><span class="sun">☼</span><strong id="day">DIA 1</strong></div><div class="timer-line"><i></i><b id="timer">00:40</b><i></i></div><div id="horde-count" hidden></div><p id="warning"></p></div>
+        <div class="solo-boss hidden" aria-live="polite"><b id="solo-boss-name">O COLOSSO</b><i><em id="solo-boss-fill"></em></i><span id="solo-boss-health"></span></div>
         <div class="top-right"><div class="counters"><span class="money"><em>$</em> <b id="money">0</b></span><span class="kills">✕ <b id="kills">0</b></span></div><div id="reward"></div><div class="location">⌖ &nbsp; VALE DO PAPEL</div><div class="boss-calendar">NO HORIZONTE <b id="boss">CHEFÃO · DIA 10</b><small>Combate de chefão em uma próxima fase</small></div></div>
         <div class="crosshair"><i></i><i></i><i></i><i></i><b>×</b></div>
         <div class="bottom-left"><div class="health-label">VOCÊ <span>ERRANTE 01</span></div><div class="hearts"><span>♥</span><span>♥</span><span>♥</span></div><div class="health-track"><div id="health-fill"></div></div><div class="health-caption"><span id="health">100 / 100</span><span id="movement">EM PÉ</span></div></div>
@@ -52,11 +54,12 @@ export class UI {
     this.on('#fullscreen',()=>{const entering=!document.fullscreenElement;const request=entering?document.documentElement.requestFullscreen?.():document.exitFullscreen();const note=this.root.querySelector('#settings-note');const unavailable=()=>{if(note?.isConnected)note.textContent='Tela cheia indisponível neste navegador. Use F11 ou abra em Chrome/Edge.';};if(!request){unavailable();return;}const timeout=window.setTimeout(()=>{if(entering&&!document.fullscreenElement)unavailable();},1200);request.then(()=>{window.clearTimeout(timeout);if(entering&&!document.fullscreenElement)unavailable();}).catch(()=>{window.clearTimeout(timeout);unavailable();});});this.on('#back',back);
   }
   gameOver(day:number,kills:number,money:number,time:number,retry:()=>void,menu:()=>void) {this.hud.classList.add('hidden');this.overlay.className='overlay modal';this.overlay.innerHTML=`<div class="card death"><span class="eyebrow">VOCÊ MORREU · A TINTA SE ESGOTOU</span><p>VOCÊ SOBREVIVEU ATÉ O</p><h2>DIA ${day}<span>.</span></h2><dl><div><dt>Inimigos eliminados</dt><dd>${kills}</dd></div><div><dt>Dinheiro coletado</dt><dd>$ ${money}</dd></div><div><dt>Tempo de sobrevivência</dt><dd>${formatTime(time)}</dd></div></dl><button class="primary" id="retry">JOGAR NOVAMENTE <span>↻</span></button><button class="text-button" id="menu">MENU</button></div>`;this.on('#retry',retry);this.on('#menu',menu);}
-  update(dt:number,cycle:DayCycle,weapon:Pistol,health:number,kills:number,money:number,crouch:boolean,run:boolean,horde?:HordeState) {
+  update(dt:number,cycle:DayCycle,weapon:Pistol,health:number,kills:number,money:number,crouch:boolean,run:boolean,horde?:HordeState,boss?:SoloBossState) {
     this.el('#day').textContent=`DIA ${cycle.day}`;this.el('#timer').textContent=formatTime(Math.ceil(cycle.remaining));this.el('.phase-label').textContent=cycle.phase==='day'?'PREPARAÇÃO':'HORDA EM ANDAMENTO';this.el('.sun').textContent=cycle.phase==='day'?'☼':'☾';this.hud.classList.toggle('is-horde',cycle.phase==='horde');
     const count=this.el('#horde-count');count.hidden=cycle.phase!=='horde';count.textContent=horde?`HORDA · ${horde.remaining} RESTANTES`:'';this.el('#timer').parentElement!.hidden=cycle.phase==='horde';
     this.el('#warning').textContent=cycle.phase==='day'&&cycle.remaining<=C.day.warning?'Prepare-se! A horda vem logo!':horde?.assist?'ÚLTIMOS BORRÕES · PROCURE O DESTAQUE':'';
     this.el('#boss').textContent=`CHEFÃO · DIA ${nextBoss(cycle.day)}`;this.el('#money').textContent=String(money);this.el('#kills').textContent=String(kills);
+    const bossHud=this.el('.solo-boss');bossHud.classList.toggle('hidden',!boss);bossHud.classList.toggle('enraged',!!boss?.enraged);if(boss){const ratio=Math.max(0,Math.min(1,boss.health/boss.maxHealth));this.el('#solo-boss-name').textContent=`DIA ${cycle.day} — ${boss.name}${boss.enraged?' · FÚRIA':''}`;this.el('#solo-boss-fill').style.width=`${ratio*100}%`;this.el('#solo-boss-health').textContent=`${Math.ceil(boss.health)} / ${boss.maxHealth}`;}
     this.el('#health').textContent=`${Math.ceil(health)} / ${C.player.health}`;this.el('#health-fill').style.width=`${health}%`;this.el('#movement').textContent=crouch?'AGACHADO':run?'CORRENDO':'EM PÉ';
     this.root.querySelectorAll<HTMLElement>('.hearts span').forEach((h,i)=>{h.style.color=health>i*C.player.health/3?'var(--red)':'#b8bab4';});
     this.el('#ammo').textContent=String(weapon.ammo);this.el('#reserve').textContent=String(weapon.reserve);this.el('#reload-fill').style.width=weapon.reloadTime>0?`${(1-weapon.reloadTime/C.weapon.reload)*100}%`:'0%';this.el('#reload-caption').innerHTML=weapon.reloadTime>0?'RECARREGANDO…':weapon.ammo===0?'<kbd>R</kbd> SEM MUNIÇÃO NO PENTE':'<kbd>R</kbd> RECARREGAR';

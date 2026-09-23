@@ -761,3 +761,9 @@ O texto `OFFLINE · ALPHA 0.1` no rodapé agora funciona como um atalho secreto 
 As hordas passaram a incluir o Caçador, um inimigo mais escuro, ligeiramente maior e mais resistente que o Borrão comum. Ele consulta jogadores vivos em intervalos leves, escolhe o mais próximo em qualquer distância e troca de alvo quando alguém morre. O primeiro chega dez segundos após a noite começar, e os demais respeitam intervalos de dez segundos. A cota é 1 nos dias 1–3, 2 nos dias 4–6, 3 nos dias 7–9, 4 no Dia 10 e continua crescendo a cada três dias até o limite de 8. Caçadores pendentes e vivos entram no contador e precisam morrer para o amanhecer.
 
 Solo e servidor multiplayer compartilham a mesma progressão. No online, alvo, posição, dano, morte e recompensa do Caçador continuam autoritativos no servidor. Testes automatizados cobrem progressão, intervalo, conclusão da cota, salto de dia, perseguição distante, escolha entre dois jogadores e exclusão de jogador morto. O painel foi validado no navegador local saltando diretamente ao Dia 10, sem erros de console.
+
+## 2026-09-23 - Lagarto como chefao unico
+
+O GLB do lagarto enviado pelo criador foi reduzido de 94,91 MB para 1,61 MB e conectado ao carregamento sob demanda do chefao. Todos os encontros de chefao (dias 10, 20, 30 e seguintes) passam a usar O LAGARTO; o Human Deer deixa de ser selecionado pelo ciclo. A home antecipa a silhueta do lagarto e o modo solo ganhou nome, vida e estado de furia do chefao no topo da tela.
+
+Registro anterior preservado em `qa/history/day-20-human-deer-rotation-bug-2026-09-23.png`: mostra o Human Deer invertido no Dia 20 antes da substituicao.

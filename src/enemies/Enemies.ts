@@ -5,7 +5,7 @@ import type { Player } from '../player/Player';
 import type { World } from '../world/World';
 export type EnemyState='WANDER'|'CHASE'|'ATTACK'|'DEAD';
 export type EnemyKind='horde'|'hunter'|'boss';
-export type BossVariant='colossus'|'human-deer';
+export type BossVariant='lizard'|'human-deer';
 export interface Enemy { id:number; kind:EnemyKind; bossVariant?:BossVariant; enraged:boolean; avatar:Avatar; health:number; maxHealth:number; speed:number; damage:number; attackRange:number; attackCooldown:number; radius:number; reward:number; cooldown:number; specialCooldown:number; specialWindup:number; specialSerial:number; specialCenter:T.Vector3; state:EnemyState; age:number; target?:Player; perceptionTimer:number; wanderTimer:number; pauseTimer:number; wanderDirection:T.Vector3 }
 export class Enemies {
   active:Enemy[]=[]; private serial=0;
@@ -26,19 +26,19 @@ export class Enemies {
     for(let attempt=0;attempt<40;attempt++){
       const a=((this.serial+attempt+1)*2.399963229728653+Math.random()*.45)%(Math.PI*2),r=C.enemy.spawnMax,x=player.x+Math.sin(a)*r,z=player.z+Math.cos(a)*r;
       if(Math.hypot(x,z)>C.world.radius-1||this.world.blocked(x,z,C.enemy.radius+1))continue;
-      const avatar=new Avatar(true,false,'colossus',true);avatar.root.position.set(x,0,z);avatar.root.scale.setScalar(C.hunter.scale);this.scene.add(avatar.root);
+      const avatar=new Avatar(true,false,'lizard',true);avatar.root.position.set(x,0,z);avatar.root.scale.setScalar(C.hunter.scale);this.scene.add(avatar.root);
       const health=Math.round(stats.health*C.hunter.healthMultiplier),id=++this.serial;
       this.active.push({id,kind:'hunter',enraged:false,avatar,health,maxHealth:health,speed:stats.speed*C.hunter.speedMultiplier,damage:C.hunter.damage,attackRange:C.enemy.attackRange,attackCooldown:C.hunter.attackCooldown,radius:C.enemy.radius,reward:C.hunter.reward,cooldown:C.hunter.attackCooldown,specialCooldown:Infinity,specialWindup:0,specialSerial:0,specialCenter:new T.Vector3(),state:'CHASE',age:0,perceptionTimer:0,wanderTimer:0,pauseTimer:0,wanderDirection:new T.Vector3(0,0,1)});return true;
     }return false;
   }
   spawnBoss(day:number,player:T.Vector3,players=1) {
     const tier=Math.max(0,Math.floor(day/C.day.bossInterval)-1),party=Math.max(1,Math.min(8,Math.floor(players)));
-    const health=Math.round((C.boss.health+tier*C.boss.healthGrowth)*(1+C.boss.partyGrowth*(party-1))),bossVariant:BossVariant=day%(C.day.bossInterval*2)===0?'human-deer':'colossus',profile=bossVariant==='human-deer'?C.humanDeer:C.boss;
+    const health=Math.round((C.boss.health+tier*C.boss.healthGrowth)*(1+C.boss.partyGrowth*(party-1))),bossVariant:BossVariant='lizard',profile=C.boss;
     for(let attempt=0;attempt<40;attempt++){
       const a=Math.random()*Math.PI*2,r=C.enemy.spawnMax,x=player.x+Math.sin(a)*r,z=player.z+Math.cos(a)*r;
       if(Math.hypot(x,z)>C.world.radius-2||this.world.blocked(x,z,profile.radius+1))continue;
       const avatar=new Avatar(true,true,bossVariant);avatar.root.position.set(x,0,z);avatar.root.scale.setScalar(profile.scale);this.scene.add(avatar.root);
-      this.active.push({id:++this.serial,kind:'boss',bossVariant,enraged:false,avatar,health,maxHealth:health,speed:profile.speed,damage:profile.damage,attackRange:profile.attackRange,attackCooldown:profile.attackCooldown,radius:profile.radius,reward:C.boss.reward,cooldown:profile.attackCooldown,specialCooldown:bossVariant==='human-deer'?C.humanDeer.roarCooldown:C.boss.slamCooldown,specialWindup:0,specialSerial:0,specialCenter:new T.Vector3(),state:'WANDER',age:0,perceptionTimer:0,wanderTimer:0,pauseTimer:0,wanderDirection:new T.Vector3(0,0,1)});return true;
+      this.active.push({id:++this.serial,kind:'boss',bossVariant,enraged:false,avatar,health,maxHealth:health,speed:profile.speed,damage:profile.damage,attackRange:profile.attackRange,attackCooldown:profile.attackCooldown,radius:profile.radius,reward:C.boss.reward,cooldown:profile.attackCooldown,specialCooldown:C.boss.slamCooldown,specialWindup:0,specialSerial:0,specialCenter:new T.Vector3(),state:'WANDER',age:0,perceptionTimer:0,wanderTimer:0,pauseTimer:0,wanderDirection:new T.Vector3(0,0,1)});return true;
     }
     return false;
   }

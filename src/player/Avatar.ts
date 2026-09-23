@@ -2,12 +2,13 @@ import * as T from 'three';
 import { box, dark, gray, ink, paper, red, shadow, sphere, stroke } from '../world/ink';
 import type { RiggedAvatar } from './RiggedAvatar';
 import type { HumanDeerAvatar } from './HumanDeerAvatar';
+import type { LizardBossAvatar } from './LizardBossAvatar';
 import { movementDirection } from './LocomotionDirection';
 import { createDrawnWeapon } from '../weapons/DrawnWeapon';
 import { draftPistol } from '../weapons/CustomWeapon';
 export class Avatar {
-  root=new T.Group(); body=new T.Group(); procedural=new T.Group(); leftLeg=new T.Group(); rightLeg=new T.Group(); arm=new T.Group(); muzzle=new T.Object3D(); private rig?:RiggedAvatar; private deer?:HumanDeerAvatar; private enemy:boolean;private showcase=false;
-  constructor(enemy=false,boss=false,bossVariant:'colossus'|'human-deer'='colossus',hunter=false) {
+  root=new T.Group(); body=new T.Group(); procedural=new T.Group(); leftLeg=new T.Group(); rightLeg=new T.Group(); arm=new T.Group(); muzzle=new T.Object3D(); private rig?:RiggedAvatar; private deer?:HumanDeerAvatar;private lizard?:LizardBossAvatar; private enemy:boolean;private showcase=false;
+  constructor(enemy=false,boss=false,bossVariant:'lizard'|'human-deer'='lizard',hunter=false) {
     this.enemy=enemy;this.root.name=boss?'inkdays-boss':enemy?'inkdays-enemy':'inkdays-player';this.root.add(this.body);this.body.add(this.procedural); const mat=enemy?dark:paper;
     const host=this.procedural;if(hunter)this.root.userData.hunter=true;
     sphere(host,[0,1.77,0],[.43,.45,.4],mat);
@@ -40,8 +41,9 @@ export class Avatar {
     }
     shadow(this.root,.48);
     if(typeof window!=='undefined'&&boss&&bossVariant==='human-deer')void import('./HumanDeerAvatar').then(({HumanDeerAvatar})=>{this.deer=new HumanDeerAvatar(()=>{this.procedural.visible=false;});this.body.add(this.deer.root);}).catch(()=>{/* mantém o chefão procedural como fallback */});
+    else if(typeof window!=='undefined'&&boss)void import('./LizardBossAvatar').then(({LizardBossAvatar})=>{this.lizard=new LizardBossAvatar(()=>{this.procedural.visible=false;});this.body.add(this.lizard.root);}).catch(()=>{/* mantém o Colosso procedural como fallback */});
     else if(typeof window!=='undefined')void import('./RiggedAvatar').then(({RiggedAvatar})=>{this.rig=new RiggedAvatar(boss?'boss':hunter?'hunter':enemy?'enemy':'player',()=>{this.rig?.setShowcasePose(this.showcase);this.procedural.visible=false;});this.rig.setShowcasePose(this.showcase);this.body.add(this.rig.root);}).catch(()=>{/* mantém o avatar procedural como fallback */});
   }
-  animate(t:number,speed:number,crouch=false,action=false,velocity?:{x:number;z:number}) { const stride=Math.min(1,speed/5);this.leftLeg.rotation.x=Math.sin(t*11)*.65*stride;this.rightLeg.rotation.x=-this.leftLeg.rotation.x;this.body.position.y=(crouch?-.35:0)+Math.abs(Math.sin(t*11))*.035*stride;this.body.rotation.x=crouch?.14:0;const motion=action?'attack':this.root.position.y>.08?'jump':crouch?'crouch':speed>.2?'move':'idle';this.rig?.update(t,motion,speed,velocity?movementDirection(this.root.rotation.y,velocity,speed):'forward');this.deer?.update(t,speed,action); }
+  animate(t:number,speed:number,crouch=false,action=false,velocity?:{x:number;z:number}) { const stride=Math.min(1,speed/5);this.leftLeg.rotation.x=Math.sin(t*11)*.65*stride;this.rightLeg.rotation.x=-this.leftLeg.rotation.x;this.body.position.y=(crouch?-.35:0)+Math.abs(Math.sin(t*11))*.035*stride;this.body.rotation.x=crouch?.14:0;const motion=action?'attack':this.root.position.y>.08?'jump':crouch?'crouch':speed>.2?'move':'idle';this.rig?.update(t,motion,speed,velocity?movementDirection(this.root.rotation.y,velocity,speed):'forward');this.deer?.update(t,speed,action);this.lizard?.update(t,speed,action); }
   setShowcasePose(enabled:boolean){this.showcase=enabled;this.rig?.setShowcasePose(enabled);}
 }
