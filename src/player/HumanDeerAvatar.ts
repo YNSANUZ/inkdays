@@ -3,7 +3,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 
-type DeerAsset={scene:T.Object3D;clip?:T.AnimationClip};
+export type DeerAsset={scene:T.Object3D;clip?:T.AnimationClip};
 let cached:Promise<DeerAsset>|undefined;
 
 async function load(){
@@ -12,11 +12,13 @@ async function load(){
   return {scene:gltf.scene,clip:gltf.animations[0]};
 }
 
+export const loadHumanDeerAsset=()=>cached??=load();
+
 export class HumanDeerAvatar{
   readonly root=new T.Group();private mixer?:T.AnimationMixer;private action?:T.AnimationAction;private last=0;
   constructor(ready:()=>void){void this.install(ready).catch(()=>{/* mantém o chefão procedural como fallback */});}
   private async install(ready:()=>void){
-    const asset=await (cached??=load()),model=clone(asset.scene),content=new T.Group();content.add(model);this.root.add(content);
+    const asset=await loadHumanDeerAsset(),model=clone(asset.scene),content=new T.Group();content.add(model);this.root.add(content);
     let bounds=new T.Box3().setFromObject(content),size=bounds.getSize(new T.Vector3());
     if(size.z>size.y*1.3){content.rotation.x=-Math.PI/2;content.updateMatrixWorld(true);bounds=new T.Box3().setFromObject(content);size=bounds.getSize(new T.Vector3());}
     const scale=2.75/Math.max(.001,size.y);content.scale.setScalar(scale);content.updateMatrixWorld(true);bounds.setFromObject(content);

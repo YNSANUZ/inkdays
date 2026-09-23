@@ -750,6 +750,10 @@ A home agora posiciona o herói na área vazia ao lado do baú, voltado para a c
 
 A primeira pessoa também recebeu nova passagem visual: a Pistola de Rascunho usa traços verdes mais finos e as duas mãos passaram a ter palma, polegar e dedos agrupados ao redor da empunhadura. A mecânica, dano e autoridade do tiro não mudaram. A composição foi inspecionada no cenário local em home e primeira pessoa; proporção em celulares físicos ainda requer conferência humana.
 
+### Silhueta real do Cervo Humano
+
+A prévia distante do chefão na home agora reutiliza a malha otimizada do Human Deer. Todo o modelo recebe um único material escuro sem textura, contorno ou iluminação de detalhes, permanece parcialmente encoberto pela névoa e reproduz sua animação em velocidade muito baixa. A forma procedural anterior continua somente como fallback durante o carregamento ou caso o GLB não possa ser aberto.
+
 ## Teste secreto de dias e Caçadores progressivos
 
 O texto `OFFLINE · ALPHA 0.1` no rodapé agora funciona como um atalho secreto de desenvolvimento. Ao clicar, abre um painel pequeno para escolher um dia entre 1 e 999; a partida solo é recriada nesse dia, sempre no começo da preparação, com dificuldade, plano de horda e chefão correspondentes. O atalho não envia comandos administrativos ao multiplayer público.
