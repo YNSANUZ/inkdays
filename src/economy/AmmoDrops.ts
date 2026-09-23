@@ -3,7 +3,8 @@ import {C} from '../config/gameplay';
 export interface AmmoDropPlayer {
   id:string;x:number;z:number;alive:boolean;ready:boolean;ammo:number;reserve:number;
 }
-export interface AmmoDropSnapshot {id:number;x:number;z:number;remaining:number}
+export type AmmoCaliber='9mm'|'762';
+export interface AmmoDropSnapshot {id:number;x:number;z:number;remaining:number;caliber:AmmoCaliber}
 type AmmoDrop=AmmoDropSnapshot;
 interface Point {x:number;z:number}
 interface AmmoDropOptions {points?:readonly Point[];rng?:()=>number}
@@ -78,7 +79,7 @@ export class AmmoDropDirector {
     const point=emergency
       ? eligible.reduce((best,candidate)=>Math.min(...players.map(player=>distance(candidate,player)))<Math.min(...players.map(player=>distance(best,player)))?candidate:best)
       : eligible[Math.min(eligible.length-1,Math.floor(Math.max(0,this.rng())*eligible.length))];
-    this.drops.push({id:this.nextId++,x:point.x,z:point.z,remaining:C.ammoDrops.lifetime});
+    this.drops.push({id:this.nextId++,x:point.x,z:point.z,remaining:C.ammoDrops.lifetime,caliber:'9mm'});
     this.recent.push(point);if(this.recent.length>2)this.recent.shift();
     return true;
   }

@@ -767,3 +767,7 @@ Solo e servidor multiplayer compartilham a mesma progressão. No online, alvo, p
 O GLB do lagarto enviado pelo criador foi reduzido de 94,91 MB para 1,61 MB e conectado ao carregamento sob demanda do chefao. Todos os encontros de chefao (dias 10, 20, 30 e seguintes) passam a usar O LAGARTO; o Human Deer deixa de ser selecionado pelo ciclo. A home antecipa a silhueta do lagarto e o modo solo ganhou nome, vida e estado de furia do chefao no topo da tela.
 
 Registro anterior preservado em `qa/history/day-20-human-deer-rotation-bug-2026-09-23.png`: mostra o Human Deer invertido no Dia 20 antes da substituicao.
+
+## 2026-09-23 - Municao como recompensa de exploracao
+
+Os drops de municao foram conectados ao mapa solo e multiplayer. O primeiro conjunto surge apos 30 segundos em um ponto distante dos jogadores, permanece por 10 segundos e desaparece; o proximo segue o ciclo de 30 segundos. A representacao e formada por tres cartuchos amarelos flutuantes. O calibre inicial e 9 mm e o protocolo ja diferencia o visual 7,62, maior e com ponta alongada, para a futura troca para fuzil. A coleta concede 16 cartuchos, respeita o limite da reserva e continua autoritativa no multiplayer.

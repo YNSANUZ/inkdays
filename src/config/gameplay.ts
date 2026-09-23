@@ -11,7 +11,7 @@ export const C = {
   boss: { name: 'O LAGARTO', health: 1200, healthGrowth: 300, partyGrowth: .45, speed: 2.15, damage: 30, attackRange: 2.25, attackCooldown: 1.45, radius: .9, reward: 500, scale: 2.15, slamRadius: 4.2, slamDamage: 42, slamWindup: 1.25, slamCooldown: 6.5, slamTriggerRange: 7, slamKnockback: 11, slamLift: 5.2 },
   humanDeer: { name: 'O CERVO HUMANO', speed: 3.05, damage: 36, attackRange: 2.5, attackCooldown: 1.7, radius: 1.05, scale: 1.35, roarRadius: 5.4, roarDamage: 34, roarWindup: 1.65, roarCooldown: 7.5, roarTriggerRange: 8.5 },
   weapon: pistolGameplay,
-  ammoDrops: { interval: 10, lifetime: 10, maxActive: 3, rounds: 16, playerExclusion: 2.2, collectionRadius: 1.8, emergencyDelay: 2 },
+  ammoDrops: { interval: 30, lifetime: 10, maxActive: 1, rounds: 16, playerExclusion: 6, collectionRadius: 1.8, emergencyDelay: 2 },
   world: { radius: 43 },
   effects: { impactLife: .32, tracerLife: .06, flashLife: .055, damageLife: .28, maxParticles: 60 },
 } as const;

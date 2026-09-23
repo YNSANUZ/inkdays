@@ -18,7 +18,7 @@ describe('combate controlado pelo servidor',()=>{
     expect(a.purchaseAmmo('a','far')).toMatchObject({ok:false,reason:'distant'});expect(a.snapshot().players[0]).toMatchObject({money:100,reserve:0});
   });
   it('permite somente uma coleta autoritativa do mesmo drop',()=>{
-    const a=new CombatAuthority();a.join('a');a.join('b');for(let n=0;n<600;n++)a.step();const drop=a.snapshot().ammoDrops[0];expect(drop).toBeTruthy();
+    const a=new CombatAuthority();a.join('a');a.join('b');for(let n=0;n<1801;n++)a.step();const drop=a.snapshot().ammoDrops[0];expect(drop).toBeTruthy();
     const participants=(a as unknown as {players:Map<string,{weapon:{reserve:number};player:{position:Vector3}}>}).players;for(const p of participants.values()){p.weapon.reserve=0;p.player.position.set(drop.x,0,drop.z);}
     const first=a.pickupAmmo('a',drop.id),second=a.pickupAmmo('b',drop.id);expect([first.ok,second.ok]).toEqual([true,false]);expect(a.snapshot().players.reduce((sum,p)=>sum+p.reserve,0)).toBe(C.ammoDrops.rounds);
   });

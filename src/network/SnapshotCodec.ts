@@ -6,7 +6,7 @@ type PackedPlayer=[string,string,number,number,number,number,number,number,numbe
 // Enemy: id,kind/flags,maxHealth,targetId,pos xyz,yaw,health,state,speed
 type PackedEnemy=[number,string,number,number,string|null,number,number,number,number,number,string,number];
 type PackedGlobal=[number,number,number,string,number,number];
-type PackedDrop=[number,number,number,number];
+type PackedDrop=[number,number,number,number,number?];
 type PackedSnapshot={g:PackedGlobal;h:unknown;p:PackedPlayer[];e:PackedEnemy[];a:PackedDrop[];b:unknown;sh:unknown[];im:unknown[];m:unknown[];dr:unknown};
 export interface PackedKeyframe{t:'k';v:2;k:number;s:PackedSnapshot}
 export interface PackedDelta{t:'d';v:2;k:number;q:number;tick:number;g?:PackedGlobal;h?:unknown;p?:PackedPlayer[];pr?:string[];e?:PackedEnemy[];er?:number[];a?:PackedDrop[];b?:unknown;sh?:unknown[];im?:unknown[];m?:unknown[];dr?:unknown}
@@ -22,8 +22,8 @@ const unpackPlayer=(p:PackedPlayer)=>({id:p[0],name:p[1],connected:!!(p[2]&1),re
 const packEnemy=(e:CombatSnapshot['enemies'][number]):PackedEnemy=>[e.id,e.kind,(e.enraged?1:0),q(e.maxHealth),e.targetId,...pv(e.position),qa(e.yaw),q(e.health),e.state,q(e.speed)];
 const unpackEnemy=(e:PackedEnemy)=>({id:e[0],kind:e[1] as CombatSnapshot['enemies'][number]['kind'],enraged:!!e[2],maxHealth:u(e[3]),targetId:e[4],position:uv([e[5],e[6],e[7]]),yaw:ua(e[8]),health:u(e[9]),state:e[10] as CombatSnapshot['enemies'][number]['state'],speed:u(e[11])}) as CombatSnapshot['enemies'][number];
 
-const packSnapshot=(s:CombatSnapshot):PackedSnapshot=>({g:[s.tick,s.round,s.day,s.phase,q(s.remaining),s.gameOver?1:0],h:clone(s.horde),p:s.players.map(packPlayer),e:s.enemies.map(packEnemy),a:s.ammoDrops.map(drop=>[drop.id,q(drop.x),q(drop.z),q(drop.remaining)]),b:clone(s.boss),sh:clone(s.shots),im:clone(s.impacts),m:clone(s.messages),dr:clone(s.dayResult)});
-const unpackSnapshot=(s:PackedSnapshot):CombatSnapshot=>({version:1,tick:s.g[0],round:s.g[1],day:s.g[2],phase:s.g[3] as CombatSnapshot['phase'],remaining:u(s.g[4]),gameOver:!!s.g[5],horde:clone(s.h) as CombatSnapshot['horde'],players:s.p.map(unpackPlayer),enemies:s.e.map(unpackEnemy),ammoDrops:(s.a??[]).map(drop=>({id:drop[0],x:u(drop[1]),z:u(drop[2]),remaining:u(drop[3])})),boss:clone(s.b) as CombatSnapshot['boss'],shots:clone(s.sh) as CombatSnapshot['shots'],impacts:clone(s.im) as CombatSnapshot['impacts'],messages:clone(s.m) as CombatSnapshot['messages'],dayResult:clone(s.dr) as CombatSnapshot['dayResult']});
+const packSnapshot=(s:CombatSnapshot):PackedSnapshot=>({g:[s.tick,s.round,s.day,s.phase,q(s.remaining),s.gameOver?1:0],h:clone(s.horde),p:s.players.map(packPlayer),e:s.enemies.map(packEnemy),a:s.ammoDrops.map(drop=>[drop.id,q(drop.x),q(drop.z),q(drop.remaining),drop.caliber==='762'?1:0]),b:clone(s.boss),sh:clone(s.shots),im:clone(s.impacts),m:clone(s.messages),dr:clone(s.dayResult)});
+const unpackSnapshot=(s:PackedSnapshot):CombatSnapshot=>({version:1,tick:s.g[0],round:s.g[1],day:s.g[2],phase:s.g[3] as CombatSnapshot['phase'],remaining:u(s.g[4]),gameOver:!!s.g[5],horde:clone(s.h) as CombatSnapshot['horde'],players:s.p.map(unpackPlayer),enemies:s.e.map(unpackEnemy),ammoDrops:(s.a??[]).map(drop=>({id:drop[0],x:u(drop[1]),z:u(drop[2]),remaining:u(drop[3]),caliber:drop[4]===1?'762':'9mm'})),boss:clone(s.b) as CombatSnapshot['boss'],shots:clone(s.sh) as CombatSnapshot['shots'],impacts:clone(s.im) as CombatSnapshot['impacts'],messages:clone(s.m) as CombatSnapshot['messages'],dayResult:clone(s.dr) as CombatSnapshot['dayResult']});
 
 export const packKeyframe=(snapshot:CombatSnapshot,keyframeId:number):PackedKeyframe=>({t:'k',v:2,k:keyframeId,s:packSnapshot(snapshot)});
 export const unpackKeyframe=(packet:PackedKeyframe):CombatSnapshot=>unpackSnapshot(packet.s);
