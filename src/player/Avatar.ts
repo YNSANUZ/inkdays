@@ -7,9 +7,9 @@ import { createDrawnWeapon } from '../weapons/DrawnWeapon';
 import { draftPistol } from '../weapons/CustomWeapon';
 export class Avatar {
   root=new T.Group(); body=new T.Group(); procedural=new T.Group(); leftLeg=new T.Group(); rightLeg=new T.Group(); arm=new T.Group(); muzzle=new T.Object3D(); private rig?:RiggedAvatar; private deer?:HumanDeerAvatar; private enemy:boolean;private showcase=false;
-  constructor(enemy=false,boss=false,bossVariant:'colossus'|'human-deer'='colossus') {
+  constructor(enemy=false,boss=false,bossVariant:'colossus'|'human-deer'='colossus',hunter=false) {
     this.enemy=enemy;this.root.name=boss?'inkdays-boss':enemy?'inkdays-enemy':'inkdays-player';this.root.add(this.body);this.body.add(this.procedural); const mat=enemy?dark:paper;
-    const host=this.procedural;
+    const host=this.procedural;if(hunter)this.root.userData.hunter=true;
     sphere(host,[0,1.77,0],[.43,.45,.4],mat);
     sphere(host,[0,1.05,0],[.33,.48,.25],mat);
     this.leftLeg.position.set(-.18,.72,0);this.rightLeg.position.set(.18,.72,0);host.add(this.leftLeg,this.rightLeg);
@@ -17,6 +17,7 @@ export class Avatar {
     this.arm.position.set(enemy?.34:-.42,1.24,.06);host.add(this.arm);
     if(enemy) {
       sphere(this.arm,[.07,-.18,.12],[.13,.35,.14],dark);sphere(host,[-.4,1.02,.15],[.13,.35,.14],dark);
+      if(hunter){sphere(host,[0,1.08,.08],[.39,.5,.29],dark);for(const x of [-.31,.31])sphere(host,[x,1.35,0],[.09,.22,.1],dark);}
       for(const x of [-.15,.15]) sphere(host,[x,1.8,.365],[.055,.065,.028],red);
       stroke(host,[-.12,1.59,.36],[.12,1.59,.36],.027,ink);
       // Crown-like ink drops give Borrões their own silhouette.
@@ -39,7 +40,7 @@ export class Avatar {
     }
     shadow(this.root,.48);
     if(typeof window!=='undefined'&&boss&&bossVariant==='human-deer')void import('./HumanDeerAvatar').then(({HumanDeerAvatar})=>{this.deer=new HumanDeerAvatar(()=>{this.procedural.visible=false;});this.body.add(this.deer.root);}).catch(()=>{/* mantém o chefão procedural como fallback */});
-    else if(typeof window!=='undefined')void import('./RiggedAvatar').then(({RiggedAvatar})=>{this.rig=new RiggedAvatar(boss?'boss':enemy?'enemy':'player',()=>{this.rig?.setShowcasePose(this.showcase);this.procedural.visible=false;});this.rig.setShowcasePose(this.showcase);this.body.add(this.rig.root);}).catch(()=>{/* mantém o avatar procedural como fallback */});
+    else if(typeof window!=='undefined')void import('./RiggedAvatar').then(({RiggedAvatar})=>{this.rig=new RiggedAvatar(boss?'boss':hunter?'hunter':enemy?'enemy':'player',()=>{this.rig?.setShowcasePose(this.showcase);this.procedural.visible=false;});this.rig.setShowcasePose(this.showcase);this.body.add(this.rig.root);}).catch(()=>{/* mantém o avatar procedural como fallback */});
   }
   animate(t:number,speed:number,crouch=false,action=false,velocity?:{x:number;z:number}) { const stride=Math.min(1,speed/5);this.leftLeg.rotation.x=Math.sin(t*11)*.65*stride;this.rightLeg.rotation.x=-this.leftLeg.rotation.x;this.body.position.y=(crouch?-.35:0)+Math.abs(Math.sin(t*11))*.035*stride;this.body.rotation.x=crouch?.14:0;const motion=action?'attack':this.root.position.y>.08?'jump':crouch?'crouch':speed>.2?'move':'idle';this.rig?.update(t,motion,speed,velocity?movementDirection(this.root.rotation.y,velocity,speed):'forward');this.deer?.update(t,speed,action); }
   setShowcasePose(enabled:boolean){this.showcase=enabled;this.rig?.setShowcasePose(enabled);}

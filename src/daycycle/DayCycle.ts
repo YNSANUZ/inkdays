@@ -9,4 +9,5 @@ export class DayCycle {
     return null;
   }
   completeHorde(){if(this.phase!=='horde')return null;this.day++;this.phase='day';this.remaining=C.day.duration;return 'dawn' as const;}
+  jumpTo(day:number){this.day=Math.max(1,Math.min(999,Math.floor(day)));this.phase='day';this.remaining=C.day.duration;this.elapsed=0;}
 }

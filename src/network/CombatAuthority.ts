@@ -14,6 +14,7 @@ import { normalizeChatText } from './Chat';
 import { MAX_PLAYERS } from './MovementAuthority';
 import {quoteAmmoPurchase} from '../economy/AmmoEconomy';
 import {AmmoDropDirector} from '../economy/AmmoDrops';
+import {HunterDirector} from '../horde/HunterDirector';
 const neutral=()=>({x:0,z:0,run:false,crouch:false,jump:false,fire:false,reload:false});
 const spawn=(slot:number)=>({x:(slot%4)*2,z:10+Math.floor(slot/4)*2});
 export interface AmmoPurchaseResult {ok:boolean;reason:string;rounds:number;cost:number}
@@ -21,7 +22,7 @@ export interface AmmoPickupResult {ok:boolean;rounds:number}
 interface Participant {slot:number;name:string;connected:boolean;ready:boolean;protection:number;player:Player;weapon:Pistol;camera:ThirdPerson;input:InputPacket;age:number;received:number;applied:number;viewed:number;kills:number;money:number;lastShot:number;shotPending:number|null;lastChat:number;lastChatTick:number;ammoRequests:Map<string,AmmoPurchaseResult>}
 export class CombatAuthority {
   readonly scene=new T.Scene();readonly world=new World(this.scene);readonly enemies=new Enemies(this.scene,this.world);
-  cycle=new DayCycle();private horde=new Horde();private players=new Map<string,Participant>();private ammoDrops=new AmmoDropDirector();tick=0;private round=1;
+  cycle=new DayCycle();private horde=new Horde();private hunters=new HunterDirector();private players=new Map<string,Participant>();private ammoDrops=new AmmoDropDirector();tick=0;private round=1;
   private shots:{serial:number;player:string;shotId?:number;from:T.Vector3;to:T.Vector3;hit:boolean;rewindTicks:number}[]=[];private serial=0;
   private impacts:{serial:number;bossId:number;kind:'impact'|'roar';position:T.Vector3;radius:number;tick:number}[]=[];private impactSerial=0;
   private messages:{serial:number;messageId:number;player:string;name:string;text:string;tick:number}[]=[];private chatSerial=0;private readonly chatLifetimeTicks=720;
@@ -29,7 +30,7 @@ export class CombatAuthority {
   private enemyHistory=new Map<number,Map<number,T.Vector3>>();private readonly historyTicks=30;
   join(id:string){
     if(this.players.has(id)||this.players.size>=MAX_PLAYERS)return false;
-    if(!this.players.size){this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.ammoDrops.reset();this.shots=[];this.impacts=[];this.messages=[];this.enemyHistory.clear();this.dayKills=this.dayMoney=0;this.lastDayResult=null;}
+    if(!this.players.size){this.cycle=new DayCycle();this.horde=new Horde();this.hunters=new HunterDirector();this.enemies.clear();this.ammoDrops.reset();this.shots=[];this.impacts=[];this.messages=[];this.enemyHistory.clear();this.dayKills=this.dayMoney=0;this.lastDayResult=null;}
     const used=new Set([...this.players.values()].map(p=>p.slot)),slot=Array.from({length:MAX_PLAYERS},(_,index)=>index).find(index=>!used.has(index))!,player=new Player(),point=spawn(slot);player.position.set(point.x,0,point.z);this.scene.add(player.avatar.root);
     this.players.set(id,{slot,name:`Errante ${slot+1}`,connected:true,ready:true,protection:0,player,weapon:new Pistol(),camera:new ThirdPerson(),input:{version:1,sequence:0,yaw:0,command:neutral()},age:Infinity,received:-1,applied:-1,viewed:-1,kills:0,money:0,lastShot:-1,shotPending:null,lastChat:-1,lastChatTick:-Infinity,ammoRequests:new Map()});return true;
   }
@@ -41,7 +42,7 @@ export class CombatAuthority {
   leave(id:string){const p=this.players.get(id);if(p)this.scene.remove(p.player.avatar.root);this.players.delete(id);if(!this.players.size)this.enemies.clear();}
   restart(id:string){
     const requester=this.players.get(id);if(!requester?.connected||!this.gameOver)return false;
-    this.round++;this.cycle=new DayCycle();this.horde=new Horde();this.enemies.clear();this.ammoDrops.reset();this.shots=[];this.impacts=[];this.enemyHistory.clear();this.dayKills=this.dayMoney=0;this.lastDayResult=null;
+    this.round++;this.cycle=new DayCycle();this.horde=new Horde();this.hunters=new HunterDirector();this.enemies.clear();this.ammoDrops.reset();this.shots=[];this.impacts=[];this.enemyHistory.clear();this.dayKills=this.dayMoney=0;this.lastDayResult=null;
     for(const p of this.players.values()){
       this.scene.remove(p.player.avatar.root);p.player=new Player();const point=spawn(p.slot);p.player.position.set(point.x,0,point.z);this.scene.add(p.player.avatar.root);
       p.weapon=new Pistol();p.input.command=neutral();p.age=Infinity;p.protection=C.player.spawnProtection;p.kills=0;p.money=0;p.shotPending=null;p.ammoRequests.clear();
@@ -113,14 +114,14 @@ export class CombatAuthority {
       p.applied=p.received;p.input.command.jump=p.input.command.reload=p.input.command.fire=false;
     }
     const event=this.cycle.update(C.fixedStep);
-    if(event==='horde'){this.dayKills=this.dayMoney=0;this.lastDayResult=null;this.horde.begin(this.cycle.day,live.length);if(this.cycle.day%C.day.bossInterval===0)this.enemies.spawnBoss(this.cycle.day,live[0].player.position,live.length);}
-    if(this.cycle.phase==='horde'){const commonEnemies=this.enemies.active.filter(enemy=>enemy.kind==='horde'),commons=commonEnemies.length,boss=this.enemies.active.find(enemy=>enemy.kind==='boss');this.horde.update(C.fixedStep,commons,()=>this.enemies.spawn(this.cycle.day,live[this.horde.spawned%live.length].player.position),boss?boss.health/boss.maxHealth:null,commonEnemies.every(enemy=>enemy.state==='WANDER'));}
+    if(event==='horde'){this.dayKills=this.dayMoney=0;this.lastDayResult=null;this.horde.begin(this.cycle.day,live.length);this.hunters.begin(this.cycle.day);if(this.cycle.day%C.day.bossInterval===0)this.enemies.spawnBoss(this.cycle.day,live[0].player.position,live.length);}
+    if(this.cycle.phase==='horde'){const commonEnemies=this.enemies.active.filter(enemy=>enemy.kind==='horde'),commons=commonEnemies.length,boss=this.enemies.active.find(enemy=>enemy.kind==='boss');this.horde.update(C.fixedStep,commons,()=>this.enemies.spawn(this.cycle.day,live[this.horde.spawned%live.length].player.position),boss?boss.health/boss.maxHealth:null,commonEnemies.every(enemy=>enemy.state==='WANDER'));this.hunters.update(C.fixedStep,()=>this.enemies.spawnHunter(this.cycle.day,live[this.tick%live.length].player.position));}
     this.enemies.update(C.fixedStep,live.map(p=>p.player),()=>{},(boss,center)=>{const deer=boss.bossVariant==='human-deer',radius=deer?C.humanDeer.roarRadius:C.boss.slamRadius,damage=deer?C.humanDeer.roarDamage:C.boss.slamDamage;this.impacts.push({serial:++this.impactSerial,bossId:boss.id,kind:deer?'roar':'impact',position:center.clone(),radius,tick:this.tick});this.impacts=this.impacts.slice(-8);for(const p of live){const offset=p.player.position.clone().sub(center);offset.y=0;const distance=offset.length();if(distance>radius)continue;if(distance<.001)offset.set(p.slot%2?-1:1,0,0);else offset.multiplyScalar(1/distance);p.player.health.damage(damage);p.player.velocity.addScaledVector(offset,C.boss.slamKnockback);p.player.vertical=Math.max(p.player.vertical,deer?2.5:C.boss.slamLift);}});
-    if(this.cycle.phase==='horde'){const commons=this.enemies.active.filter(enemy=>enemy.kind==='horde').length,bossAlive=this.enemies.active.some(enemy=>enemy.kind==='boss');if(this.horde.canComplete(C.fixedStep,commons,bossAlive)&&this.cycle.completeHorde())this.finishHorde(live);}
+    if(this.cycle.phase==='horde'){const commons=this.enemies.active.filter(enemy=>enemy.kind==='horde').length,hunters=this.enemies.active.filter(enemy=>enemy.kind==='hunter').length,bossAlive=this.enemies.active.some(enemy=>enemy.kind==='boss');if(this.hunters.complete&&hunters===0&&this.horde.canComplete(C.fixedStep,commons,bossAlive)&&this.cycle.completeHorde())this.finishHorde(live);}
     this.enemyHistory.set(this.tick,new Map(this.enemies.active.map(e=>[e.id,e.avatar.root.position.clone()])));while(this.enemyHistory.size>this.historyTicks)this.enemyHistory.delete(this.enemyHistory.keys().next().value!);
   }
   private get gameOver(){const active=[...this.players.values()].filter(p=>p.ready);return active.length>0&&active.every(p=>p.player.health.dead);}
-  snapshot(){const ids=new Map([...this.players].map(([id,p])=>[p.player,id])),commons=this.enemies.active.filter(enemy=>enemy.kind==='horde').length;return {version:1,tick:this.tick,round:this.round,day:this.cycle.day,phase:this.cycle.phase,remaining:this.cycle.remaining,gameOver:this.gameOver,horde:this.cycle.phase==='horde'?this.horde.state(commons):null,
+  snapshot(){const ids=new Map([...this.players].map(([id,p])=>[p.player,id])),commons=this.enemies.active.filter(enemy=>enemy.kind==='horde').length,hunters=this.enemies.active.filter(enemy=>enemy.kind==='hunter').length,hordeState=this.horde.state(commons);return {version:1,tick:this.tick,round:this.round,day:this.cycle.day,phase:this.cycle.phase,remaining:this.cycle.remaining,gameOver:this.gameOver,horde:this.cycle.phase==='horde'?{...hordeState,remaining:hordeState.remaining+this.hunters.remaining(hunters),assist:hordeState.assist&&this.hunters.remaining(hunters)===0}:null,
     players:[...this.players].map(([id,p])=>({id,name:p.name,connected:p.connected,ready:p.ready,protection:p.protection,acknowledged:p.applied,chatAcknowledged:p.lastChat,yaw:p.input.yaw,position:{...p.player.position},velocity:{...p.player.velocity},vertical:p.player.vertical,health:p.player.health.value,ammo:p.weapon.ammo,reserve:p.weapon.reserve,reloading:p.weapon.reloadTime>0,crouch:p.input.command.crouch,kills:p.kills,money:p.money})),
     enemies:this.enemies.active.map(e=>({id:e.id,kind:e.kind,enraged:e.enraged,maxHealth:e.maxHealth,targetId:e.target?ids.get(e.target)??null:null,position:{...e.avatar.root.position},yaw:e.avatar.root.rotation.y,health:e.health,state:e.state,speed:e.speed})),
     boss:(()=>{const boss=this.enemies.active.find(e=>e.kind==='boss');if(!boss)return null;const deer=boss.bossVariant==='human-deer';return {id:boss.id,name:deer?C.humanDeer.name:C.boss.name,variant:boss.bossVariant??'colossus',health:boss.health,maxHealth:boss.maxHealth,enraged:boss.enraged,slam:boss.specialWindup>0?{serial:boss.specialSerial,attack:deer?'roar' as const:'impact' as const,position:{...boss.specialCenter},radius:deer?C.humanDeer.roarRadius:C.boss.slamRadius,remaining:boss.specialWindup}:null};})(),

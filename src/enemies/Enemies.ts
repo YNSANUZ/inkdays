@@ -4,7 +4,7 @@ import { Avatar } from '../player/Avatar';
 import type { Player } from '../player/Player';
 import type { World } from '../world/World';
 export type EnemyState='WANDER'|'CHASE'|'ATTACK'|'DEAD';
-export type EnemyKind='horde'|'boss';
+export type EnemyKind='horde'|'hunter'|'boss';
 export type BossVariant='colossus'|'human-deer';
 export interface Enemy { id:number; kind:EnemyKind; bossVariant?:BossVariant; enraged:boolean; avatar:Avatar; health:number; maxHealth:number; speed:number; damage:number; attackRange:number; attackCooldown:number; radius:number; reward:number; cooldown:number; specialCooldown:number; specialWindup:number; specialSerial:number; specialCenter:T.Vector3; state:EnemyState; age:number; target?:Player; perceptionTimer:number; wanderTimer:number; pauseTimer:number; wanderDirection:T.Vector3 }
 export class Enemies {
@@ -20,6 +20,16 @@ export class Enemies {
       const id=++this.serial,heading=(id*2.399963229728653+Math.random()*.7)%(Math.PI*2);
       this.active.push({id,kind:'horde',enraged:false,avatar,health:stats.health,maxHealth:stats.health,speed:stats.speed,damage:C.enemy.damage,attackRange:C.enemy.attackRange,attackCooldown:C.enemy.attackCooldown,radius:C.enemy.radius,reward:C.enemy.reward,cooldown:C.enemy.attackCooldown,specialCooldown:Infinity,specialWindup:0,specialSerial:0,specialCenter:new T.Vector3(),state:'WANDER',age:0,perceptionTimer:0,wanderTimer:C.enemy.wanderMin+Math.random()*(C.enemy.wanderMax-C.enemy.wanderMin),pauseTimer:0,wanderDirection:new T.Vector3(Math.sin(heading),0,Math.cos(heading))});return true;
     } return false;
+  }
+  spawnHunter(day:number,player:T.Vector3) {
+    const stats=difficulty(day);
+    for(let attempt=0;attempt<40;attempt++){
+      const a=((this.serial+attempt+1)*2.399963229728653+Math.random()*.45)%(Math.PI*2),r=C.enemy.spawnMax,x=player.x+Math.sin(a)*r,z=player.z+Math.cos(a)*r;
+      if(Math.hypot(x,z)>C.world.radius-1||this.world.blocked(x,z,C.enemy.radius+1))continue;
+      const avatar=new Avatar(true,false,'colossus',true);avatar.root.position.set(x,0,z);avatar.root.scale.setScalar(C.hunter.scale);this.scene.add(avatar.root);
+      const health=Math.round(stats.health*C.hunter.healthMultiplier),id=++this.serial;
+      this.active.push({id,kind:'hunter',enraged:false,avatar,health,maxHealth:health,speed:stats.speed*C.hunter.speedMultiplier,damage:C.hunter.damage,attackRange:C.enemy.attackRange,attackCooldown:C.hunter.attackCooldown,radius:C.enemy.radius,reward:C.hunter.reward,cooldown:C.hunter.attackCooldown,specialCooldown:Infinity,specialWindup:0,specialSerial:0,specialCenter:new T.Vector3(),state:'CHASE',age:0,perceptionTimer:0,wanderTimer:0,pauseTimer:0,wanderDirection:new T.Vector3(0,0,1)});return true;
+    }return false;
   }
   spawnBoss(day:number,player:T.Vector3,players=1) {
     const tier=Math.max(0,Math.floor(day/C.day.bossInterval)-1),party=Math.max(1,Math.min(8,Math.floor(players)));
@@ -38,10 +48,10 @@ export class Enemies {
       if(e.state==='DEAD')continue;
       e.age+=dt;e.cooldown=Math.max(0,e.cooldown-dt);e.specialCooldown=Math.max(0,e.specialCooldown-dt);
       const p=e.avatar.root.position;e.perceptionTimer-=dt;if(e.target&&!targets.includes(e.target)){e.target=undefined;e.perceptionTimer=0;}
-      if(e.kind==='boss'||e.perceptionTimer<=0){
+      if(e.perceptionTimer<=0){
         e.perceptionTimer=C.enemy.perceptionInterval+(e.id%5)*.012;
         if(e.kind==='horde'&&e.target&&e.target.position.distanceToSquared(p)>C.enemy.disengage*C.enemy.disengage)e.target=undefined;
-        const radius=e.kind==='boss'?Infinity:C.enemy.detection*C.enemy.detection;
+        const radius=e.kind==='horde'?C.enemy.detection*C.enemy.detection:Infinity;
         const nearest=targets.reduce<Player|undefined>((best,candidate)=>{const distance=candidate.position.distanceToSquared(p);return distance<=radius&&(!best||distance<best.position.distanceToSquared(p))?candidate:best;},undefined);if(nearest)e.target=nearest;
       }
       const player=e.target;

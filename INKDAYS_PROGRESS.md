@@ -749,3 +749,11 @@ Os traços da arma continuam sendo geometria fina, recebem transparência e pres
 A home agora posiciona o herói na área vazia ao lado do baú, voltado para a câmera com uma leve rotação do corpo. A pose de apresentação interrompe a animação que abria os braços durante o carregamento e mantém os membros baixos. No horizonte, uma silhueta escura e sem detalhes antecipa o Human Deer, com respiração quase imperceptível, sem revelar o modelo completo.
 
 A primeira pessoa também recebeu nova passagem visual: a Pistola de Rascunho usa traços verdes mais finos e as duas mãos passaram a ter palma, polegar e dedos agrupados ao redor da empunhadura. A mecânica, dano e autoridade do tiro não mudaram. A composição foi inspecionada no cenário local em home e primeira pessoa; proporção em celulares físicos ainda requer conferência humana.
+
+## Teste secreto de dias e Caçadores progressivos
+
+O texto `OFFLINE · ALPHA 0.1` no rodapé agora funciona como um atalho secreto de desenvolvimento. Ao clicar, abre um painel pequeno para escolher um dia entre 1 e 999; a partida solo é recriada nesse dia, sempre no começo da preparação, com dificuldade, plano de horda e chefão correspondentes. O atalho não envia comandos administrativos ao multiplayer público.
+
+As hordas passaram a incluir o Caçador, um inimigo mais escuro, ligeiramente maior e mais resistente que o Borrão comum. Ele consulta jogadores vivos em intervalos leves, escolhe o mais próximo em qualquer distância e troca de alvo quando alguém morre. O primeiro chega dez segundos após a noite começar, e os demais respeitam intervalos de dez segundos. A cota é 1 nos dias 1–3, 2 nos dias 4–6, 3 nos dias 7–9, 4 no Dia 10 e continua crescendo a cada três dias até o limite de 8. Caçadores pendentes e vivos entram no contador e precisam morrer para o amanhecer.
+
+Solo e servidor multiplayer compartilham a mesma progressão. No online, alvo, posição, dano, morte e recompensa do Caçador continuam autoritativos no servidor. Testes automatizados cobrem progressão, intervalo, conclusão da cota, salto de dia, perseguição distante, escolha entre dois jogadores e exclusão de jogador morto. O painel foi validado no navegador local saltando diretamente ao Dia 10, sem erros de console.

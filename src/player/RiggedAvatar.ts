@@ -4,7 +4,7 @@ import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { createDrawnWeapon } from '../weapons/DrawnWeapon';
 import { draftPistol } from '../weapons/CustomWeapon';
 
-type Role = 'player' | 'enemy' | 'boss';
+type Role = 'player' | 'enemy' | 'hunter' | 'boss';
 type Motion = 'idle' | 'move' | 'crouch' | 'jump' | 'attack';
 export type MoveDirection='forward'|'backward'|'left'|'right';
 type PlayerMotion='idle'|'moveForward'|'moveBackward'|'moveLeft'|'moveRight'|'crouch'|'jump';
@@ -76,7 +76,7 @@ export class RiggedAvatar {
       if(spine){const pack=new T.Mesh(new T.BoxGeometry(.32,.42,.14),new T.MeshToonMaterial({color:0xb9bbb3}));pack.position.set(0,.06,-.16);spine.add(pack);}
       if(head){for(const x of [-.06,.06]){const eye=new T.Mesh(new T.SphereGeometry(.018,8,6),black);eye.position.set(x,.115,.284);head.add(eye);}}
     } else {
-      const enemyWhite=new T.MeshToonMaterial({color:0xceccc3});model.traverse(node=>{if(node instanceof T.Mesh&&node.material===white)node.material=enemyWhite;});
+      const enemyWhite=new T.MeshToonMaterial({color:this.role==='hunter'?0x414541:0xceccc3});model.traverse(node=>{if(node instanceof T.Mesh&&node.material===white)node.material=enemyWhite;});
       if(head){
         const mask=new T.Mesh(new T.SphereGeometry(.235,14,10),black);mask.scale.set(.82,.72,.18);mask.position.set(0,.1,.275);head.add(mask);
         const eyeRed=new T.MeshBasicMaterial({color:0xb20d14});
