@@ -752,7 +752,7 @@ A primeira pessoa também recebeu nova passagem visual: a Pistola de Rascunho us
 
 ### Silhueta real do Cervo Humano
 
-A prévia distante do chefão na home agora reutiliza a malha otimizada do Human Deer. Todo o modelo recebe um único material escuro sólido, sem textura, transparência, contorno ou iluminação de detalhes; sua escala foi reduzida e sua posição recuada para o horizonte, onde a névoa produz o desbotamento. A animação é reproduzida em velocidade muito baixa. A forma procedural anterior continua somente como fallback durante o carregamento ou caso o GLB não possa ser aberto.
+A prévia distante do chefão na home usa uma silhueta frontal simplificada baseada no Human Deer: cabeça de cervo, chifres ramificados, peito pesado e braços abaixados. Essa representação evita que as dezenas de peças separadas da malha real virem um borrão semelhante a uma aranha nessa escala. O GLB completo e otimizado permanece reservado ao combate do Dia 20. A silhueta não possui textura, transparência, contorno ou iluminação de detalhes e permanece recuada no horizonte, suavizada pela névoa.
 
 ## Teste secreto de dias e Caçadores progressivos
 
